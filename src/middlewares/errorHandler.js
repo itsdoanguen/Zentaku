@@ -1,5 +1,3 @@
-// Simple error handling middleware
-
 const { response } = require("../app");
 
 const errorHandler = (err, req, res, next) => {
