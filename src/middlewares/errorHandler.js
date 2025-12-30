@@ -1,5 +1,5 @@
 const logger = require('../utils/logger');
-const { AnilistAPIError, NotFoundError, ValidationError } = require('../utils/errors');
+const { AnilistAPIError, NotFoundError, ValidationError } = require('../utils/error');
 
 /**
  * 404 handler
