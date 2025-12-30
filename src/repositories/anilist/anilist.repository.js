@@ -1,6 +1,6 @@
 const httpClient = require('../../services/httpClient');
 const logger = require('../../utils/logger');
-const { AnilistAPIError, NotFoundError } = require('../../utils/errors');
+const { AnilistAPIError, NotFoundError } = require('../../utils/error');
 
 const {
     ANIME_INFO_QS,
@@ -41,8 +41,7 @@ class AnilistRepository {
         try {
             const response = await httpClient.post(this.apiUrl, {
                 query,
-                variables,
-                operationName
+                variables
             });
 
             const duration = Date.now() - startTime;
@@ -72,15 +71,9 @@ class AnilistRepository {
                     error.response.status,
                     error.response.data
                 );
-            } else {
-                logger.error(`[API] ${operationName} request error: ${error.message} in ${duration}ms`);
-                throw new AnilistAPIError(
-                    error.response.data?.message || `Anilist API request error: ${error.message}`,
-                    error.response?.status || 500,
-                    error.response?.data || {}
-                );
             }
 
+            // Network or other errors
             logger.error(`[API] ${operationName} FAILED after ${duration}ms:`, error.message);
             throw new AnilistAPIError(
                 `Network error: ${error.message}`,
