@@ -452,8 +452,6 @@ model Comment {
   activityId  BigInt?
   activity    Activity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
-  // Lưu ý: Comment thường phức tạp, có thể dùng raw `targetType` + `targetId`
-  // nếu không muốn tạo quá nhiều relation nullable.
   targetType  String? // "MEDIA", "LIST", "EPISODE"
   targetId    BigInt?
 
