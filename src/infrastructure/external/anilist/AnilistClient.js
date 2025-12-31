@@ -1,6 +1,6 @@
-const httpClient = require('../../services/httpClient');
-const logger = require('../../utils/logger');
-const { AnilistAPIError, NotFoundError } = require('../../utils/error');
+const httpClient = require('../../../services/httpClient');
+const logger = require('../../../shared/utils/logger');
+const { AnilistAPIError, NotFoundError } = require('../../../shared/utils/error');
 
 const {
     ANIME_INFO_QS,
@@ -16,7 +16,7 @@ const {
     ANIME_BATCH_INFO_QS,
     CHARACTER_INFO_QS,
     STAFF_INFO_QS
-} = require('./anilist.query');
+} = require('./anilist.queries');
 
 /**
  * Repository for interacting with the Anilist API.

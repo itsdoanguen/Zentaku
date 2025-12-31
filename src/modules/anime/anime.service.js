@@ -1,7 +1,7 @@
 const animeRepository = require('./anime.repository');
-const anilistRepository = require('../../repositories/anilist/anilist.repository');
-const { NotFoundError, AnilistAPIError } = require('../../utils/error');
-const logger = require('../../utils/logger');
+const anilistRepository = require('../../infrastructure/external/anilist/AnilistClient');
+const { NotFoundError, AnilistAPIError } = require('../../shared/utils/error');
+const logger = require('../../shared/utils/logger');
 class AnimeService {
     /**
      * Get anime details by Anilist ID.

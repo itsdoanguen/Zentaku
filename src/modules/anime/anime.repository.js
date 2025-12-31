@@ -1,5 +1,5 @@
-const prisma = require('../../config/databaseConnection')
-const { NotFoundError } = require('../../utils/error');
+const prisma = require('../../config/database')
+const { NotFoundError } = require('../../shared/utils/error');
 
 class AnimeRepository {
     /**
