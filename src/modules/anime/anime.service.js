@@ -47,6 +47,7 @@ class AnimeService {
         }
     }
 
+    
     //PRIVATE METHODS
 
 
