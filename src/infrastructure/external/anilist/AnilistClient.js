@@ -1,56 +1,30 @@
 const httpClient = require('../../http/httpClient');
 const logger = require('../../../shared/utils/logger');
-const { AnilistAPIError, NotFoundError } = require('../../../shared/utils/error');
-const IMetadataSource = require('../../../core/interfaces/IMetadataSource');
-
-const {
-    ANIME_INFO_QS,
-    ANIME_INFO_LIGHTWEIGHT_QS,
-    ANIME_COVERS_BATCH_QS,
-    ANIME_ID_SEARCH_QS,
-    ANIME_SEASON_TREND_QS,
-    ANIME_SEARCH_CRITERIA_QS,
-    ANIME_CHARACTERS_QS,
-    ANIME_STAFF_QS,
-    ANIME_STATS_QS,
-    ANIME_WHERE_TO_WATCH_QS,
-    ANIME_BATCH_INFO_QS,
-    CHARACTER_INFO_QS,
-    STAFF_INFO_QS
-} = require('./anilist.queries');
+const { AnilistAPIError } = require('../../../shared/utils/error');
 
 /**
- * AniList API Client - METADATA SOURCE Implementation
+ * Base AniList GraphQL Client
+ * Provides shared GraphQL execution functionality for all AniList clients
  * 
  * @class AnilistClient
- * @extends {IMetadataSource}
- * @description
- * Primary METADATA source for anime/manga from AniList GraphQL API.
- * 
- * Responsibilities:
- * - Detailed anime/manga information (title, description, cover, rating)
- * - Search and filter by multiple criteria
- * - Character and staff information
- * - Statistics and rankings
- * - Seasonal anime listings
- * 
  */
-class AnilistClient extends IMetadataSource {
+class AnilistClient {
     constructor() {
-        super();
         this.apiUrl = 'https://graphql.anilist.co';
     }
 
     /**
-     * Execute a GraphQL query against the Anilist API.
-     * @param {string} query - The GraphQL query string.
-     * @param {object} variables - The variables for the GraphQL query.
-     * @returns {Promise<object>} - The response data from the API.
-     * @throws {AnilistAPIError} - If the API request fails.
+     * Execute a GraphQL query against AniList API
      * 
-     * @private
+     * @param {string} query - GraphQL query string
+     * @param {object} variables - Query variables
+     * @param {string} operationName - Operation name for logging
+     * @returns {Promise<object>} - Response data
+     * @throws {AnilistAPIError} - If request fails
+     * 
+     * @protected
      */
-    async _executeQuery(query, variables = {}, operationName = "AnilistQuery") {
+    async executeQuery(query, variables = {}, operationName = 'AnilistQuery') {
         const startTime = Date.now();
 
         try {
@@ -60,12 +34,12 @@ class AnilistClient extends IMetadataSource {
             });
 
             const duration = Date.now() - startTime;
-            logger.info(`[API] ${operationName} executed in ${duration}ms`);
+            logger.info(`[AniList] ${operationName} completed in ${duration}ms`);
 
             if (response.data.errors) {
-                logger.error(`[API] ${JSON.stringify(response.data.errors)}`);
+                logger.error(`[AniList] GraphQL errors: ${JSON.stringify(response.data.errors)}`);
                 throw new AnilistAPIError(
-                    'Anilist API returned errors',
+                    'AniList API returned errors',
                     response.status,
                     response.data.errors
                 );
@@ -80,495 +54,18 @@ class AnilistClient extends IMetadataSource {
             }
 
             if (error.response) {
-                logger.error(`[API] ${operationName} failed with status ${error.response.status} in ${duration}ms`);
+                logger.error(`[AniList] ${operationName} failed with status ${error.response.status} (${duration}ms)`);
                 throw new AnilistAPIError(
-                    `Anilist API request failed with status ${error.response.status}`,
+                    `AniList API request failed: ${error.response.status}`,
                     error.response.status,
                     error.response.data
                 );
             }
 
-            // Network or other errors
-            logger.error(`[API] ${operationName} FAILED after ${duration}ms:`, error.message);
-            throw new AnilistAPIError(
-                `Network error: ${error.message}`,
-                500,
-                null
-            );
+            logger.error(`[AniList] ${operationName} network error after ${duration}ms:`, error.message);
+            throw new AnilistAPIError(`Network error: ${error.message}`, 500, null);
         }
     }
 
-    /**
-     * Fetch detailed anime information by its ID.
-     * @param {number} animeId - The ID of the anime.
-     * @returns {Promise<object>} - The anime information.
-     * @throws {AnilistAPIError} - If the API request fails.
-     * @throws {NotFoundError} - If the anime is not found.
-     */
-    async fetchAnimeInfoById(animeId) {
-        const data = await this._executeQuery(ANIME_INFO_QS, { id: animeId }, `FetchAnimeInfoById(${animeId})`);
-
-        if (!data || !data.Media) {
-            throw new NotFoundError(`Anime with ID ${animeId} not found`);
-        }
-        return data.Media;
-    }
-    /**
-     * Fetch lightweight anime information (for lists)
-     * @param {number} animeId - The ID of the anime.
-     * @returns {Promise<object>} - The lightweight anime information.
-     * @throws {AnilistAPIError} - If the API request fails.
-     * @throws {NotFoundError} - If the anime is not found.
-     */
-    async fetchAnimeBasicInfo(animeId) {
-        const data = await this._executeQuery(
-            ANIME_INFO_LIGHTWEIGHT_QS,
-            { id: animeId },
-            `fetchAnimeBasicInfo(${animeId})`
-        );
-
-        if (!data.Media) {
-            throw new NotFoundError('Anime', animeId);
-        }
-
-        return data.Media;
-    }
-
-    /**
-     * Fetch multiple anime in batch (max 50)
-     * @param {number[]} animeIds - Array of anime IDs.
-     * @returns {Promise<object>} - Map of animeId to anime data.
-     * @throws {AnilistAPIError} - If the API request fails.
-     */
-    async fetchAnimeBatch(animeIds) {
-        if (!animeIds || animeIds.length === 0) {
-            return {};
-        }
-
-        if (animeIds.length > 50) {
-            logger.warn(`fetchAnimeBatch called with ${animeIds.length} IDs, limiting to 50`);
-            animeIds = animeIds.slice(0, 50);
-        }
-
-        const data = await this._executeQuery(
-            ANIME_BATCH_INFO_QS,
-            { ids: animeIds },
-            `fetchAnimeBatch(${animeIds.length} anime)`
-        );
-
-        // Convert array to map: { animeId: animeData }
-        const result = {};
-        const mediaList = data.Page?.media || [];
-
-        mediaList.forEach((anime) => {
-            if (anime?.id) {
-                result[anime.id] = anime;
-            }
-        });
-
-        logger.debug(`fetchAnimeBatch: requested ${animeIds.length}, received ${Object.keys(result).length}`);
-        return result;
-    }
-
-    /**
-     * Fetch characters for an anime
-     * @param {number} animeId - The ID of the anime.
-     * @param {object} options - Pagination options.
-     * @param {string} options.language - Language preference for character names.
-     */
-    async fetchCharactersByAnimeId(animeId, options = {}) {
-        const { language = 'JAPANESE', page = 1, perPage = 10 } = options;
-
-        const data = await this._executeQuery(
-            ANIME_CHARACTERS_QS,
-            { id: animeId, page, perpage: perPage },
-            `fetchCharacters(${animeId})`
-        );
-
-        const characters = data.Media?.characters || {};
-        return {
-            pageInfo: characters.pageInfo || {},
-            edges: characters.edges || [],
-        };
-    }
-
-    /**
-     * Fetch staff for an anime
-     * @param {number} animeId - The ID of the anime.
-     * @param {object} options - Pagination options.
-     * @param {number} options.page - Page number.
-     * @param {number} options.perPage - Items per page.
-     */
-    async fetchStaffByAnimeId(animeId, options = {}) {
-        const { page = 1, perPage = 10 } = options;
-
-        const data = await this._executeQuery(
-            ANIME_STAFF_QS,
-            { id: animeId, page, perpage: perPage },
-            `fetchStaff(${animeId})`
-        );
-
-        const staff = data.Media?.staff || {};
-        return {
-            pageInfo: staff.pageInfo || {},
-            edges: staff.edges || [],
-        };
-    }
-
-    /**
-     * Fetch statistics and rankings
-     * @param {number} animeId - The ID of the anime.
-     * @returns {Promise<object>} - The anime statistics.
-     * @throws {AnilistAPIError} - If the API request fails.
-     */
-    async fetchStatsByAnimeId(animeId) {
-        const data = await this._executeQuery(
-            ANIME_STATS_QS,
-            { id: animeId },
-            `fetchStats(${animeId})`
-        );
-
-        return data.Media;
-    }
-
-    /**
-     * Fetch streaming platforms
-     * @param {number} animeId - The ID of the anime.
-     * @returns {Promise<object[]>} - The streaming platform information.
-     * @throws {AnilistAPIError} - If the API request fails.
-     */
-    async fetchWhereToWatch(animeId) {
-        const data = await this._executeQuery(
-            ANIME_WHERE_TO_WATCH_QS,
-            { id: animeId },
-            `fetchWhereToWatch(${animeId})`
-        );
-
-        return data.Media?.streamingEpisodes || [];
-    }
-
-    /**
-     * Fetch only cover images in batch
-     * @param {number[]} animeIds - Array of anime IDs.
-     * @returns {Promise<object>} - Map of animeId to cover image URL.
-     * @throws {AnilistAPIError} - If the API request fails.
-     */
-    async fetchAnimeCoversBatch(animeIds) {
-        if (!animeIds || animeIds.length === 0) {
-            return {};
-        }
-
-        if (animeIds.length > 50) {
-            logger.warn(`fetchAnimeCoversBatch called with ${animeIds.length} IDs, limiting to 50`);
-            animeIds = animeIds.slice(0, 50);
-        }
-
-        const data = await this._executeQuery(
-            ANIME_COVERS_BATCH_QS,
-            { ids: animeIds },
-            `fetchAnimeCoversBatch(${animeIds.length} covers)`
-        );
-
-        const result = {};
-        const mediaList = data.Page?.media || [];
-
-        mediaList.forEach((anime) => {
-            if (anime?.id) {
-                result[anime.id] = anime.coverImage?.large || null;
-            }
-        });
-
-        return result;
-    }
-
-    /**
-     * Search anime by query string
-     * @param {string} query - Search query string.
-     * @param {object} options - Pagination options.
-     * @param {number} options.page - Page number (default: 1).
-     * @param {number} options.perPage - Items per page (default: 20).
-     * @returns {Promise<object>} - Search results with pageInfo and media list.
-     * @throws {AnilistAPIError} - If the API request fails.
-     */
-    async searchAnime(query, options = {}) {
-        const { page = 1, perPage = 20 } = options;
-
-        const data = await this._executeQuery(
-            ANIME_ID_SEARCH_QS,
-            { query, page, perpage: perPage },
-            `searchAnime("${query}")`
-        );
-
-        return {
-            pageInfo: data.Page?.pageInfo || {},
-            media: data.Page?.media || [],
-        };
-    }
-
-    /**
-     * Fetch anime by season and year with optional sorting
-     * @param {string} season - Season (WINTER, SPRING, SUMMER, FALL).
-     * @param {number} seasonYear - Year of the season.
-     * @param {object} options - Pagination and sorting options.
-     * @param {number} options.page - Page number (default: 1).
-     * @param {number} options.perPage - Items per page (default: 20).
-     * @param {string[]} options.sort - Sort criteria (e.g., ['POPULARITY_DESC', 'SCORE_DESC']).
-     * @returns {Promise<object>} - Seasonal anime list with pageInfo.
-     * @throws {AnilistAPIError} - If the API request fails.
-     */
-    async fetchSeasonalAnime(season, seasonYear, options = {}) {
-        const { page = 1, perPage = 20, sort = ['POPULARITY_DESC'] } = options;
-
-        const data = await this._executeQuery(
-            ANIME_SEASON_TREND_QS,
-            { season, seasonYear, page, perpage: perPage, sort },
-            `fetchSeasonalAnime(${season} ${seasonYear})`
-        );
-
-        return {
-            pageInfo: data.Page?.pageInfo || {},
-            media: data.Page?.media || [],
-        };
-    }
-
-    /**
-     * Search anime by multiple criteria
-     * @param {object} criteria - Search criteria.
-     * @param {string[]} criteria.genres - Array of genre names.
-     * @param {string} criteria.season - Season (WINTER, SPRING, SUMMER, FALL).
-     * @param {number} criteria.seasonYear - Year of the season.
-     * @param {string} criteria.format - Format (TV, TV_SHORT, MOVIE, SPECIAL, OVA, ONA, MUSIC).
-     * @param {string} criteria.status - Status (RELEASING, FINISHED, NOT_YET_RELEASED, CANCELLED).
-     * @param {object} options - Pagination and sorting options.
-     * @param {number} options.page - Page number (default: 1).
-     * @param {number} options.perPage - Items per page (default: 20).
-     * @param {string[]} options.sort - Sort criteria.
-     * @returns {Promise<object>} - Search results with pageInfo and media list.
-     * @throws {AnilistAPIError} - If the API request fails.
-     */
-    async searchAnimeByCriteria(criteria = {}, options = {}) {
-        const { genres, season, seasonYear, format, status } = criteria;
-        const { page = 1, perPage = 20, sort = ['POPULARITY_DESC'] } = options;
-
-        const data = await this._executeQuery(
-            ANIME_SEARCH_CRITERIA_QS,
-            { genres, season, seasonYear, format, status, page, perpage: perPage, sort },
-            `searchAnimeByCriteria()`
-        );
-
-        return {
-            pageInfo: data.Page?.pageInfo || {},
-            media: data.Page?.media || [],
-        };
-    }
-
-    /**
-     * Fetch detailed character information by ID
-     * @param {number} characterId - The ID of the character.
-     * @returns {Promise<object>} - The character information.
-     * @throws {AnilistAPIError} - If the API request fails.
-     * @throws {NotFoundError} - If the character is not found.
-     */
-    async fetchCharacterById(characterId) {
-        const data = await this._executeQuery(
-            CHARACTER_INFO_QS,
-            { id: characterId },
-            `fetchCharacterById(${characterId})`
-        );
-
-        if (!data.Character) {
-            throw new NotFoundError('Character', characterId);
-        }
-
-        return data.Character;
-    }
-
-    /**
-     * Fetch detailed staff information by ID
-     * @param {number} staffId - The ID of the staff member.
-     * @returns {Promise<object>} - The staff information.
-     * @throws {AnilistAPIError} - If the API request fails.
-     * @throws {NotFoundError} - If the staff member is not found.
-     */
-    async fetchStaffById(staffId) {
-        const data = await this._executeQuery(
-            STAFF_INFO_QS,
-            { id: staffId },
-            `fetchStaffById(${staffId})`
-        );
-
-        if (!data.Staff) {
-            throw new NotFoundError('Staff', staffId);
-        }
-
-        return data.Staff;
-    }
-
-    // ==================== IMETADATASOURCE IMPLEMENTATION ====================
-
-    /**
-     * Implementation of IMetadataSource.getMediaInfo
-     * Delegates to fetchAnimeInfoById for ANIME type
-     * 
-     * @override
-     */
-    async getMediaInfo(mediaId, mediaType = 'ANIME') {
-        switch (mediaType) {
-            case 'ANIME':
-                return this.fetchAnimeInfoById(mediaId);
-            default:
-                throw new Error(`Unsuported mediaType: ${mediaType}`);
-        }
-    }
-
-    /**
-     * Implementation of IMetadataSource.getMediaBasicInfo
-     * Delegates to fetchAnimeBasicInfo for ANIME type
-     * 
-     * @override
-     */
-    async getMediaBasicInfo(mediaId, mediaType = 'ANIME') {
-        if (mediaType !== 'ANIME') {
-            throw new Error(`AnilistClient currently only supports ANIME media type, got: ${mediaType}`);
-        }
-        return this.fetchAnimeBasicInfo(mediaId);
-    }
-
-    /**
-     * Implementation of IMetadataSource.getMediaBatch
-     * Delegates to fetchAnimeBatch for ANIME type
-     * 
-     * @override
-     */
-    async getMediaBatch(mediaIds, mediaType = 'ANIME') {
-        if (mediaType !== 'ANIME') {
-            throw new Error(`AnilistClient currently only supports ANIME media type, got: ${mediaType}`);
-        }
-        return this.fetchAnimeBatch(mediaIds);
-    }
-
-
-
-    /**
-     * Implementation of IMetadataSource.searchByCriteria
-     * Delegates to searchAnimeByCriteria
-     * 
-     * @override
-     */
-    async searchByCriteria(criteria = {}, options = {}) {
-        const { mediaType = 'ANIME', ...otherCriteria } = criteria;
-        if (mediaType !== 'ANIME') {
-            throw new Error(`AnilistClient currently only supports ANIME media type, got: ${mediaType}`);
-        }
-        return this.searchAnimeByCriteria(otherCriteria, options);
-    }
-
-    /**
-     * Implementation of IMetadataSource.getSeasonalAnime
-     * Delegates to fetchSeasonalAnime
-     * 
-     * @override
-     */
-    async getSeasonalAnime(season, seasonYear, options = {}) {
-        return this.fetchSeasonalAnime(season, seasonYear, options);
-    }
-
-    /**
-     * Implementation of IMetadataSource.getCharacters
-     * Delegates to fetchCharactersByAnimeId
-     * 
-     * @override
-     */
-    async getCharacters(mediaId, options = {}) {
-        return this.fetchCharactersByAnimeId(mediaId, options);
-    }
-
-    /**
-     * Implementation of IMetadataSource.getStaff
-     * Delegates to fetchStaffByAnimeId
-     * 
-     * @override
-     */
-    async getStaff(mediaId, options = {}) {
-        return this.fetchStaffByAnimeId(mediaId, options);
-    }
-
-    /**
-     * Implementation of IMetadataSource.getStatistics
-     * Delegates to fetchStatsByAnimeId
-     * 
-     * @override
-     */
-    async getStatistics(mediaId) {
-        return this.fetchStatsByAnimeId(mediaId);
-    }
-
-    /**
-     * Implementation of IMetadataSource.getCharacterInfo
-     * Delegates to fetchCharacterById
-     * 
-     * @override
-     */
-    async getCharacterInfo(characterId) {
-        return this.fetchCharacterById(characterId);
-    }
-
-    /**
-     * Implementation of IMetadataSource.getStaffInfo
-     * Delegates to fetchStaffById
-     * 
-     * @override
-     */
-    async getStaffInfo(staffId) {
-        return this.fetchStaffById(staffId);
-    }
-
-    /**
-     * Implementation of IMetadataSource.getCoversBatch
-     * Delegates to fetchAnimeCoversBatch
-     * 
-     * @override
-     */
-    async getCoversBatch(mediaIds) {
-        return this.fetchAnimeCoversBatch(mediaIds);
-    }
-
-    /**
-     * Implementation of IMetadataSource.getSourceName
-     * 
-     * @override
-     * @returns {string} - 'AniList'
-     */
-    getSourceName() {
-        return 'AniList';
-    }
-
-    /**
-     * Implementation of IMetadataSource.supportsMediaType
-     * 
-     * @override
-     * @param {string} mediaType - Type of media
-     * @returns {boolean} - True if ANIME or MANGA
-     */
-    supportsMediaType(mediaType) {
-        // AniList supports both ANIME and MANGA
-        // Currently, this client only implements ANIME
-        return mediaType === 'ANIME';
-    }
-
-    /**
-     * Get rate limit information from AniList API
-     * Note: AniList uses a rate limit of ~90 requests per minute
-     * 
-     * @override
-     * @returns {object|null} - Rate limit info or null
-     */
-    getRateLimitInfo() {
-        // AniList doesn't expose rate limit info in response headers by default
-        // Could be enhanced to track internally if needed
-        return null;
-    }
 }
-
-// Export singleton instance
-module.exports = new AnilistClient();
+module.exports = AnilistClient
