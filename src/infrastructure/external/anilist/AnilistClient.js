@@ -1,6 +1,7 @@
-const httpClient = require('../../../services/httpClient');
+const httpClient = require('../../http/httpClient');
 const logger = require('../../../shared/utils/logger');
 const { AnilistAPIError, NotFoundError } = require('../../../shared/utils/error');
+const IMetadataSource = require('../../../core/interfaces/IMetadataSource');
 
 const {
     ANIME_INFO_QS,
@@ -19,10 +20,24 @@ const {
 } = require('./anilist.queries');
 
 /**
- * Repository for interacting with the Anilist API.
+ * AniList API Client - METADATA SOURCE Implementation
+ * 
+ * @class AnilistClient
+ * @extends {IMetadataSource}
+ * @description
+ * Primary METADATA source for anime/manga from AniList GraphQL API.
+ * 
+ * Responsibilities:
+ * - Detailed anime/manga information (title, description, cover, rating)
+ * - Search and filter by multiple criteria
+ * - Character and staff information
+ * - Statistics and rankings
+ * - Seasonal anime listings
+ * 
  */
-class AnilistRepository {
+class AnilistClient extends IMetadataSource {
     constructor() {
+        super();
         this.apiUrl = 'https://graphql.anilist.co';
     }
 
@@ -90,7 +105,7 @@ class AnilistRepository {
      * @throws {AnilistAPIError} - If the API request fails.
      * @throws {NotFoundError} - If the anime is not found.
      */
-    async featchAnimeInfoById(animeId) {
+    async fetchAnimeInfoById(animeId) {
         const data = await this._executeQuery(ANIME_INFO_QS, { id: animeId }, `FetchAnimeInfoById(${animeId})`);
 
         if (!data || !data.Media) {
@@ -388,6 +403,172 @@ class AnilistRepository {
 
         return data.Staff;
     }
+
+    // ==================== IMETADATASOURCE IMPLEMENTATION ====================
+
+    /**
+     * Implementation of IMetadataSource.getMediaInfo
+     * Delegates to fetchAnimeInfoById for ANIME type
+     * 
+     * @override
+     */
+    async getMediaInfo(mediaId, mediaType = 'ANIME') {
+        switch (mediaType) {
+            case 'ANIME':
+                return this.fetchAnimeInfoById(mediaId);
+            default:
+                throw new Error(`Unsuported mediaType: ${mediaType}`);
+        }
+    }
+
+    /**
+     * Implementation of IMetadataSource.getMediaBasicInfo
+     * Delegates to fetchAnimeBasicInfo for ANIME type
+     * 
+     * @override
+     */
+    async getMediaBasicInfo(mediaId, mediaType = 'ANIME') {
+        if (mediaType !== 'ANIME') {
+            throw new Error(`AnilistClient currently only supports ANIME media type, got: ${mediaType}`);
+        }
+        return this.fetchAnimeBasicInfo(mediaId);
+    }
+
+    /**
+     * Implementation of IMetadataSource.getMediaBatch
+     * Delegates to fetchAnimeBatch for ANIME type
+     * 
+     * @override
+     */
+    async getMediaBatch(mediaIds, mediaType = 'ANIME') {
+        if (mediaType !== 'ANIME') {
+            throw new Error(`AnilistClient currently only supports ANIME media type, got: ${mediaType}`);
+        }
+        return this.fetchAnimeBatch(mediaIds);
+    }
+
+
+
+    /**
+     * Implementation of IMetadataSource.searchByCriteria
+     * Delegates to searchAnimeByCriteria
+     * 
+     * @override
+     */
+    async searchByCriteria(criteria = {}, options = {}) {
+        const { mediaType = 'ANIME', ...otherCriteria } = criteria;
+        if (mediaType !== 'ANIME') {
+            throw new Error(`AnilistClient currently only supports ANIME media type, got: ${mediaType}`);
+        }
+        return this.searchAnimeByCriteria(otherCriteria, options);
+    }
+
+    /**
+     * Implementation of IMetadataSource.getSeasonalAnime
+     * Delegates to fetchSeasonalAnime
+     * 
+     * @override
+     */
+    async getSeasonalAnime(season, seasonYear, options = {}) {
+        return this.fetchSeasonalAnime(season, seasonYear, options);
+    }
+
+    /**
+     * Implementation of IMetadataSource.getCharacters
+     * Delegates to fetchCharactersByAnimeId
+     * 
+     * @override
+     */
+    async getCharacters(mediaId, options = {}) {
+        return this.fetchCharactersByAnimeId(mediaId, options);
+    }
+
+    /**
+     * Implementation of IMetadataSource.getStaff
+     * Delegates to fetchStaffByAnimeId
+     * 
+     * @override
+     */
+    async getStaff(mediaId, options = {}) {
+        return this.fetchStaffByAnimeId(mediaId, options);
+    }
+
+    /**
+     * Implementation of IMetadataSource.getStatistics
+     * Delegates to fetchStatsByAnimeId
+     * 
+     * @override
+     */
+    async getStatistics(mediaId) {
+        return this.fetchStatsByAnimeId(mediaId);
+    }
+
+    /**
+     * Implementation of IMetadataSource.getCharacterInfo
+     * Delegates to fetchCharacterById
+     * 
+     * @override
+     */
+    async getCharacterInfo(characterId) {
+        return this.fetchCharacterById(characterId);
+    }
+
+    /**
+     * Implementation of IMetadataSource.getStaffInfo
+     * Delegates to fetchStaffById
+     * 
+     * @override
+     */
+    async getStaffInfo(staffId) {
+        return this.fetchStaffById(staffId);
+    }
+
+    /**
+     * Implementation of IMetadataSource.getCoversBatch
+     * Delegates to fetchAnimeCoversBatch
+     * 
+     * @override
+     */
+    async getCoversBatch(mediaIds) {
+        return this.fetchAnimeCoversBatch(mediaIds);
+    }
+
+    /**
+     * Implementation of IMetadataSource.getSourceName
+     * 
+     * @override
+     * @returns {string} - 'AniList'
+     */
+    getSourceName() {
+        return 'AniList';
+    }
+
+    /**
+     * Implementation of IMetadataSource.supportsMediaType
+     * 
+     * @override
+     * @param {string} mediaType - Type of media
+     * @returns {boolean} - True if ANIME or MANGA
+     */
+    supportsMediaType(mediaType) {
+        // AniList supports both ANIME and MANGA
+        // Currently, this client only implements ANIME
+        return mediaType === 'ANIME';
+    }
+
+    /**
+     * Get rate limit information from AniList API
+     * Note: AniList uses a rate limit of ~90 requests per minute
+     * 
+     * @override
+     * @returns {object|null} - Rate limit info or null
+     */
+    getRateLimitInfo() {
+        // AniList doesn't expose rate limit info in response headers by default
+        // Could be enhanced to track internally if needed
+        return null;
+    }
 }
 
-module.exports = new AnilistRepository();
+// Export singleton instance
+module.exports = new AnilistClient();
