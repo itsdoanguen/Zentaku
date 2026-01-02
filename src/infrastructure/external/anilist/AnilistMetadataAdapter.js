@@ -228,5 +228,4 @@ class AnilistMetadataAdapter extends IMetadataSource {
     }
 }
 
-// Export singleton instance
-module.exports = new AnilistMetadataAdapter();
+module.exports = AnilistMetadataAdapter;

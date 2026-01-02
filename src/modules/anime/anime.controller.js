@@ -29,4 +29,4 @@ class AnimeController {
   }
 }
 
-module.exports = new AnimeController();
+module.exports = AnimeController;

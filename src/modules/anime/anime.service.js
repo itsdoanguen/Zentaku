@@ -132,4 +132,4 @@ class AnimeService {
     }
 }
 
-module.exports = new AnimeService();
+module.exports = AnimeService;

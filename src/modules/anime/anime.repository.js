@@ -128,4 +128,4 @@ class AnimeRepository {
     }
 }
 
-module.exports = new AnimeRepository();
+module.exports = AnimeRepository;

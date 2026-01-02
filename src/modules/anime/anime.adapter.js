@@ -418,4 +418,4 @@ class AnimeAdapter {
   }
 }
 
-module.exports = new AnimeAdapter();
+module.exports = AnimeAdapter;
