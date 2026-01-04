@@ -1,11 +1,20 @@
 const express = require('express');
-const router = express.Router();
-const animeController = require('./anime.controller');
-const { getAnimeDetailsValidator } = require('./anime.validator');
+const AnimeValidator = require('./anime.validator');
 
 /**
- * @swagger
- * /api/anilist/anime/{anilistId}:
+ * Initialize anime routes with dependency injection
+ * @param {Object} container - DI container instance
+ * @returns {Router} Express router with configured routes
+ */
+module.exports = (container) => {
+  const router = express.Router();
+  
+  // Resolve controller from DI container
+  const animeController = container.resolve('animeController');
+
+  /**
+   * @swagger
+   * /api/anilist/anime/{anilistId}:
  *   get:
  *     summary: Get anime details by AniList ID
  *     description: Retrieve detailed information about an anime from AniList API. Data is cached in database and synced every 7 days.
@@ -144,6 +153,12 @@ const { getAnimeDetailsValidator } = require('./anime.validator');
  *                 name: "AnilistAPIError"
  *                 message: "Failed to fetch data from AniList API"
  */
-router.get('/:anilistId', getAnimeDetailsValidator, animeController.getAnimeDetail);
+  router.get(
+    '/:anilistId',
+    AnimeValidator.getByIdRules(),
+    AnimeValidator.validate,
+    animeController.getAnimeDetail
+  );
 
-module.exports = router;
+  return router;
+};
