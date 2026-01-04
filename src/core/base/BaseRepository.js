@@ -300,11 +300,14 @@ class BaseRepository {
    * );
    */
   async upsert(where, create, update, options = {}) {
+    const { include, select } = options;
+    
     return this.model.upsert({
       where,
       create,
       update,
-      ...options
+      ...(include && { include }),
+      ...(select && { select })
     });
   }
 

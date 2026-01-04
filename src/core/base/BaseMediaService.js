@@ -186,14 +186,13 @@ class BaseMediaService extends BaseService {
             }
             
             // Transform using adapter
-            const transformedData = this.adapter.fromExternal(externalData);
+            const transformedData = this.adapter.fromAnilist(externalData);
             
             // Add sync metadata
             transformedData.lastSyncedAt = new Date();
             transformedData.type = this.getMediaType();
             
-            // Upsert to database
-            const syncedMedia = await this.dbRepository.upsert(transformedData);
+            const syncedMedia = await this.dbRepository.upsertAnime(transformedData);
             
             this._logInfo(`Successfully synced ${this.getMediaType()}`, { 
                 externalId,
@@ -232,26 +231,12 @@ class BaseMediaService extends BaseService {
      * Fetch data from external API
      * Delegates to appropriate external client method based on media type
      * 
-     * @param {number} externalId - External API ID
+     * @param {number} externalId - ExternOal API ID
      * @returns {Promise<Object>} External API response
      * @protected
      */
     async _fetchFromExternalAPI(externalId) {
-        const mediaType = this.getMediaType();
-        
-        switch (mediaType) {
-            case 'ANIME':
-                return await this.externalClient.fetchAnimeById(externalId);
-            
-            case 'MANGA':
-                return await this.externalClient.fetchMangaById(externalId);
-            
-            case 'NOVEL':
-                return await this.externalClient.fetchNovelById(externalId);
-            
-            default:
-                throw new Error(`Unsupported media type: ${mediaType}`);
-        }
+        return this.externalClient.fetchById(externalId);
     }
     
     /**
