@@ -53,13 +53,11 @@ module.exports = (container) => {
    */
   container.register('animeService', (c) => {
     const AnimeService = require('../../modules/anime/anime.service');
+    
     const repository = c.resolve('animeRepository');
     const adapter = c.resolve('animeAdapter');
     const anilistClient = c.resolve('anilistAnimeClient');
-    
-    let service;
-    service = new AnimeService(repository, adapter, anilistClient);    
-    return service;
+    return new AnimeService(repository, adapter, anilistClient);
   }, { 
     singleton: true,
     dependencies: ['animeRepository', 'animeAdapter', 'anilistAnimeClient']
