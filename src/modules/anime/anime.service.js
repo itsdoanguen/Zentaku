@@ -12,7 +12,7 @@ class AnimeService {
      */
     async getAnimeDetails(anilistId) {
         try {
-            let anime = await animeRepository.findAnimeById(anilistId);
+            let anime = await animeRepository.findByAnilistId(anilistId);
 
             if (this._shouldSyncFromAnilist(anime)) {
                 logger.info(`Syncing anime ID ${anilistId} from Anilist.`);

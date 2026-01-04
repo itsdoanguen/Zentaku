@@ -23,11 +23,7 @@ module.exports = (container) => {
   container.register('animeAdapter', () => {
     const AnimeAdapter = require('../../modules/anime/anime.adapter');
     
-    // TEMPORARY: Handle both class export and singleton export
-    // After refactoring anime.adapter.js to export class, use: new AnimeAdapter()
-    const adapter = typeof AnimeAdapter === 'function' 
-      ? new AnimeAdapter() 
-      : AnimeAdapter;
+    const adapter = new AnimeAdapter();
     
     return adapter;
   }, { 
