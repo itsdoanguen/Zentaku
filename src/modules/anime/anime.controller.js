@@ -1,31 +1,38 @@
-const animeService = require('./anime.service');
-const logger = require('../../shared/utils/logger');
+const BaseController = require('../../core/base/BaseController');
 
-class AnimeController {
+/**
+ * Anime Controller
+ * HTTP request handler layer for anime endpoints
+ * 
+ * Extends BaseController with anime-specific route handlers
+ * Uses dependency injection for better testability
+ * 
+ * @extends BaseController
+ */
+class AnimeController extends BaseController {
+  /**
+   * Constructor with dependency injection
+   * @param {Object} animeService - Anime service instance
+   */
+  constructor(animeService) {
+    super(animeService);
+    
+    this.getAnimeDetail = this.asyncHandler(this.getAnimeDetail);
+  }
+  
   /**
    * Get anime detail by AniList ID
    * @route GET /api/anime/:anilistId
    * @param {Request} req - Express request
    * @param {Response} res - Express response
-   * @param {NextFunction} next - Express next middleware
    */
-  async getAnimeDetail(req, res, next) {
-    try {
-      const { anilistId } = req.params;
-      const anilistIdInt = parseInt(anilistId, 10);
-
-      logger.info(`Fetching anime detail for ID: ${anilistIdInt}`);
-
-      const anime = await animeService.getAnimeDetails(anilistIdInt);
-
-      return res.status(200).json({
-        success: true,
-        data: anime
-      });
-
-    } catch (error) {
-      next(error);
-    }
+  async getAnimeDetail(req, res) {
+    const anilistId = this.getIntParam(req, 'anilistId');
+    this.logInfo('Fetching anime detail', { anilistId });
+    
+    const anime = await this.service.getAnimeDetails(anilistId);
+    
+    return this.success(res, anime);
   }
 }
 
