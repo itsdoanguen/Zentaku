@@ -1,52 +1,68 @@
-const Joi = require('joi');
+const { param, validationResult } = require('express-validator');
 
 /**
- * Validator for anime-related endpoints.
+ * Anime Validator
+ * Validation rules for anime-related endpoints using express-validator
  */
-const getAnimeDetailsSchema = Joi.object({
-    params: Joi.object({
-        anilistId: Joi.number().integer().positive().required()
-            .messages({
-                'number.base': '"anilistId" must be a number',
-                'number.integer': '"anilistId" must be an integer',
-                'number.positive': '"anilistId" must be a positive number',
-                'any.required': '"anilistId" is a required parameter'
-            }).required()
-    }).required()
-});
+class AnimeValidator {
+  /**
+   * Validation rules for getAnimeDetail endpoint
+   * @route GET /api/anime/:anilistId
+   * @returns {Array} Array of validation chains
+   * 
+   * @example
+   * router.get('/:anilistId', 
+   *   AnimeValidator.getByIdRules(), 
+   *   AnimeValidator.validate,
+   *   controller.getAnimeDetail
+   * );
+   */
+  static getByIdRules() {
+    return [
+      param('anilistId')
+        .notEmpty()
+        .withMessage('anilistId is required')
+        .isInt({ min: 1 })
+        .withMessage('anilistId must be a positive integer')
+        .toInt() 
+    ];
+  }
 
-/**
- * Middleware validate request
- */
-const validateRequest = (schema) => {
-    return (req, res, next) => {
-        const { error } = schema.validate(
-            {
-                params: req.params,
-                query: req.query,
-                body: req.body
-            },
-            {
-                abortEarly: false,
-                stripUnknown: true
-            }
-        );
-        if (error) {
-            const errors = error.details.map(detail => ({
-                field: detail.path.join('.'),
-                message: detail.message
-            }));
+  /**
+   * Validation middleware to check for errors
+   * Execute after validation rules to handle validation results
+   * 
+   * @param {Request} req - Express request
+   * @param {Response} res - Express response
+   * @param {NextFunction} next - Express next middleware
+   * @returns {Response|void} Error response or proceeds to next middleware
+   * 
+   * @example
+   * router.post('/anime',
+   *   AnimeValidator.createRules(),
+   *   AnimeValidator.validate,
+   *   controller.create
+   * );
+   */
+  static validate(req, res, next) {
+    const errors = validationResult(req);
+    
+    if (!errors.isEmpty()) {
+      const formattedErrors = errors.array().map(error => ({
+        field: error.path || error.param,
+        message: error.msg,
+        value: error.value
+      }));
 
-            return res.status(400).json({
-                error: 'Validation failed',
-                details: errors
-            });
-        }
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: formattedErrors
+      });
+    }
+    
+    next();
+  }
+}
 
-        next();
-    };
-};
-
-module.exports = {
-    getAnimeDetailsValidator: validateRequest(getAnimeDetailsSchema)
-};
+module.exports = AnimeValidator;

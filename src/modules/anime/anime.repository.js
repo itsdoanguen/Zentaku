@@ -1,131 +1,91 @@
-const prisma = require('../../config/databaseConnection')
-const { NotFoundError } = require('../../utils/error');
+const BaseMediaRepository = require('../../core/base/BaseMediaRepository');
 
-class AnimeRepository {
-    /**
-     * Find anime details by ID in database.
-     * @param {number} anilistId - The ID of the anime to fetch.
-     * @returns {Promise<Object>} - The anime details.
-     * @throws {NotFoundError} - If the anime with the given ID does not exist.
-     */
-    async findAnimeById(anilistId) {
-        try {
-            const anime = await prisma.mediaItem.findUnique({
-                where: {
-                    idAnilist: anilistId
-                },
-                include: {
-                    animeMetadata: true
-                }
-            });
+/**
+ * Anime Repository
+ * 
+ * Handles data access for anime entities.
+ * Extends BaseMediaRepository to inherit common media operations.
+ * 
+ * Features:
+ * - External ID lookups 
+ * - Anime upsert with metadata
+ * - Inherited: CRUD, pagination, search, filtering
+ * 
+ * @extends BaseMediaRepository
+ */
+class AnimeRepository extends BaseMediaRepository {
+  /**
+   * Create anime repository instance
+   * 
+   * @param {Object} prisma - Prisma client instance (injected by DI container)
+   */
+  constructor(prisma) {
+    super(prisma, 'animeMetadata');
+  }
 
-            return anime;
-        } catch (error) {
-            throw new Error(`Failed to fetch anime with ID ${anilistId}: ${error.message}`);
+  /**
+   * Find anime by AniList ID
+   * 
+   * @param {number} anilistId - AniList anime ID
+   * @param {Object} [options={}] - Query options
+   * @param {Object} [options.include] - Custom include (overrides default)
+   * @param {Object} [options.select] - Fields to select
+   * @returns {Promise<Object|null>} Anime with metadata or null
+   */
+  async findByAnilistId(anilistId, options = {}) {
+    return this._findByExternalId('idAnilist', anilistId, options);
+  }
+
+  /**
+   * Create or update anime entry
+   * 
+   * This method expects data already transformed by AnimeAdapter.
+   * The adapter handles:
+   * - Score normalization (0-100 → 0-10)
+   * - Studio extraction
+   * - Trailer URL building
+   * - Field mapping
+   * 
+   * @param {Object} transformedData - Data from AnimeAdapter.fromAnilist()
+   * @param {number} transformedData.idAnilist - AniList ID
+   * @param {Object} transformedData.animeMetadata - Metadata object with create field
+   * @returns {Promise<Object>} Created or updated anime with metadata
+   * 
+   * @example
+   * // In service:
+   * const anilistData = await anilistClient.fetchById(1);
+   * const transformedData = animeAdapter.fromAnilist(anilistData);
+   * const anime = await animeRepo.upsertAnime(transformedData);
+   */
+  async upsertAnime(transformedData) {
+    const { idAnilist, animeMetadata, ...coreFields } = transformedData;
+
+    return this.upsert(
+      { idAnilist },
+      {
+        ...coreFields,
+        idAnilist,
+        type: 'ANIME',
+        lastSyncedAt: new Date(),
+        animeMetadata: {
+          create: animeMetadata.create
         }
-    }
-
-    /**
-     * Create or update a new anime entry in the database.
-     * @param {Object} animeData - The data of the anime to create or update.
-     * @returns {Promise<Object>} - The created or updated anime entry.
-     */
-    async upsertAnime(animeData) {
-        try {
-            const {
-                id: anilistId,
-                titleRomaji,
-                titleEnglish,
-                titleNative,
-                coverImage,
-                bannerImage,
-                status,
-                averageScore,
-                description,
-                isAdult,
-                // Anime-specific fields
-                episodes,
-                duration,
-                season,
-                seasonYear,
-                studios,
-                source,
-                trailer
-            } = animeData;
-
-            const anime = await prisma.mediaItem.upsert({
-                where: {
-                    idAnilist: anilistId
-                },
-                update: {
-                    titleRomaji,
-                    titleEnglish,
-                    titleNative,
-                    coverImage,
-                    bannerImage,
-                    status,
-                    averageScore: averageScore ? averageScore / 10 : null, // Convert 0-100 to 0-10
-                    description,
-                    isAdult: isAdult || false,
-                    lastSyncedAt: new Date(),
-                    animeMetadata: {
-                        upsert: {
-                            create: {
-                                episodeCount: episodes,
-                                durationMin: duration,
-                                season,
-                                seasonYear,
-                                studio: studios?.[0]?.name || null,
-                                source,
-                                trailerUrl: trailer
-                            },
-                            update: {
-                                episodeCount: episodes,
-                                durationMin: duration,
-                                season,
-                                seasonYear,
-                                studio: studios?.[0]?.name || null,
-                                source,
-                                trailerUrl: trailer
-                            }
-                        }
-                    }
-                },
-                create: {
-                    idAnilist: anilistId,
-                    titleRomaji,
-                    titleEnglish,
-                    titleNative,
-                    type: 'ANIME',
-                    status,
-                    coverImage,
-                    bannerImage,
-                    averageScore: averageScore ? averageScore / 10 : null,
-                    description,
-                    isAdult: isAdult || false,
-                    lastSyncedAt: new Date(),
-                    animeMetadata: {
-                        create: {
-                            episodeCount: episodes,
-                            durationMin: duration,
-                            season,
-                            seasonYear,
-                            studio: studios?.[0]?.name || null,
-                            source,
-                            trailerUrl: trailer
-                        }
-                    }
-                },
-                include: {
-                    animeMetadata: true
-                }
-            });
-
-            return anime;
-        } catch (error) {
-            throw new Error(`Database upsert error: ${error.message}`);
+      },
+      {
+        ...coreFields,
+        lastSyncedAt: new Date(),
+        animeMetadata: {
+          upsert: {
+            create: animeMetadata.create,
+            update: animeMetadata.create
+          }
         }
-    }
+      },
+      {
+        include: this._getDefaultInclude()
+      }
+    );
+  }
 }
 
-module.exports = new AnimeRepository();
+module.exports = AnimeRepository;
