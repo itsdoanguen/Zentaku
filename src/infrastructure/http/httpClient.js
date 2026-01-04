@@ -1,6 +1,5 @@
 const axios = require('axios');
-const logger = require('../shared/utils/logger');
-const { head } = require('../routes');
+const logger = require('../../shared/utils/logger');
 
 const httpClient = axios.create({
     timeout: 10000,
