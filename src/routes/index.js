@@ -1,30 +1,20 @@
 const express = require('express');
-const router = express.Router();
-const animeRoutes = require('../modules/anime/anime.routes');
 
 /**
- * @swagger
- * /api/status:
- *   get:
- *     summary: Check API health status
- *     description: Returns a simple message to confirm the API is running
- *     tags: [Health]
- *     responses:
- *       200:
- *         description: Server is running successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Server is running OK!
+ * Initialize main application routes with dependency injection
+ * @param {Object} container - DI container instance
+ * @returns {Router} Express router with all configured routes
  */
-router.get('/status', (req, res) => {
+module.exports = (container) => {
+  const router = express.Router();
+  
+  const animeRoutes = require('../modules/anime/anime.routes');
+
+  router.get('/status', (req, res) => {
     res.status(200).json({ message: 'Server is running OK!' });
-});
+  });
 
-router.use('/anilist/anime', animeRoutes);
+  router.use('/anilist/anime', animeRoutes(container));
 
-module.exports = router;
+  return router;
+};
