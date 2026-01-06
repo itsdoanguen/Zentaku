@@ -44,7 +44,6 @@ class BaseMediaService extends BaseService {
     }
     
     // ==================== ABSTRACT METHODS ====================
-    // Subclasses MUST implement these methods
     
     /**
      * Get media type identifier
