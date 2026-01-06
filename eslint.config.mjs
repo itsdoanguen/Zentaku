@@ -18,6 +18,9 @@ export default [
       '@typescript-eslint': tsPlugin,
     },
     rules: {
+      // Disable base rule to use TypeScript version
+      'no-unused-vars': 'off',
+      
       // TypeScript specific rules
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-function-return-type': 'off',
@@ -27,10 +30,7 @@ export default [
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
       '@typescript-eslint/no-non-null-assertion': 'warn',
-      '@typescript-eslint/consistent-type-imports': [
-        'error',
-        { prefer: 'type-imports' },
-      ],
+      '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
 
       // General rules
       'no-console': ['warn', { allow: ['warn', 'error'] }],

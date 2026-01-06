@@ -5,13 +5,13 @@
  * These types handle HTTP-specific concerns and Express integration.
  */
 
-import type { Buffer } from 'node:buffer';
 import type {
   RequestHandler as ExpressRequestHandler,
   NextFunction,
   Request,
   Response,
 } from 'express';
+import type { Buffer } from 'node:buffer';
 import type { PaginatedResult } from './common';
 
 /**
@@ -84,7 +84,6 @@ export interface PaginatedApiResponse<T> extends ApiResponse {
 /**
  * HTTP status codes
  */
-/* eslint-disable no-unused-vars */
 export enum HttpStatus {
   OK = 200,
   CREATED = 201,
@@ -99,7 +98,6 @@ export enum HttpStatus {
   INTERNAL_SERVER_ERROR = 500,
   SERVICE_UNAVAILABLE = 503,
 }
-/* eslint-enable no-unused-vars */
 
 /**
  * Request parameter types
@@ -169,11 +167,8 @@ export type RequestHandler<
   ReqBody = unknown,
   Q = RequestQuery,
 > = (
-  // eslint-disable-next-line no-unused-vars
   _req: TypedRequest<P, ResBody, ReqBody, Q>,
-  // eslint-disable-next-line no-unused-vars
   _res: Response<ApiResponse<ResBody>>,
-  // eslint-disable-next-line no-unused-vars
   _next: NextFunction
 ) => void | Promise<void> | Response;
 
@@ -187,11 +182,8 @@ export type AsyncRequestHandler<
   ReqBody = unknown,
   Q = RequestQuery,
 > = (
-  // eslint-disable-next-line no-unused-vars
   _req: TypedRequest<P, ResBody, ReqBody, Q>,
-  // eslint-disable-next-line no-unused-vars
   _res: Response<ApiResponse<ResBody>>,
-  // eslint-disable-next-line no-unused-vars
   _next: NextFunction
 ) => Promise<void | Response>;
 
@@ -200,13 +192,9 @@ export type AsyncRequestHandler<
  */
 
 export type ErrorHandler = (
-  // eslint-disable-next-line no-unused-vars
   _err: Error,
-  // eslint-disable-next-line no-unused-vars
   _req: Request,
-  // eslint-disable-next-line no-unused-vars
   _res: Response,
-  // eslint-disable-next-line no-unused-vars
   _next: NextFunction
 ) => void | Response;
 
@@ -293,26 +281,16 @@ export interface RequestWithFile<
  */
 
 export interface ResponseHelpers {
-  // eslint-disable-next-line no-unused-vars
   success<T>(_data: T, _statusCode?: number): Response<ApiResponse<T>>;
-  // eslint-disable-next-line no-unused-vars
   created<T>(_data: T): Response<ApiResponse<T>>;
   noContent(): Response;
-  // eslint-disable-next-line no-unused-vars
   error(_message: string, _statusCode?: number, _details?: unknown): Response<ApiResponse>;
-  // eslint-disable-next-line no-unused-vars
   badRequest(_message: string, _details?: unknown): Response<ApiResponse>;
-  // eslint-disable-next-line no-unused-vars
   unauthorized(_message?: string): Response<ApiResponse>;
-  // eslint-disable-next-line no-unused-vars
   forbidden(_message?: string): Response<ApiResponse>;
-  // eslint-disable-next-line no-unused-vars
   notFound(_message?: string): Response<ApiResponse>;
-  // eslint-disable-next-line no-unused-vars
   conflict(_message: string, _details?: unknown): Response<ApiResponse>;
-  // eslint-disable-next-line no-unused-vars
   serverError(_message?: string, _error?: Error): Response<ApiResponse>;
-  // eslint-disable-next-line no-unused-vars
   paginated<T>(_result: PaginatedResult<T>): Response<PaginatedApiResponse<T>>;
 }
 
@@ -329,7 +307,6 @@ export interface ControllerContext {
 /**
  * Request validator function
  */
-// eslint-disable-next-line no-unused-vars
 export type RequestValidator<T = unknown> = (_data: unknown) => T | Promise<T>;
 
 /**
@@ -355,13 +332,10 @@ export interface ControllerMethodMetadata {
  * Extract params type from path
  * Example: '/users/:id/posts/:postId' -> { id: string; postId: string }
  */
-
 export type PathParams<Path extends string> = Path extends `${string}:${infer Param}/${infer Rest}`
-  ? // eslint-disable-next-line no-unused-vars
-    { [K in Param | keyof PathParams<`/${Rest}`>]: string }
+  ? { [K in Param | keyof PathParams<`/${Rest}`>]: string }
   : Path extends `${string}:${infer Param}`
-    ? // eslint-disable-next-line no-unused-vars
-      { [K in Param]: string }
+    ? { [K in Param]: string }
     : Record<string, never>;
 
 /**

@@ -203,26 +203,22 @@ export type Maybe<T> = T | null | undefined;
 /**
  * Constructor type
  */
-// eslint-disable-next-line no-unused-vars
-export type Constructor<T = object> = new (...args: unknown[]) => T;
+export type Constructor<T = object> = new (..._args: unknown[]) => T;
 
 /**
  * Abstract constructor type
  */
-// eslint-disable-next-line no-unused-vars
-export type AbstractConstructor<T = object> = abstract new (...args: unknown[]) => T;
+export type AbstractConstructor<T = object> = abstract new (..._args: unknown[]) => T;
 
 /**
  * Function type
  */
-// eslint-disable-next-line no-unused-vars
 export type Func<Args extends unknown[] = unknown[], Return = unknown> = (..._args: Args) => Return;
 
 /**
  * Async function type
  */
 export type AsyncFunc<Args extends unknown[] = unknown[], Return = unknown> = (
-  // eslint-disable-next-line no-unused-vars
   ..._args: Args
 ) => Promise<Return>;
 
@@ -317,10 +313,8 @@ export type TupleToUnion<T extends readonly unknown[]> = T[number];
 /**
  * Union to intersection
  */
-// eslint-disable-next-line no-unused-vars
-export type UnionToIntersection<U> = (U extends unknown ? (_k: U) => void : never) extends (
-  // eslint-disable-next-line no-unused-vars
-  _k: infer I
+export type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (
+  k: infer I
 ) => void
   ? I
   : never;

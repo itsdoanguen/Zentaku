@@ -117,17 +117,11 @@ export interface BatchResult {
  */
 
 export interface QueryBuilder<T> {
-  // eslint-disable-next-line no-unused-vars
   where(_clause: WhereClause<T>): this;
-  // eslint-disable-next-line no-unused-vars
   orderBy(_field: keyof T, _order: 'asc' | 'desc'): this;
-  // eslint-disable-next-line no-unused-vars
   skip(_count: number): this;
-  // eslint-disable-next-line no-unused-vars
   take(_count: number): this;
-  // eslint-disable-next-line no-unused-vars
   include(_relations: IncludeClause): this;
-  // eslint-disable-next-line no-unused-vars
   select(_fields: SelectClause): this;
   execute(): Promise<T[]>;
   first(): Promise<T | null>;
@@ -142,13 +136,11 @@ export interface RawQueryCapable {
   /**
    * Execute raw SQL query
    */
-  // eslint-disable-next-line no-unused-vars
   executeRaw(_query: string, _params?: unknown[]): Promise<unknown>;
 
   /**
    * Execute raw SQL query and return results
    */
-  // eslint-disable-next-line no-unused-vars
   queryRaw<T = unknown>(_query: string, _params?: unknown[]): Promise<T[]>;
 }
 
@@ -205,8 +197,7 @@ export interface RepositoryPaginatedResult<T> extends PaginatedResult<T> {
 /**
  * Repository factory function type
  */
-// eslint-disable-next-line no-unused-vars
-export type RepositoryFactory<T> = (prisma: Prisma.TransactionClient) => T;
+export type RepositoryFactory<T> = (_prisma: Prisma.TransactionClient) => T;
 
 /**
  * Soft delete fields
@@ -255,9 +246,7 @@ export type WhereInput<T> = Partial<T> & {
 /**
  * Order by input
  */
-
 export type OrderByInput<T> = {
-  // eslint-disable-next-line no-unused-vars
   [K in keyof T]?: 'asc' | 'desc';
 };
 
@@ -276,7 +265,6 @@ export type IncludeWithStrategy = IncludeClause & {
 /**
  * Repository error types
  */
-/* eslint-disable no-unused-vars */
 export enum RepositoryErrorType {
   NOT_FOUND = 'NOT_FOUND',
   UNIQUE_CONSTRAINT = 'UNIQUE_CONSTRAINT',
@@ -286,7 +274,6 @@ export enum RepositoryErrorType {
   CONNECTION = 'CONNECTION',
   UNKNOWN = 'UNKNOWN',
 }
-/* eslint-enable no-unused-vars */
 
 /**
  * Repository error
@@ -301,7 +288,6 @@ export interface RepositoryError extends Error {
 /**
  * Transaction callback type
  */
-// eslint-disable-next-line no-unused-vars
 export type TransactionCallback<T> = (_tx: PrismaTransaction) => Promise<T>;
 
 /**
@@ -316,7 +302,6 @@ export interface TransactionOptions {
 /**
  * Repository event types
  */
-/* eslint-disable no-unused-vars */
 export enum RepositoryEvent {
   BEFORE_CREATE = 'beforeCreate',
   AFTER_CREATE = 'afterCreate',
@@ -325,24 +310,18 @@ export enum RepositoryEvent {
   BEFORE_DELETE = 'beforeDelete',
   AFTER_DELETE = 'afterDelete',
 }
-/* eslint-enable no-unused-vars */
 
 /**
  * Repository event handler
  */
-// eslint-disable-next-line no-unused-vars
 export type RepositoryEventHandler<T> = (_data: T) => void | Promise<void>;
 
 /**
  * Repository with events
  */
-
 export interface EventEmittingRepository<T> {
-  // eslint-disable-next-line no-unused-vars
   on(_event: RepositoryEvent, _handler: RepositoryEventHandler<T>): void;
-  // eslint-disable-next-line no-unused-vars
   off(_event: RepositoryEvent, _handler: RepositoryEventHandler<T>): void;
-  // eslint-disable-next-line no-unused-vars
   emit(_event: RepositoryEvent, _data: T): Promise<void>;
 }
 
