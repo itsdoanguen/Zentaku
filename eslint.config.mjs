@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
+import globals from 'globals';
 
 export default [
   js.configs.recommended,
@@ -13,6 +14,9 @@ export default [
         sourceType: 'module',
         project: './tsconfig.json',
       },
+      globals: {
+        ...globals.node,
+      },
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
@@ -20,7 +24,7 @@ export default [
     rules: {
       // Disable base rule to use TypeScript version
       'no-unused-vars': 'off',
-      
+
       // TypeScript specific rules
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-function-return-type': 'off',
@@ -44,10 +48,14 @@ export default [
     files: ['**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
-      sourceType: 'module',
+      sourceType: 'commonjs',
+      globals: {
+        ...globals.node,
+      },
     },
     rules: {
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      'no-console': 'off',
     },
   },
   {
