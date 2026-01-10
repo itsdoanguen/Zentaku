@@ -1,12 +1,11 @@
 /**
  * Core Interfaces Index
  *
- * Central export point for all interfaces
+ * External Integration Interfaces
+ * These interfaces define contracts for third-party API adapters
+ * (AniList, MangaDex, Consumet, etc.)
  */
 
-export * from './IController';
 export * from './IMangaSource';
 export * from './IMetadataSource';
-export * from './IRepository';
-export * from './IService';
 export * from './IStreamingSource';
