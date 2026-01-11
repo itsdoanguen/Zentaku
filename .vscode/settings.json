@@ -47,5 +47,8 @@
   // Prisma
   "[prisma]": {
     "editor.defaultFormatter": "Prisma.prisma"
-  }
+  },
+
+  //cSpell
+  "cSpell.words": ["anilist", "zentaku", "Anilist"]
 }

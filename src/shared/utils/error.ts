@@ -16,14 +16,14 @@ interface OperationalError extends Error {
 export class AnilistAPIError extends Error implements OperationalError {
   public readonly statusCode: number;
   public readonly isOperational: boolean = true;
-  public readonly details: Record<string, any>;
+  public readonly details: Record<string, unknown>;
 
   /**
    * @param message - Error message
    * @param statusCode - HTTP status code (default: 500)
    * @param details - Additional error details
    */
-  constructor(message: string, statusCode: number = 500, details: Record<string, any> = {}) {
+  constructor(message: string, statusCode: number = 500, details: Record<string, unknown> = {}) {
     super(message);
     this.name = 'AnilistAPIError';
     this.statusCode = statusCode;
@@ -55,13 +55,13 @@ export class NotFoundError extends Error implements OperationalError {
 export class ValidationError extends Error implements OperationalError {
   public readonly statusCode: number = 400;
   public readonly isOperational: boolean = true;
-  public readonly errors: Record<string, any>;
+  public readonly errors: Record<string, unknown>;
 
   /**
    * @param message - Error message (default: 'Validation Error')
    * @param errors - Details about validation errors
    */
-  constructor(message: string = 'Validation Error', errors: Record<string, any> = {}) {
+  constructor(message: string = 'Validation Error', errors: Record<string, unknown> = {}) {
     super(message);
     this.name = 'ValidationError';
     this.errors = errors;

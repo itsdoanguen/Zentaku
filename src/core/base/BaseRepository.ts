@@ -30,8 +30,8 @@ export interface FindOneOptions {
 /**
  * Options for finding multiple records
  */
-export interface FindManyOptions extends FindOneOptions {
-  where?: Record<string, any>;
+export interface FindManyOptions<T = unknown> extends FindOneOptions {
+  where?: Partial<T> | Record<string, unknown>;
   orderBy?: Record<string, 'asc' | 'desc'> | Array<Record<string, 'asc' | 'desc'>>;
   skip?: number;
   take?: number;
@@ -47,10 +47,10 @@ export interface BatchResult {
 /**
  * Pagination options
  */
-export interface PaginationOptions extends Omit<FindManyOptions, 'skip' | 'take'> {
+export interface PaginationOptions<T = unknown> extends Omit<FindManyOptions<T>, 'skip' | 'take'> {
   page?: number;
   perPage?: number;
-  where?: Record<string, any>;
+  where?: Partial<T> | Record<string, unknown>;
 }
 
 /**
@@ -69,9 +69,9 @@ export interface PaginatedResult<T> {
 /**
  * Base Repository Abstract Class
  */
-export abstract class BaseRepository<T = any, ModelName extends string = string> {
+export abstract class BaseRepository<T = unknown, ModelName extends string = string> {
   protected readonly prisma: PrismaClient;
-  protected readonly model: any; // Prisma model delegate
+  protected readonly model: unknown;
   protected readonly modelName: ModelName;
 
   /**
@@ -92,12 +92,12 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
       throw new Error('Prisma client is required');
     }
 
-    if (!modelName || !(prisma as any)[modelName]) {
+    if (!modelName || !(prisma as unknown as Record<string, unknown>)[modelName]) {
       throw new Error(`Invalid model name: ${modelName}. Model does not exist in Prisma schema.`);
     }
 
     this.prisma = prisma;
-    this.model = (prisma as any)[modelName];
+    this.model = (prisma as unknown as Record<string, unknown>)[modelName];
     this.modelName = modelName;
   }
 
@@ -116,7 +116,7 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    * const user = await userRepo.findById(1, { include: { profile: true } });
    */
   async findById(id: number | bigint, options: FindOneOptions = {}): Promise<T | null> {
-    return this.model.findUnique({
+    return (this.model as any).findUnique({
       where: { id },
       ...options,
     });
@@ -132,8 +132,8 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    * @example
    * const user = await userRepo.findOne({ email: 'user@example.com' });
    */
-  async findOne(where: Record<string, any>, options: FindOneOptions = {}): Promise<T | null> {
-    return this.model.findUnique({
+  async findOne(where: Record<string, unknown>, options: FindOneOptions = {}): Promise<T | null> {
+    return (this.model as any).findUnique({
       where,
       ...options,
     });
@@ -153,7 +153,7 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    * });
    */
   async findFirst(options: FindManyOptions = {}): Promise<T | null> {
-    return this.model.findFirst(options);
+    return (this.model as any).findFirst(options);
   }
 
   /**
@@ -170,7 +170,7 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    * });
    */
   async findMany(options: FindManyOptions = {}): Promise<T[]> {
-    return this.model.findMany(options);
+    return (this.model as any).findMany(options);
   }
 
   /**
@@ -180,7 +180,7 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    * @returns Array of all records
    */
   async findAll(options: FindOneOptions = {}): Promise<T[]> {
-    return this.model.findMany(options);
+    return (this.model as any).findMany(options);
   }
 
   /**
@@ -192,8 +192,8 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    * @example
    * const publishedCount = await postRepo.count({ published: true });
    */
-  async count(where: Record<string, any> = {}): Promise<number> {
-    return this.model.count({ where });
+  async count(where: Record<string, unknown> = {}): Promise<number> {
+    return (this.model as any).count({ where });
   }
 
   /**
@@ -205,7 +205,7 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    * @example
    * const emailExists = await userRepo.exists({ email: 'test@example.com' });
    */
-  async exists(where: Record<string, any>): Promise<boolean> {
+  async exists(where: Record<string, unknown>): Promise<boolean> {
     const count = await this.count(where);
     return count > 0;
   }
@@ -227,8 +227,8 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    *   name: 'John Doe'
    * });
    */
-  async create(data: any, options: FindOneOptions = {}): Promise<T> {
-    return this.model.create({
+  async create(data: Partial<T>, options: FindOneOptions = {}): Promise<T> {
+    return (this.model as any).create({
       data,
       ...options,
     });
@@ -247,8 +247,11 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    *   { email: 'user2@example.com', name: 'User 2' }
    * ]);
    */
-  async createMany(data: any[], options: { skipDuplicates?: boolean } = {}): Promise<BatchResult> {
-    return this.model.createMany({
+  async createMany(
+    data: Partial<T>[],
+    options: { skipDuplicates?: boolean } = {}
+  ): Promise<BatchResult> {
+    return (this.model as any).createMany({
       data,
       ...options,
     });
@@ -273,8 +276,12 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    *   { name: 'Updated Name' }
    * );
    */
-  async update(where: Record<string, any>, data: any, options: FindOneOptions = {}): Promise<T> {
-    return this.model.update({
+  async update(
+    where: Record<string, unknown>,
+    data: Partial<T>,
+    options: FindOneOptions = {}
+  ): Promise<T> {
+    return (this.model as any).update({
       where,
       data,
       ...options,
@@ -294,8 +301,8 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    *   { published: true }
    * );
    */
-  async updateMany(where: Record<string, any>, data: any): Promise<BatchResult> {
-    return this.model.updateMany({
+  async updateMany(where: Record<string, unknown>, data: Partial<T>): Promise<BatchResult> {
+    return (this.model as any).updateMany({
       where,
       data,
     });
@@ -322,14 +329,14 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    * );
    */
   async upsert(
-    where: Record<string, any>,
-    create: any,
-    update: any,
+    where: Record<string, unknown>,
+    create: Partial<T>,
+    update: Partial<T>,
     options: FindOneOptions = {}
   ): Promise<T> {
     const { include, select } = options;
 
-    return this.model.upsert({
+    return (this.model as any).upsert({
       where,
       create,
       update,
@@ -352,8 +359,8 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    * @example
    * const deletedUser = await userRepo.delete({ id: 1 });
    */
-  async delete(where: Record<string, any>): Promise<T> {
-    return this.model.delete({ where });
+  async delete(where: Record<string, unknown>): Promise<T> {
+    return (this.model as any).delete({ where });
   }
 
   /**
@@ -365,8 +372,8 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    * @example
    * const result = await postRepo.deleteMany({ published: false });
    */
-  async deleteMany(where: Record<string, any>): Promise<BatchResult> {
-    return this.model.deleteMany({ where });
+  async deleteMany(where: Record<string, unknown>): Promise<BatchResult> {
+    return (this.model as any).deleteMany({ where });
   }
 
   // ============================================
@@ -399,7 +406,7 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
     const skip = (page - 1) * perPage;
 
     const [data, total] = await Promise.all([
-      this.model.findMany({
+      (this.model as any).findMany({
         where,
         skip,
         take: perPage,
@@ -441,7 +448,7 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    * `;
    */
   async rawQuery<R = unknown>(query: TemplateStringsArray, ...params: unknown[]): Promise<R> {
-    return this.prisma.$queryRaw(query as any, ...params) as Promise<R>;
+    return this.prisma.$queryRaw(query as never, ...params) as Promise<R>;
   }
 
   /**
@@ -462,7 +469,7 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    * @returns Number of affected rows
    */
   async executeRaw(query: TemplateStringsArray, ...params: unknown[]): Promise<number> {
-    return this.prisma.$executeRaw(query as any, ...params);
+    return this.prisma.$executeRaw(query as never, ...params);
   }
 
   // ============================================
@@ -502,7 +509,7 @@ export abstract class BaseRepository<T = any, ModelName extends string = string>
    *   _count: true
    * });
    */
-  getModel(): any {
+  getModel(): unknown {
     return this.model;
   }
 

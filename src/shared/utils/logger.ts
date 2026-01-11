@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Simple logger utility with different log levels
  */
@@ -25,7 +26,7 @@ class Logger {
   /**
    * Log debug message
    */
-  debug(message: string, ...args: any[]): void {
+  debug(message: string, ...args: unknown[]): void {
     if (this.level <= LogLevel.DEBUG) {
       console.log(`[DEBUG] ${new Date().toISOString()}`, message, ...args);
     }
@@ -34,7 +35,7 @@ class Logger {
   /**
    * Log info message
    */
-  info(message: string, ...args: any[]): void {
+  info(message: string, ...args: unknown[]): void {
     if (this.level <= LogLevel.INFO) {
       console.log(`[INFO] ${new Date().toISOString()}`, message, ...args);
     }
@@ -43,7 +44,7 @@ class Logger {
   /**
    * Log warning message
    */
-  warn(message: string, ...args: any[]): void {
+  warn(message: string, ...args: unknown[]): void {
     if (this.level <= LogLevel.WARN) {
       console.warn(`[WARN] ${new Date().toISOString()}`, message, ...args);
     }
@@ -52,7 +53,7 @@ class Logger {
   /**
    * Log error message
    */
-  error(message: string, ...args: any[]): void {
+  error(message: string, ...args: unknown[]): void {
     if (this.level <= LogLevel.ERROR) {
       console.error(`[ERROR] ${new Date().toISOString()}`, message, ...args);
     }
