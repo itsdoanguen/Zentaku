@@ -50,5 +50,14 @@
   },
 
   //cSpell
-  "cSpell.words": ["anilist", "zentaku", "Anilist", "mangadex", "Mangadex"]
+  "cSpell.words": [
+    "anilist",
+    "zentaku",
+    "Anilist",
+    "mangadex",
+    "Mangadex",
+    "romaji",
+    "Romaji",
+    "naruto"
+  ]
 }
