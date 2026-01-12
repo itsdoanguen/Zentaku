@@ -1,10 +1,11 @@
-const logger = require('../shared/utils/logger');
-const { AnilistAPIError, NotFoundError, ValidationError } = require('../shared/utils/error');
+import type { NextFunction, Request, Response } from 'express';
+import { AnilistAPIError, NotFoundError, ValidationError } from '../shared/utils/error';
+import logger from '../shared/utils/logger';
 
 /**
  * 404 handler
  */
-const notFound = (req, res, next) => {
+export const notFound = (req: Request, res: Response, next: NextFunction): void => {
   const error = new Error(`Not Found - ${req.originalUrl}`);
   res.status(404);
   next(error);
@@ -13,7 +14,12 @@ const notFound = (req, res, next) => {
 /**
  * Global error handler
  */
-const errorHandler = (err, req, res, _next) => {
+export const errorHandler = (
+  err: Error,
+  _req: Request,
+  res: Response,
+  _next: NextFunction
+): void => {
   // Log error
   logger.error('Error Handler:', {
     name: err.name,
@@ -22,36 +28,39 @@ const errorHandler = (err, req, res, _next) => {
   });
 
   // Handle known operational errors
-  if (err.isOperational) {
-    return res.status(err.statusCode || 500).json({
+  if ('isOperational' in err && err.isOperational) {
+    res.status((err as unknown as { statusCode?: number }).statusCode || 500).json({
       success: false,
       error: {
         name: err.name,
         message: err.message,
-        ...(err instanceof AnilistAPIError && err.errors && { details: err.errors }),
+        ...(err instanceof AnilistAPIError && err.details && { details: err.details }),
       },
     });
+    return;
   }
 
   // Handle specific error types
   if (err instanceof NotFoundError) {
-    return res.status(404).json({
+    res.status(404).json({
       success: false,
       error: {
         name: 'NotFoundError',
         message: err.message,
       },
     });
+    return;
   }
 
   if (err instanceof ValidationError) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       error: {
         name: 'ValidationError',
         message: err.message,
       },
     });
+    return;
   }
 
   // Unknown errors (programming errors)
@@ -65,5 +74,3 @@ const errorHandler = (err, req, res, _next) => {
     },
   });
 };
-
-module.exports = { notFound, errorHandler };
