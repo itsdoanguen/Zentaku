@@ -1,10 +1,10 @@
 /**
  * Anime Adapter
- * 
+ *
  * Transforms data between different representations:
  * - AniList API GraphQL response → Prisma Database format
  * - Prisma Database model → API Response format
- * 
+ *
  * @module AnimeAdapter
  */
 
@@ -15,11 +15,11 @@ class AnimeAdapter {
 
   /**
    * Transform AniList GraphQL response to Prisma MediaItem format
-   * 
+   *
    * This method prepares data for Prisma's create/update operations.
    * It handles nested AnimeMetadata creation and ensures all fields
    * match the Prisma schema types.
-   * 
+   *
    * @param {Object} anilistData - Raw data from AniList GraphQL API
    * @param {number} anilistData.id - AniList media ID
    * @param {number} [anilistData.idMal] - MyAnimeList ID
@@ -38,7 +38,7 @@ class AnimeAdapter {
    * @param {string} [anilistData.source] - Source material
    * @param {Object} [anilistData.trailer] - Trailer object with id and site
    * @returns {Object} Data formatted for Prisma upsert operation
-   * 
+   *
    * @example
    * const anilistData = await anilistClient.fetchById(1);
    * const dbData = animeAdapter.fromAnilist(anilistData);
@@ -65,7 +65,7 @@ class AnimeAdapter {
       titleNative: anilistData.title?.native || null,
 
       // Media type and status
-      type: 'ANIME', 
+      type: 'ANIME',
       status: this._mapAnilistStatus(anilistData.status),
 
       // Images
@@ -87,17 +87,17 @@ class AnimeAdapter {
           studio: this._extractStudio(anilistData.studios),
           source: anilistData.source || null,
           trailerUrl: this._buildTrailerUrl(anilistData.trailer),
-        }
-      }
+        },
+      },
     };
   }
 
   /**
    * Transform AniList lightweight data (for batch operations)
-   * 
+   *
    * Used when fetching multiple anime at once or when only
    * basic information is needed (e.g., for list displays).
-   * 
+   *
    * @param {Object} anilistData - Lightweight AniList data
    * @returns {Object} Minimal data for Prisma operations
    */
@@ -112,12 +112,12 @@ class AnimeAdapter {
       type: 'ANIME',
       coverImage: this._extractCoverImage(anilistData.coverImage),
       lastSyncedAt: new Date(),
-      
+
       animeMetadata: {
         create: {
           episodeCount: anilistData.episodes || null,
-        }
-      }
+        },
+      },
     };
   }
 
@@ -127,13 +127,13 @@ class AnimeAdapter {
 
   /**
    * Transform Prisma MediaItem model to API response format
-   * 
+   *
    * This method creates a clean, client-friendly response by:
    * - Flattening nested relations
    * - Renaming fields for consistency
    * - Formatting dates and scores
    * - Removing internal database fields
-   * 
+   *
    * @param {Object} animeModel - Prisma MediaItem with animeMetadata relation
    * @param {bigint} animeModel.id - Database ID
    * @param {number} animeModel.idAnilist - AniList ID
@@ -151,7 +151,7 @@ class AnimeAdapter {
    * @param {Date} [animeModel.lastSyncedAt] - Last sync timestamp
    * @param {Object} [animeModel.animeMetadata] - Anime-specific metadata
    * @returns {Object|null} Formatted API response or null if input is null
-   * 
+   *
    * @example
    * const anime = await prisma.mediaItem.findUnique({
    *   where: { idAnilist: 1 },
@@ -200,13 +200,13 @@ class AnimeAdapter {
 
   /**
    * Transform array of Prisma MediaItem models to API response format
-   * 
+   *
    * Efficiently maps multiple anime models using toResponse().
    * Filters out any null results.
-   * 
+   *
    * @param {Array<Object>} animeList - Array of Prisma MediaItem models
    * @returns {Array<Object>} Array of formatted API responses
-   * 
+   *
    * @example
    * const animeList = await prisma.mediaItem.findMany({
    *   where: { type: 'ANIME' },
@@ -219,16 +219,14 @@ class AnimeAdapter {
       return [];
     }
 
-    return animeList
-      .map(anime => this.toResponse(anime))
-      .filter(anime => anime !== null);
+    return animeList.map((anime) => this.toResponse(anime)).filter((anime) => anime !== null);
   }
 
   /**
    * Transform for lightweight list responses (cards, previews)
-   * 
+   *
    * Returns minimal data for list views to reduce payload size.
-   * 
+   *
    * @param {Object} animeModel - Prisma MediaItem model
    * @returns {Object|null} Minimal response object
    */
@@ -256,10 +254,10 @@ class AnimeAdapter {
 
   /**
    * Normalize AniList score (0-100) to application scale (0-10)
-   * 
+   *
    * AniList uses a 0-100 scale, but we store as 0-10 for consistency
    * with other rating systems (MAL uses 1-10).
-   * 
+   *
    * @private
    * @param {number} anilistScore - Score from AniList (0-100)
    * @returns {number|null} Normalized score (0-10) or null
@@ -270,7 +268,7 @@ class AnimeAdapter {
     }
 
     const score = parseFloat(anilistScore);
-    
+
     if (isNaN(score) || score < 0 || score > 100) {
       return null;
     }
@@ -280,20 +278,20 @@ class AnimeAdapter {
 
   /**
    * Map AniList status enum to Prisma MediaStatus enum
-   * 
+   *
    * Ensures compatibility between AniList's status values
    * and our database schema.
-   * 
+   *
    * @private
    * @param {string} anilistStatus - Status from AniList API
    * @returns {string} Mapped status for Prisma enum
    */
   _mapAnilistStatus(anilistStatus) {
     const statusMap = {
-      'RELEASING': 'RELEASING',
-      'FINISHED': 'FINISHED',
-      'NOT_YET_RELEASED': 'NOT_YET_RELEASED',
-      'CANCELLED': 'CANCELLED',
+      RELEASING: 'RELEASING',
+      FINISHED: 'FINISHED',
+      NOT_YET_RELEASED: 'NOT_YET_RELEASED',
+      CANCELLED: 'CANCELLED',
     };
 
     return statusMap[anilistStatus] || 'NOT_YET_RELEASED';
@@ -301,9 +299,9 @@ class AnimeAdapter {
 
   /**
    * Extract cover image URL with fallback priority
-   * 
+   *
    * Priority: extraLarge > large > medium > null
-   * 
+   *
    * @private
    * @param {Object} coverImage - Cover image object from AniList
    * @returns {string|null} Best quality cover URL or null
@@ -313,18 +311,15 @@ class AnimeAdapter {
       return null;
     }
 
-    return coverImage.extraLarge 
-      || coverImage.large 
-      || coverImage.medium 
-      || null;
+    return coverImage.extraLarge || coverImage.large || coverImage.medium || null;
   }
 
   /**
    * Extract primary studio name from studios object
-   * 
+   *
    * AniList returns studios as a nested object with nodes array.
    * We take the first studio as the primary one.
-   * 
+   *
    * @private
    * @param {Object} studios - Studios object from AniList
    * @param {Array} [studios.nodes] - Array of studio objects
@@ -346,9 +341,9 @@ class AnimeAdapter {
 
   /**
    * Build complete trailer URL from AniList trailer object
-   * 
+   *
    * Supports YouTube and Dailymotion.
-   * 
+   *
    * @private
    * @param {Object} trailer - Trailer object from AniList
    * @param {string} trailer.id - Video ID on the platform
@@ -363,8 +358,8 @@ class AnimeAdapter {
     const siteLower = trailer.site?.toLowerCase();
 
     const siteMap = {
-      'youtube': `https://www.youtube.com/watch?v=${trailer.id}`,
-      'dailymotion': `https://www.dailymotion.com/video/${trailer.id}`,
+      youtube: `https://www.youtube.com/watch?v=${trailer.id}`,
+      dailymotion: `https://www.dailymotion.com/video/${trailer.id}`,
     };
 
     return siteMap[siteLower] || null;
@@ -372,13 +367,13 @@ class AnimeAdapter {
 
   /**
    * Clean HTML tags from description text
-   * 
+   *
    * AniList returns descriptions with HTML formatting.
    * This method:
    * - Converts <br> tags to newlines
    * - Strips all other HTML tags
    * - Trims whitespace
-   * 
+   *
    * @private
    * @param {string} description - HTML description from AniList
    * @returns {string|null} Cleaned plain text or null
@@ -389,9 +384,9 @@ class AnimeAdapter {
     }
 
     return description
-      .replace(/<br\s*\/?>/gi, '\n')           
-      .replace(/<\/?[^>]+(>|$)/g, '')          
-      .replace(/&quot;/g, '"')                 
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/?[^>]+(>|$)/g, '')
+      .replace(/&quot;/g, '"')
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
@@ -400,7 +395,7 @@ class AnimeAdapter {
 
   /**
    * Format Date object to ISO 8601 string
-   * 
+   *
    * @private
    * @param {Date} date - Date object
    * @returns {string|null} ISO 8601 formatted date string or null
@@ -410,11 +405,7 @@ class AnimeAdapter {
       return null;
     }
 
-    try {
-      return new Date(date).toISOString();
-    } catch (error) {
-      return null;
-    }
+    return date.toISOString();
   }
 }
 

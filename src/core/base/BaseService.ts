@@ -86,7 +86,7 @@ export abstract class BaseService {
    * // Returns: 123 (validated number)
    * // Throws: ValidationError if invalid
    */
-  protected _validateId(id: any, fieldName: string = 'ID'): number {
+  protected _validateId(id: unknown, fieldName: string = 'ID'): number {
     if (id === null || id === undefined) {
       throw new ValidationError(`${fieldName} is required.`);
     }
@@ -120,7 +120,7 @@ export abstract class BaseService {
    * });
    */
   protected _validateString(
-    str: any,
+    str: unknown,
     fieldName: string = 'String',
     options: StringValidationOptions = {}
   ): string {
@@ -344,7 +344,7 @@ export abstract class BaseService {
    * @example
    * this._logInfo('Anime fetched successfully', { animeId: 123 });
    */
-  protected _logInfo(message: string, meta: any = {}): void {
+  protected _logInfo(message: string, meta: unknown = {}): void {
     this.logger.info(`[${this.constructor.name}] ${message}`, meta);
   }
 
@@ -357,7 +357,7 @@ export abstract class BaseService {
    * @example
    * this._logWarn('Cache miss, fetching from API', { key: 'anime:123' });
    */
-  protected _logWarn(message: string, meta: any = {}): void {
+  protected _logWarn(message: string, meta: unknown = {}): void {
     this.logger.warn(`[${this.constructor.name}] ${message}`, meta);
   }
 
@@ -370,7 +370,7 @@ export abstract class BaseService {
    * @example
    * this._logError('Failed to fetch anime', { error: error.message });
    */
-  protected _logError(message: string, meta: any = {}): void {
+  protected _logError(message: string, meta: unknown = {}): void {
     this.logger.error(`[${this.constructor.name}] ${message}`, meta);
   }
 
@@ -383,7 +383,7 @@ export abstract class BaseService {
    * @example
    * this._logDebug('Processing anime data', { rawData });
    */
-  protected _logDebug(message: string, meta: any = {}): void {
+  protected _logDebug(message: string, meta: unknown = {}): void {
     this.logger.debug(`[${this.constructor.name}] ${message}`, meta);
   }
 
@@ -402,7 +402,7 @@ export abstract class BaseService {
    *   // ... process description
    * }
    */
-  protected _exists(value: any): boolean {
+  protected _exists(value: unknown): boolean {
     return value !== null && value !== undefined;
   }
 
@@ -434,7 +434,7 @@ export abstract class BaseService {
    *   { theme: 'dark' }
    * );
    */
-  protected _parseJSON<T = any>(jsonString: string, defaultValue: T | null = null): T | null {
+  protected _parseJSON<T = unknown>(jsonString: string, defaultValue: T | null = null): T | null {
     try {
       return JSON.parse(jsonString) as T;
     } catch (error) {
