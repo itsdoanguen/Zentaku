@@ -41,7 +41,7 @@ export const ANIME_INFO_LIGHTWEIGHT_QS = `
 query ($id: Int) {
   Media(id: $id, type: ANIME) {
     id
-    title { romaji }
+    title { romaji english native }
     coverImage { large }
     episodes
     nextAiringEpisode { airingAt timeUntilAiring episode }
@@ -66,7 +66,7 @@ query ($query: String, $page: Int, $perpage: Int) {
     pageInfo { total currentPage lastPage hasNextPage }
     media (search: $query, type: ANIME) {
       id
-      title { romaji english }
+      title { romaji english native }
       coverImage { large }
       averageScore
       popularity
@@ -84,7 +84,7 @@ query ($season: MediaSeason, $seasonYear: Int, $page: Int, $perpage: Int, $sort:
     pageInfo { total currentPage lastPage hasNextPage }
     media(season: $season, seasonYear: $seasonYear, type: ANIME, sort: $sort) {
       id
-      title { romaji english }
+      title { romaji english native }
       coverImage { large }
       bannerImage
       averageScore
@@ -105,7 +105,7 @@ query ($genres: [String], $season: MediaSeason, $seasonYear: Int, $format: Media
     pageInfo { total currentPage lastPage hasNextPage }
     media(genre_in: $genres, season: $season, seasonYear: $seasonYear, format: $format, status: $status, type: ANIME, sort: $sort) {
       id
-      title { romaji english }
+      title { romaji english native }
       coverImage { large }
       bannerImage
       averageScore
