@@ -22,6 +22,7 @@ query ($id: Int) {
     coverImage { large }
     bannerImage
     description
+    isAdult
     averageScore
     meanScore
     popularity

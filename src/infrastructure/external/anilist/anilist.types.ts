@@ -70,6 +70,7 @@ export interface AnimeInfo {
   coverImage: CoverImage;
   bannerImage?: string;
   description?: string;
+  isAdult?: boolean;
   averageScore?: number;
   meanScore?: number;
   popularity?: number;
