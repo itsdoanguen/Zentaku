@@ -328,3 +328,13 @@ export interface CharacterInfoResponse {
 export interface StaffInfoResponse {
   Staff: StaffInfo;
 }
+
+// ========== Enums & Criteria ==========
+
+export interface AnimeSearchCriteria {
+  genres?: string[];
+  season?: string;
+  seasonYear?: number;
+  format?: string;
+  status?: string;
+}

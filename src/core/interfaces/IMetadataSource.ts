@@ -177,7 +177,7 @@ export interface MediaInfo extends MediaBasicInfo {
  */
 export interface PageInfo {
   total: number;
-  perPage: number;
+  perPage?: number;
   currentPage: number;
   lastPage: number;
   hasNextPage: boolean;
