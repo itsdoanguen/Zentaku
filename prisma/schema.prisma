@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "mysql"
 }
+
 // =========================================================
 // 1. ENUMS
 // =========================================================
@@ -71,42 +72,42 @@ enum InviteStatus {
 // =========================================================
 
 model User {
-  id            BigInt    @id @default(autoincrement())
-  username      String    @unique
-  email         String    @unique
+  id            BigInt   @id @default(autoincrement())
+  username      String   @unique
+  email         String   @unique
   passwordHash  String
   avatar        String?
   statusMessage String?
-  settings      Json?     // { theme: "dark", notify: true }
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  settings      Json? // { theme: "dark", notify: true }
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relationships
   libraryEntries LibraryEntry[]
-  progressLogs   ProgressLog[]  // Short-cut relation if needed
-  
+  progressLogs   ProgressLog[] // Short-cut relation if needed
+
   // Lists
-  ownedLists     CustomList[]
-  listInvitesSent ListInvitation[] @relation("Inviter")
+  ownedLists          CustomList[]
+  listInvitesSent     ListInvitation[] @relation("Inviter")
   listInvitesReceived ListInvitation[] @relation("Invitee")
-  addedListItems ListItem[] // Items user added to shared lists
+  addedListItems      ListItem[] // Items user added to shared lists
 
   // Social Graph
-  followers      UserRelationship[] @relation("UserFollowers")
-  following      UserRelationship[] @relation("UserFollowing")
+  followers UserRelationship[] @relation("UserFollowers")
+  following UserRelationship[] @relation("UserFollowing")
 
   // Community & Chat
-  ownedCommunities Community[]
+  ownedCommunities  Community[]
   joinedCommunities CommunityMember[]
-  
+
   // DM & Channels
   channelParticipants ChannelParticipant[]
   messages            Message[]
-  
+
   // Realtime & Activities
-  hostedRooms    WatchRoomConfig[]
-  activities     Activity[]
-  comments       Comment[]
+  hostedRooms WatchRoomConfig[]
+  activities  Activity[]
+  comments    Comment[]
 
   @@map("users")
 }
@@ -115,10 +116,10 @@ model UserRelationship {
   followerId  BigInt
   followingId BigInt
   type        RelationshipType
-  createdAt   DateTime @default(now())
+  createdAt   DateTime         @default(now())
 
-  follower    User @relation("UserFollowing", fields: [followerId], references: [id])
-  following   User @relation("UserFollowers", fields: [followingId], references: [id])
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id])
+  following User @relation("UserFollowers", fields: [followingId], references: [id])
 
   @@id([followerId, followingId]) // Composite PK
   @@map("user_relationships")
@@ -129,61 +130,68 @@ model UserRelationship {
 // =========================================================
 
 model MediaItem {
-  id              BigInt      @id @default(autoincrement())
-  
+  id BigInt @id @default(autoincrement())
+
   // Sync IDs
-  idAnilist       Int?        @unique
-  idMal           Int?        @unique
-  idMangadex      String?     @unique
-  lastSyncedAt    DateTime?
+  idAnilist    Int?      @unique
+  idMal        Int?      @unique
+  idMangadex   String?   @unique
+  lastSyncedAt DateTime?
 
   // Metadata
-  titleRomaji     String
-  titleEnglish    String?
-  titleNative     String?
-  type            MediaType
-  status          MediaStatus
-  coverImage      String?
-  bannerImage     String?
-  isAdult         Boolean     @default(false)
-  averageScore    Float?
-  description     String?     @db.Text
+  titleRomaji  String
+  titleEnglish String?
+  titleNative  String?
+  type         MediaType
+  status       MediaStatus
+  coverImage   String?
+  bannerImage  String?
+  isAdult      Boolean     @default(false)
+  averageScore Float?
+  description  String?     @db.Text
+  synonyms     Json?
+  genres       Json?
+  tags         Json?
+  popularity   Int?
+  favorites    Int?
+  meanScore    Float?
 
   // Inheritance Extensions (1-1 Optional)
-  animeMetadata   AnimeMetadata?
-  bookMetadata    BookMetadata?
+  animeMetadata AnimeMetadata?
+  bookMetadata  BookMetadata?
 
   // Relations
-  libraryEntries  LibraryEntry[]
-  listItems       ListItem[]
-  watchRooms      WatchRoomConfig[] 
-  activities      Activity[]        
+  libraryEntries LibraryEntry[]
+  listItems      ListItem[]
+  watchRooms     WatchRoomConfig[]
+  activities     Activity[]
 
   @@map("media_items")
 }
 
 model AnimeMetadata {
-  mediaId       BigInt  @id // PK đồng thời là FK
-  media         MediaItem @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-  
-  episodeCount  Int?
-  durationMin   Int?
-  season        String? // "WINTER", "SUMMER"
-  seasonYear    Int?
-  studio        String?
-  source        String?
-  trailerUrl    String?
+  mediaId BigInt    @id // PK đồng thời là FK
+  media   MediaItem @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  episodeCount      Int?
+  durationMin       Int?
+  season            String? // "WINTER", "SUMMER"
+  seasonYear        Int?
+  studio            String?
+  source            String?
+  trailerUrl        String?
+  nextAiringEpisode Json?
 
   @@map("anime_metadata")
 }
 
 model BookMetadata {
-  mediaId       BigInt  @id
-  media         MediaItem @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  mediaId BigInt    @id
+  media   MediaItem @relation(fields: [mediaId], references: [id], onDelete: Cascade)
 
   chapters      Int?
   volumes       Int?
-  author        Json?   // [{name: "Oda", role: "Art"}]
+  author        Json? // [{name: "Oda", role: "Art"}]
   serialization String?
 
   @@map("book_metadata")
@@ -199,7 +207,7 @@ model LibraryEntry {
   mediaId         BigInt
   status          LibraryStatus
   progress        Int           @default(0) // Số tập/chap đã xem
-  progressVolumes Int?          // Cho Manga
+  progressVolumes Int? // Cho Manga
   score           Float?
   notes           String?       @db.Text
   isPrivate       Boolean       @default(false)
@@ -208,24 +216,24 @@ model LibraryEntry {
   finishDate      DateTime?     @db.Date
   updatedAt       DateTime      @updatedAt
 
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  media           MediaItem     @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-  
-  progressLogs    ProgressLog[]
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media MediaItem @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  progressLogs ProgressLog[]
 
   @@unique([userId, mediaId]) // Mỗi user chỉ có 1 entry cho 1 media
   @@map("library_entries")
 }
 
 model ProgressLog {
-  id             BigInt       @id @default(autoincrement())
+  id             BigInt   @id @default(autoincrement())
   entryId        BigInt
-  userId         BigInt       // Denormalized for easier querying
+  userId         BigInt // Denormalized for easier querying
   progressNumber Int
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime @default(now())
 
-  entry          LibraryEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entry LibraryEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("progress_logs")
 }
@@ -242,48 +250,48 @@ model CustomList {
   description String?     @db.Text
   privacy     PrivacyMode @default(PUBLIC)
   bannerImage String?
-  settings    Json?       // { viewMode: "grid", sortBy: "score" }
+  settings    Json? // { viewMode: "grid", sortBy: "score" }
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  owner       User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner       User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   items       ListItem[]
   invitations ListInvitation[]
-  
+
   // Polymorphic Relations
-  activities  Activity[]  // Activity liên quan đến List này
+  activities Activity[] // Activity liên quan đến List này
 
   @@map("custom_lists")
 }
 
 model ListItem {
-  id          BigInt    @id @default(autoincrement())
-  listId      BigInt
-  mediaId     BigInt
-  addedById   BigInt
-  orderIndex  Int       @default(0)
-  note        String?   @db.Text
-  createdAt   DateTime  @default(now())
+  id         BigInt   @id @default(autoincrement())
+  listId     BigInt
+  mediaId    BigInt
+  addedById  BigInt
+  orderIndex Int      @default(0)
+  note       String?  @db.Text
+  createdAt  DateTime @default(now())
 
-  list        CustomList @relation(fields: [listId], references: [id], onDelete: Cascade)
-  media       MediaItem  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-  addedBy     User       @relation(fields: [addedById], references: [id])
+  list    CustomList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  media   MediaItem  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  addedBy User       @relation(fields: [addedById], references: [id])
 
   @@map("list_items")
 }
 
 model ListInvitation {
-  id          BigInt       @id @default(autoincrement())
-  listId      BigInt
-  inviterId   BigInt
-  inviteeId   BigInt
-  permission  ListPerm
-  status      InviteStatus @default(PENDING)
-  createdAt   DateTime     @default(now())
+  id         BigInt       @id @default(autoincrement())
+  listId     BigInt
+  inviterId  BigInt
+  inviteeId  BigInt
+  permission ListPerm
+  status     InviteStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
 
-  list        CustomList @relation(fields: [listId], references: [id], onDelete: Cascade)
-  inviter     User       @relation("Inviter", fields: [inviterId], references: [id])
-  invitee     User       @relation("Invitee", fields: [inviteeId], references: [id])
+  list    CustomList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  inviter User       @relation("Inviter", fields: [inviterId], references: [id])
+  invitee User       @relation("Invitee", fields: [inviteeId], references: [id])
 
   @@map("list_invitations")
 }
@@ -293,19 +301,19 @@ model ListInvitation {
 // =========================================================
 
 model Community {
-  id          BigInt    @id @default(autoincrement())
+  id          BigInt   @id @default(autoincrement())
   ownerId     BigInt
   name        String
   icon        String?
-  description String?   @db.Text
-  isPublic    Boolean   @default(true)
-  inviteCode  String?   @unique
-  createdAt   DateTime  @default(now())
+  description String?  @db.Text
+  isPublic    Boolean  @default(true)
+  inviteCode  String?  @unique
+  createdAt   DateTime @default(now())
 
-  owner       User      @relation(fields: [ownerId], references: [id])
-  members     CommunityMember[]
-  channels    Channel[]
-  activities  Activity[] // Activity: "Joined Server X"
+  owner      User              @relation(fields: [ownerId], references: [id])
+  members    CommunityMember[]
+  channels   Channel[]
+  activities Activity[] // Activity: "Joined Server X"
 
   @@map("communities")
 }
@@ -317,8 +325,8 @@ model CommunityMember {
   nickname    String?
   joinedAt    DateTime @default(now())
 
-  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([communityId, userId])
   @@map("community_members")
@@ -326,18 +334,18 @@ model CommunityMember {
 
 model Channel {
   id          BigInt      @id @default(autoincrement())
-  communityId BigInt?     // Null nếu là DM/Group Chat
-  name        String?     // Null nếu là DM
+  communityId BigInt? // Null nếu là DM/Group Chat
+  name        String? // Null nếu là DM
   type        ChannelType
   isPrivate   Boolean     @default(false)
   position    Int         @default(0)
   createdAt   DateTime    @default(now())
 
-  community   Community?  @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  
+  community Community? @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
   participants ChannelParticipant[] // Cho DM
   messages     Message[]
-  
+
   // Extension: Watch Party
   watchRoomConfig WatchRoomConfig?
 
@@ -345,33 +353,33 @@ model Channel {
 }
 
 model ChannelParticipant {
-  channelId   BigInt
-  userId      BigInt
-  lastReadAt  DateTime?
-  isMuted     Boolean   @default(false)
+  channelId  BigInt
+  userId     BigInt
+  lastReadAt DateTime?
+  isMuted    Boolean   @default(false)
 
-  channel     Channel   @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([channelId, userId])
   @@map("channel_participants")
 }
 
 model Message {
-  id              BigInt    @id @default(autoincrement())
+  id              BigInt   @id @default(autoincrement())
   channelId       BigInt
   senderId        BigInt
   replyToId       BigInt?
-  content         String?   @db.Text
-  attachments     Json?     // [{url: "...", type: "img"}]
-  isSystemMessage Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  content         String?  @db.Text
+  attachments     Json? // [{url: "...", type: "img"}]
+  isSystemMessage Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  channel         Channel   @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  sender          User      @relation(fields: [senderId], references: [id])
-  replyTo         Message?  @relation("Thread", fields: [replyToId], references: [id])
-  replies         Message[] @relation("Thread")
+  channel Channel   @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  sender  User      @relation(fields: [senderId], references: [id])
+  replyTo Message?  @relation("Thread", fields: [replyToId], references: [id])
+  replies Message[] @relation("Thread")
 
   @@map("messages")
 }
@@ -382,21 +390,21 @@ model Message {
 
 // BRIDGE 1: Watch Party Config (Chat + Media)
 model WatchRoomConfig {
-  channelId        BigInt    @id // PK đồng thời là FK
-  channel          Channel   @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  
-  mediaId          BigInt?   // Phim đang chiếu
-  media            MediaItem? @relation(fields: [mediaId], references: [id])
-  
-  hostId           BigInt?   // Người đang cầm remote
-  host             User?     @relation(fields: [hostId], references: [id])
+  channelId BigInt  @id // PK đồng thời là FK
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
-  isPlaying        Boolean   @default(false)
-  currentTimestamp Float     @default(0.0)
-  currentSourceUrl String?   
-  playlistQueue    Json?     // [{mediaId: 1, ep: 2}, ...]
-  settings         Json?     // { allowChat: true }
-  lastSyncedAt     DateTime  @default(now())
+  mediaId BigInt? // Phim đang chiếu
+  media   MediaItem? @relation(fields: [mediaId], references: [id])
+
+  hostId BigInt? // Người đang cầm remote
+  host   User?   @relation(fields: [hostId], references: [id])
+
+  isPlaying        Boolean  @default(false)
+  currentTimestamp Float    @default(0.0)
+  currentSourceUrl String?
+  playlistQueue    Json? // [{mediaId: 1, ep: 2}, ...]
+  settings         Json? // { allowChat: true }
+  lastSyncedAt     DateTime @default(now())
 
   @@map("watch_room_configs")
 }
@@ -406,53 +414,53 @@ model WatchRoomConfig {
 // Thay vì `target_type` string, ta dùng quan hệ trực tiếp
 
 model Activity {
-  id          BigInt   @id @default(autoincrement())
-  userId      BigInt
-  type        String   // "WATCHED", "RATED", "JOINED", "CREATED_LIST"
-  createdAt   DateTime @default(now())
-  metaData    Json?    // Snapshot data (tên phim tại thời điểm xem)
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt
+  type      String // "WATCHED", "RATED", "JOINED", "CREATED_LIST"
+  createdAt DateTime @default(now())
+  metaData  Json? // Snapshot data (tên phim tại thời điểm xem)
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Polymorphic Targets (Chỉ 1 trong các field này được có giá trị)
-  mediaId     BigInt?
-  media       MediaItem? @relation(fields: [mediaId], references: [id])
+  mediaId BigInt?
+  media   MediaItem? @relation(fields: [mediaId], references: [id])
 
-  listId      BigInt?
-  list        CustomList? @relation(fields: [listId], references: [id])
+  listId BigInt?
+  list   CustomList? @relation(fields: [listId], references: [id])
 
   communityId BigInt?
   community   Community? @relation(fields: [communityId], references: [id])
 
-  comments    Comment[]
+  comments Comment[]
 
   @@index([userId])
   @@map("activities")
 }
 
 model Comment {
-  id          BigInt   @id @default(autoincrement())
-  userId      BigInt
-  content     String   @db.Text
-  isSpoiler   Boolean  @default(false)
-  likeCount   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt
+  content   String   @db.Text
+  isSpoiler Boolean  @default(false)
+  likeCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Polymorphic Targets
-  mediaId     BigInt?
+  mediaId BigInt?
   //media       MediaItem? @relation... (Optional: Nếu muốn comment vào phim)
-  
-  listId      BigInt?
+
+  listId BigInt?
   //list        CustomList? @relation... (Optional: Nếu muốn comment vào list)
 
-  activityId  BigInt?
-  activity    Activity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activityId BigInt?
+  activity   Activity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
-  targetType  String? // "MEDIA", "LIST", "EPISODE"
-  targetId    BigInt?
+  targetType String? // "MEDIA", "LIST", "EPISODE"
+  targetId   BigInt?
 
   @@map("comments")
 }
