@@ -124,67 +124,67 @@ class AnimeAdapter {
    * It handles nested AnimeMetadata creation and ensures all fields
    * match the Prisma schema types.
    *
-   * @param anilistData - Raw data from AniList GraphQL API
+   * @param externalData - Raw data from AniList GraphQL API
    * @returns Data formatted for Prisma upsert operation
    * @throws {Error} If required fields are missing
    *
    * @example
-   * const anilistData = await anilistClient.fetchById(1);
-   * const dbData = animeAdapter.fromAnilist(anilistData);
+   * const externalData = await anilistClient.fetchById(1);
+   * const dbData = animeAdapter.fromExternal(externalData);
    * await prisma.mediaItem.upsert({
    *   where: { idAnilist: dbData.idAnilist },
    *   create: dbData,
    *   update: dbData
    * });
    */
-  fromAnilist(anilistData: AnimeInfo): PrismaAnimeCreateData {
-    if (!anilistData || !anilistData.id) {
+  fromExternal(externalData: AnimeInfo): PrismaAnimeCreateData {
+    if (!externalData || !externalData.id) {
       throw new Error('Invalid AniList data: missing required id field');
     }
 
     return {
       // ========== MediaItem Core Fields ==========
-      idAnilist: anilistData.id,
-      idMal: anilistData.idMal || null,
+      idAnilist: externalData.id,
+      idMal: externalData.idMal || null,
       lastSyncedAt: new Date(),
 
       // Title fields
-      titleRomaji: anilistData.title?.romaji || 'Unknown Title',
-      titleEnglish: anilistData.title?.english || null,
-      titleNative: anilistData.title?.native || null,
+      titleRomaji: externalData.title?.romaji || 'Unknown Title',
+      titleEnglish: externalData.title?.english || null,
+      titleNative: externalData.title?.native || null,
 
       // Media type and status
       type: 'ANIME' as const,
-      status: this._mapAnilistStatus(anilistData.status),
+      status: this._mapAnilistStatus(externalData.status),
 
       // Images
-      coverImage: this._extractCoverImage(anilistData.coverImage),
-      bannerImage: anilistData.bannerImage || null,
+      coverImage: this._extractCoverImage(externalData.coverImage),
+      bannerImage: externalData.bannerImage || null,
 
       // Scoring and metadata
-      isAdult: anilistData.isAdult || false,
-      averageScore: this._normalizeScore(anilistData.averageScore),
-      meanScore: this._normalizeScore(anilistData.meanScore),
-      description: this._cleanDescription(anilistData.description),
+      isAdult: externalData.isAdult || false,
+      averageScore: this._normalizeScore(externalData.averageScore),
+      meanScore: this._normalizeScore(externalData.meanScore),
+      description: this._cleanDescription(externalData.description),
 
       // ========== Additional Metadata Fields ==========
-      synonyms: anilistData.synonyms || null,
-      genres: anilistData.genres || null,
-      tags: anilistData.tags || null,
-      popularity: anilistData.popularity || null,
-      favorites: anilistData.favourites || null,
+      synonyms: externalData.synonyms || null,
+      genres: externalData.genres || null,
+      tags: externalData.tags || null,
+      popularity: externalData.popularity || null,
+      favorites: externalData.favourites || null,
 
       // ========== AnimeMetadata Nested Create ==========
       animeMetadata: {
         create: {
-          episodeCount: anilistData.episodes || null,
-          durationMin: anilistData.duration || null,
-          season: anilistData.season || null,
-          seasonYear: anilistData.seasonYear || null,
-          studio: this._extractStudio(anilistData.studios),
-          source: anilistData.source || null,
-          trailerUrl: this._buildTrailerUrl(anilistData.trailer),
-          nextAiringEpisode: anilistData.nextAiringEpisode || null,
+          episodeCount: externalData.episodes || null,
+          durationMin: externalData.duration || null,
+          season: externalData.season || null,
+          seasonYear: externalData.seasonYear || null,
+          studio: this._extractStudio(externalData.studios),
+          source: externalData.source || null,
+          trailerUrl: this._buildTrailerUrl(externalData.trailer),
+          nextAiringEpisode: externalData.nextAiringEpisode || null,
         },
       },
     };
@@ -196,34 +196,34 @@ class AnimeAdapter {
    * Used when fetching multiple anime at once or when only
    * basic information is needed (e.g., for list displays).
    *
-   * @param anilistData - Lightweight AniList data
+   * @param externalData - Lightweight AniList data
    * @returns Minimal data for Prisma operations
    * @throws {Error} If required fields are missing
    */
-  fromAnilistLightweight(anilistData: AnimeLightweight): Partial<PrismaAnimeCreateData> {
-    if (!anilistData || !anilistData.id) {
+  fromAnilistLightweight(externalData: AnimeLightweight): Partial<PrismaAnimeCreateData> {
+    if (!externalData || !externalData.id) {
       throw new Error('Invalid AniList data: missing required id field');
     }
 
     return {
-      idAnilist: anilistData.id,
-      titleRomaji: anilistData.title?.romaji || 'Unknown Title',
-      titleEnglish: anilistData.title?.english || null,
-      titleNative: anilistData.title?.native || null,
+      idAnilist: externalData.id,
+      titleRomaji: externalData.title?.romaji || 'Unknown Title',
+      titleEnglish: externalData.title?.english || null,
+      titleNative: externalData.title?.native || null,
       type: 'ANIME' as const,
-      coverImage: this._extractCoverImage(anilistData.coverImage),
+      coverImage: this._extractCoverImage(externalData.coverImage),
       lastSyncedAt: new Date(),
 
       animeMetadata: {
         create: {
-          episodeCount: anilistData.episodes || null,
+          episodeCount: externalData.episodes || null,
           durationMin: null,
           season: null,
           seasonYear: null,
           studio: null,
           source: null,
           trailerUrl: null,
-          nextAiringEpisode: anilistData.nextAiringEpisode || null,
+          nextAiringEpisode: externalData.nextAiringEpisode || null,
         },
       },
     };

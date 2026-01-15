@@ -69,6 +69,59 @@ class AnimeRepository extends BaseMediaRepository<MediaItemWithAnimeMetadata> {
     super(prisma, 'animeMetadata');
   }
 
+  // ==================== IMediaRepository IMPLEMENTATIONS ====================
+  /**
+   * Find anime by external ID
+   *
+   * @param externalId - External ID (AniList ID)
+   * @returns Anime with metadata or null
+   * @override
+   */
+  async findByExternalId(externalId: number): Promise<MediaItemWithAnimeMetadata | null> {
+    return this._findByExternalId('idAnilist', externalId, {
+      include: this._getDefaultInclude(),
+    });
+  }
+
+  /**
+   * Find multiple anime by external IDs
+   * @param externalIds - Array of external IDs (AniList IDs)
+   * @returns Array of anime with metadata
+   * @override
+   */
+  async findManyByExternalIds(externalIds: number[]): Promise<MediaItemWithAnimeMetadata[]> {
+    return this.findMany({
+      where: {
+        idAnilist: { in: externalIds },
+      },
+      include: this._getDefaultInclude(),
+    }) as Promise<MediaItemWithAnimeMetadata[]>;
+  }
+
+  /**
+   * Count anime by search query
+   *
+   * @param filter - Filter with optional query
+   * @returns Count of anime matching the query
+   * @override
+   */
+  async countByQuery(filter: { query?: string }): Promise<number> {
+    if (!filter.query) {
+      return this.count({ where: { type: 'ANIME' } });
+    }
+    return this.count({
+      where: {
+        type: 'ANIME',
+        OR: [
+          { titleRomaji: { contains: filter.query, mode: 'insensitive' } },
+          { titleEnglish: { contains: filter.query, mode: 'insensitive' } },
+          { titleNative: { contains: filter.query, mode: 'insensitive' } },
+        ],
+      },
+    });
+  }
+
+  // ==================== PUBLIC API ====================
   /**
    * Find anime by AniList ID
    *
@@ -81,20 +134,6 @@ class AnimeRepository extends BaseMediaRepository<MediaItemWithAnimeMetadata> {
     options: FindOneOptions = {}
   ): Promise<MediaItemWithAnimeMetadata | null> {
     return this._findByExternalId('idAnilist', anilistId, options);
-  }
-
-  /**
-   * Find anime by MyAnimeList ID
-   *
-   * @param malId - MyAnimeList ID
-   * @param options - Query options
-   * @returns Anime with metadata or null
-   */
-  async findByMalId(
-    malId: number,
-    options: FindOneOptions = {}
-  ): Promise<MediaItemWithAnimeMetadata | null> {
-    return this._findByExternalId('idMal', malId, options);
   }
 
   /**

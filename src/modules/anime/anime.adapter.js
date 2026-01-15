@@ -48,45 +48,44 @@ class AnimeAdapter {
    *   update: dbData
    * });
    */
-  fromAnilist(anilistData) {
-    if (!anilistData || !anilistData.id) {
-      throw new Error('Invalid AniList data: missing required id field');
+  fromExternal(externalData) {
+    if (!externalData || !externalData.id) {
+      throw new Error('Invalid external data: missing required id field');
     }
 
     return {
       // ========== MediaItem Core Fields ==========
-      idAnilist: anilistData.id,
-      idMal: anilistData.idMal || null,
+      idAnilist: externalData.id,
+      idMal: externalData.idMal || null,
       lastSyncedAt: new Date(),
 
       // Title fields
-      titleRomaji: anilistData.title?.romaji || 'Unknown Title',
-      titleEnglish: anilistData.title?.english || null,
-      titleNative: anilistData.title?.native || null,
+      titleRomaji: externalData.title?.romaji || 'Unknown Title',
+      titleEnglish: externalData.title?.english || null,
+      titleNative: externalData.title?.native || null,
 
       // Media type and status
       type: 'ANIME',
-      status: this._mapAnilistStatus(anilistData.status),
+      status: this._mapAnilistStatus(externalData.status),
 
       // Images
-      coverImage: this._extractCoverImage(anilistData.coverImage),
-      bannerImage: anilistData.bannerImage || null,
+      coverImage: this._extractCoverImage(externalData.coverImage),
+      bannerImage: externalData.bannerImage || null,
 
       // Scoring and metadata
-      isAdult: anilistData.isAdult || false,
-      averageScore: this._normalizeScore(anilistData.averageScore),
-      description: this._cleanDescription(anilistData.description),
-
+      isAdult: externalData.isAdult || false,
+      averageScore: this._normalizeScore(externalData.averageScore),
+      description: this._cleanDescription(externalData.description),
       // ========== AnimeMetadata Nested Create ==========
       animeMetadata: {
         create: {
-          episodeCount: anilistData.episodes || null,
-          durationMin: anilistData.duration || null,
-          season: anilistData.season || null,
-          seasonYear: anilistData.seasonYear || null,
-          studio: this._extractStudio(anilistData.studios),
-          source: anilistData.source || null,
-          trailerUrl: this._buildTrailerUrl(anilistData.trailer),
+          episodeCount: externalData.episodes || null,
+          durationMin: externalData.duration || null,
+          season: externalData.season || null,
+          seasonYear: externalData.seasonYear || null,
+          studio: this._extractStudio(externalData.studios),
+          source: externalData.source || null,
+          trailerUrl: this._buildTrailerUrl(externalData.trailer),
         },
       },
     };
@@ -98,24 +97,24 @@ class AnimeAdapter {
    * Used when fetching multiple anime at once or when only
    * basic information is needed (e.g., for list displays).
    *
-   * @param {Object} anilistData - Lightweight AniList data
+   * @param {Object} externalData - Lightweight external data
    * @returns {Object} Minimal data for Prisma operations
    */
-  fromAnilistLightweight(anilistData) {
-    if (!anilistData || !anilistData.id) {
-      throw new Error('Invalid AniList data: missing required id field');
+  fromExternalLightweight(externalData) {
+    if (!externalData || !externalData.id) {
+      throw new Error('Invalid external data: missing required id field');
     }
 
     return {
-      idAnilist: anilistData.id,
-      titleRomaji: anilistData.title?.romaji || 'Unknown Title',
+      idAnilist: externalData.id,
+      titleRomaji: externalData.title?.romaji || 'Unknown Title',
       type: 'ANIME',
-      coverImage: this._extractCoverImage(anilistData.coverImage),
+      coverImage: this._extractCoverImage(externalData.coverImage),
       lastSyncedAt: new Date(),
 
       animeMetadata: {
         create: {
-          episodeCount: anilistData.episodes || null,
+          episodeCount: externalData.episodes || null,
         },
       },
     };

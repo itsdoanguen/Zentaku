@@ -62,21 +62,20 @@ export interface SearchResult<T> {
  * Media entity interface (basic structure)
  */
 export interface MediaEntity {
-  id?: number;
+  id?: number | bigint;
   lastSyncedAt?: Date | null;
   type?: MediaType;
-  [key: string]: unknown;
 }
 
 /**
  * Base Media Repository Interface
  */
 export interface IMediaRepository {
-  findById(externalId: number): Promise<MediaEntity | null>;
+  findByExternalId(externalId: number): Promise<MediaEntity | null>;
+  findManyByExternalIds(externalIds: number[]): Promise<MediaEntity[]>;
   upsertAnime(data: Partial<MediaEntity>): Promise<MediaEntity>;
-  search(query: string, pagination: PaginationOptions): Promise<MediaEntity[]>;
-  count(filter: { query?: string }): Promise<number>;
-  findMany(externalIds: number[]): Promise<MediaEntity[]>;
+  searchByTitle(query: string, pagination: PaginationOptions): Promise<MediaEntity[]>;
+  countByQuery(filter: { query?: string }): Promise<number>;
 }
 
 /**
@@ -84,16 +83,14 @@ export interface IMediaRepository {
  */
 export interface IExternalClient {
   fetchById(externalId: number): Promise<unknown>;
-  getTrending(mediaType: MediaType, pagination: PaginationOptions): Promise<unknown[]>;
 }
 
 /**
  * Data Adapter Interface
  */
 export interface IMediaAdapter {
-  fromAnilist(externalData: unknown): Partial<MediaEntity>;
-  toResponse(dbData: MediaEntity): unknown;
   fromExternal(externalData: unknown): Partial<MediaEntity>;
+  toResponse(dbData: unknown): unknown;
 }
 
 /**
@@ -311,7 +308,7 @@ export abstract class BaseMediaService extends BaseService {
       }
 
       // Transform using adapter
-      const transformedData = this.adapter.fromAnilist(externalData);
+      const transformedData = this.adapter.fromExternal(externalData);
 
       // Add sync metadata
       transformedData.lastSyncedAt = new Date();
@@ -377,7 +374,7 @@ export abstract class BaseMediaService extends BaseService {
    */
   protected async _getFromDatabase(externalId: number): Promise<MediaEntity | null> {
     try {
-      const media = await this.dbRepository.findById(externalId);
+      const media = await this.dbRepository.findByExternalId(externalId);
 
       if (media) {
         this._logDebug(`Found ${this.getMediaType()} in database`, { externalId });
@@ -432,7 +429,7 @@ export abstract class BaseMediaService extends BaseService {
       this._logInfo(`Searching ${this.getMediaType()}`, { query, page, perPage });
 
       // Search in database first
-      const results = await this.dbRepository.search(query, {
+      const results = await this.dbRepository.searchByTitle(query, {
         skip: pagination.skip,
         take: pagination.take,
       });
@@ -441,51 +438,10 @@ export abstract class BaseMediaService extends BaseService {
       const formattedResults = results.map((item) => this.adapter.toResponse(item));
 
       // Get total count for pagination
-      const total = await this.dbRepository.count({ query });
-
+      const total = await this.dbRepository.countByQuery({ query });
       return {
         items: formattedResults,
         pagination: this._buildPaginationMeta(page, perPage, total),
-      };
-    }, context);
-  }
-
-  /**
-   * Get trending media
-   *
-   * Fetches trending media from external API and formats the response.
-   * Can be overridden by subclasses for specific implementations.
-   *
-   * @param page - Page number (default: 1)
-   * @param perPage - Items per page (default: 20)
-   * @returns Trending media with pagination metadata
-   *
-   * @example
-   * const trending = await service.getTrending(1, 10);
-   */
-  async getTrending(page: number = 1, perPage: number = 20): Promise<SearchResult<unknown>> {
-    const context = 'getTrending()';
-
-    return this._executeWithErrorHandling(async () => {
-      const pagination = this._getPaginationParams(page, perPage);
-
-      this._logInfo(`Fetching trending ${this.getMediaType()}`, { page, perPage });
-
-      // Fetch from external API
-      const trendingData = await this.externalClient.getTrending(this.getMediaType(), {
-        skip: pagination.skip,
-        take: pagination.take,
-      });
-
-      // Transform and format
-      const formatted = trendingData.map((item) => {
-        const transformed = this.adapter.fromExternal(item);
-        return this.adapter.toResponse(transformed as MediaEntity);
-      });
-
-      return {
-        items: formatted,
-        pagination: this._buildPaginationMeta(page, perPage, formatted.length),
       };
     }, context);
   }
@@ -520,8 +476,7 @@ export abstract class BaseMediaService extends BaseService {
       });
 
       // Fetch all from database
-      const mediaItems = await this.dbRepository.findMany(externalIds);
-
+      const mediaItems = await this.dbRepository.findManyByExternalIds(externalIds);
       // Check which need sync
       const needSync = mediaItems.filter((m) => this._shouldSync(m));
 
@@ -538,7 +493,7 @@ export abstract class BaseMediaService extends BaseService {
       }
 
       // Re-fetch after sync
-      const updatedItems = await this.dbRepository.findMany(externalIds);
+      const updatedItems = await this.dbRepository.findManyByExternalIds(externalIds);
 
       // Format responses
       return updatedItems.map((item) => this.adapter.toResponse(item));
