@@ -101,9 +101,7 @@ export interface AuthenticatedRequest extends Request {
 /**
  * Base service interface
  */
-export interface IBaseService {
-  [key: string]: unknown;
-}
+export interface IBaseService {}
 
 /**
  * Base Controller Abstract Class
