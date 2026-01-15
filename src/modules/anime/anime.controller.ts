@@ -28,6 +28,8 @@ class AnimeController extends BaseController {
     super(animeService);
 
     this.service = animeService;
+
+    this.getAnimeDetail = this.getAnimeDetail.bind(this);
   }
 
   // ==================== PUBLIC API ====================

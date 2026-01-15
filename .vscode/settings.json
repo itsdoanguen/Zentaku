@@ -54,6 +54,7 @@
     "anilist",
     "Anilist",
     "animes",
+    "customfav",
     "dailymotion",
     "Dailymotion",
     "favourites",
@@ -63,6 +64,7 @@
     "perpage",
     "romaji",
     "Romaji",
+    "topbar",
     "zentaku"
   ]
 }

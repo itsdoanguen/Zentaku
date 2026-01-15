@@ -10,6 +10,8 @@
  * @module AnimeLoader
  */
 
+import logger from '../../shared/utils/logger';
+
 /**
  * Load anime module dependencies into container
  *
@@ -23,7 +25,9 @@ const loadAnime = (container: any): void => {
   container.register(
     'animeAdapter',
     () => {
-      const AnimeAdapter = require('../../modules/anime/anime.adapter');
+      const AnimeAdapter =
+        require('../../modules/anime/anime.adapter').default ||
+        require('../../modules/anime/anime.adapter');
 
       const adapter = new AnimeAdapter();
 
@@ -41,7 +45,9 @@ const loadAnime = (container: any): void => {
   container.register(
     'animeRepository',
     (c: any) => {
-      const AnimeRepository = require('../../modules/anime/anime.repository');
+      const AnimeRepository =
+        require('../../modules/anime/anime.repository').default ||
+        require('../../modules/anime/anime.repository');
       const prisma = c.resolve('prisma');
 
       const repository = new AnimeRepository(prisma);
@@ -61,7 +67,9 @@ const loadAnime = (container: any): void => {
   container.register(
     'animeService',
     (c: any) => {
-      const AnimeService = require('../../modules/anime/anime.service');
+      const AnimeService =
+        require('../../modules/anime/anime.service').default ||
+        require('../../modules/anime/anime.service');
 
       const repository = c.resolve('animeRepository');
       const adapter = c.resolve('animeAdapter');
@@ -81,7 +89,9 @@ const loadAnime = (container: any): void => {
   container.register(
     'animeController',
     (c: any) => {
-      const AnimeController = require('../../modules/anime/anime.controller');
+      const AnimeController =
+        require('../../modules/anime/anime.controller').default ||
+        require('../../modules/anime/anime.controller');
       const animeService = c.resolve('animeService');
 
       const controller = new AnimeController(animeService);
@@ -94,8 +104,7 @@ const loadAnime = (container: any): void => {
     }
   );
 
-  const logger = container.resolve('logger');
-  logger.info('[Loader] Anime module registered ✓');
+  logger.info('[Loader] Anime module registered');
 };
 
 export = loadAnime;

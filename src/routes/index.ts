@@ -6,7 +6,7 @@ import express from 'express';
  * @param {Object} container - DI container instance
  * @returns {Router} Express router with all configured routes
  */
-const initializeRoutes = (container: any): Router => {
+const initializeRoutes = (container: unknown): Router => {
   const router = express.Router();
 
   const animeRoutes = require('../modules/anime/anime.routes');

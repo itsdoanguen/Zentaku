@@ -2,11 +2,10 @@
   "name": "zentaku",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",
-    "start:dev": "tsx watch src/server.ts",
-    "dev": "nodemon",
+    "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "build:watch": "tsc --watch",
     "type-check": "tsc --noEmit",

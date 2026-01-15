@@ -61,12 +61,7 @@
     /* Completeness */
     "skipLibCheck": true
   },
-  "include": [
-    "src/**/*",
-    "src/@types/**/*",
-    "src/server.ts",
-    "prisma/schema.prisma"
-  ],
+  "include": ["src/**/*", "src/@types/**/*", "prisma/schema.prisma"],
   "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts", "test"],
   "ts-node": {
     "require": ["tsconfig-paths/register"],

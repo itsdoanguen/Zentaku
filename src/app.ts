@@ -1,22 +1,24 @@
-const express = require('express');
-const dotenv = require('dotenv');
-const cors = require('cors');
-const helmet = require('helmet');
-const { errorHandler, notFound } = require('./middlewares/errorHandler');
-const { swaggerUi, swaggerSpec } = require('./config/swagger');
-const container = require('./config/container');
+import cors from 'cors';
+import dotenv from 'dotenv';
+import express, { type Application, type NextFunction, type Request, type Response } from 'express';
+import helmet from 'helmet';
+import container from './config/container';
+import { swaggerSpec, swaggerUi } from './config/swagger';
+import { errorHandler, notFound } from './middlewares/errorHandler';
 
 dotenv.config();
 
 container.initialize();
 
-const app = express();
+const app: Application = express();
 
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use((req, res, next) => {
+
+// Inject container into request
+app.use((req: Request, _res: Response, next: NextFunction) => {
   req.container = container;
   next();
 });
@@ -42,4 +44,4 @@ app.use(notFound);
 // Error handler
 app.use(errorHandler);
 
-module.exports = app;
+export default app;

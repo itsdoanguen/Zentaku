@@ -10,6 +10,8 @@
  * @module InfrastructureLoader
  */
 
+import logger from '../../shared/utils/logger';
+
 /**
  * Load infrastructure dependencies into container
  *
@@ -23,7 +25,7 @@ const loadInfrastructure = (container: any): void => {
   container.register(
     'prisma',
     () => {
-      const prisma = require('../database');
+      const prisma = require('../database').default || require('../database');
       return prisma;
     },
     {
@@ -53,7 +55,6 @@ const loadInfrastructure = (container: any): void => {
   container.register(
     'logger',
     () => {
-      const logger = require('../../shared/utils/logger');
       return logger;
     },
     {
@@ -68,7 +69,9 @@ const loadInfrastructure = (container: any): void => {
   container.register(
     'anilistAnimeClient',
     () => {
-      const AnilistAnimeClient = require('../../infrastructure/external/anilist/AnilistAnimeClient');
+      const AnilistAnimeClient =
+        require('../../infrastructure/external/anilist/AnilistAnimeClient').default ||
+        require('../../infrastructure/external/anilist/AnilistAnimeClient');
       const client = new AnilistAnimeClient();
       return client;
     },
@@ -85,7 +88,9 @@ const loadInfrastructure = (container: any): void => {
   container.register(
     'anilistMetadataAdapter',
     () => {
-      const AnilistMetadataAdapter = require('../../infrastructure/external/anilist/AnilistMetadataAdapter');
+      const AnilistMetadataAdapter =
+        require('../../infrastructure/external/anilist/AnilistMetadataAdapter').default ||
+        require('../../infrastructure/external/anilist/AnilistMetadataAdapter');
       const adapter = new AnilistMetadataAdapter();
       return adapter;
     },
@@ -95,8 +100,7 @@ const loadInfrastructure = (container: any): void => {
     }
   );
 
-  const logger = container.resolve('logger');
-  logger.info('[Loader] Infrastructure layer registered ✓');
+  logger.info('[Loader] Infrastructure layer registered');
 };
 
 export = loadInfrastructure;

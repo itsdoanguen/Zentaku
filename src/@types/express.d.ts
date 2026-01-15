@@ -1,5 +1,7 @@
 // Global type declarations for the application
 
+import type Container from '../config/container';
+
 declare module 'express' {
   interface Request {
     user?: {
@@ -7,6 +9,7 @@ declare module 'express' {
       email: string;
       role?: string;
     };
+    container?: typeof Container;
   }
 }
 

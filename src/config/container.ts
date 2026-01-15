@@ -11,12 +11,12 @@
  * @module Container
  */
 
-const logger = require('../shared/utils/logger');
+import logger from '../shared/utils/logger';
 
 /**
  * Factory function type that creates instances
  */
-type FactoryFunction<T = any> = (container: Container) => T;
+type FactoryFunction<T = unknown> = (container: Container) => T;
 
 /**
  * Registration options for dependencies
@@ -24,18 +24,18 @@ type FactoryFunction<T = any> = (container: Container) => T;
 interface RegistrationOptions {
   singleton?: boolean;
   dependencies?: string[];
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
  * Internal dependency configuration
  */
-interface DependencyConfig<T = any> {
+interface DependencyConfig<T = unknown> {
   factory: FactoryFunction<T>;
   options: {
     singleton: boolean;
     dependencies: string[];
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -87,7 +87,7 @@ class Container {
    *   );
    * }, { singleton: true });
    */
-  register<T = any>(
+  register<T = unknown>(
     name: string,
     factory: FactoryFunction<T>,
     options: RegistrationOptions = {}
@@ -123,12 +123,12 @@ class Container {
    * @example
    * const animeService = container.resolve('animeService');
    */
-  resolve<T = any>(name: string): T {
-    if (!this.dependencies.has(name)) {
+  resolve<T = unknown>(name: string): T {
+    const config = this.dependencies.get(name);
+
+    if (!config) {
       throw new Error(`Dependency '${name}' is not registered in the container`);
     }
-
-    const config = this.dependencies.get(name)!;
 
     if (config.options.singleton && this.singletons.has(name)) {
       return this.singletons.get(name) as T;
@@ -158,12 +158,13 @@ class Container {
    * @param {string} name - Name of the dependency
    * @returns {any} A new instance of the dependency
    */
-  create<T = any>(name: string): T {
-    if (!this.dependencies.has(name)) {
+  create<T = unknown>(name: string): T {
+    const config = this.dependencies.get(name);
+
+    if (!config) {
       throw new Error(`Dependency '${name}' is not registered in the container`);
     }
 
-    const config = this.dependencies.get(name)!;
     logger.debug(`[Container] Creating new instance: ${name}`);
     return config.factory(this) as T;
   }
