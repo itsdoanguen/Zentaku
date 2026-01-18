@@ -7,6 +7,10 @@ import type {
   AnimeTitle,
   CoverImage,
   MediaDate,
+  MediaRanking,
+  MediaScoreDistribution,
+  MediaStatistics,
+  MediaStatusDistribution,
   NextAiringEpisode,
   PageInfo,
   Studio,
@@ -95,38 +99,10 @@ export interface AnimeSeasonalResult {
 }
 
 // ========== Statistics Types ==========
-
-export interface Ranking {
-  id: number;
-  rank: number;
-  type: string;
-  format?: string;
-  year?: number;
-  season?: string;
-  allTime?: boolean;
-  context: string;
-}
-
-export interface ScoreDistribution {
-  score: number;
-  amount: number;
-}
-
-export interface StatusDistribution {
-  status: string;
-  amount: number;
-}
-
-export interface AnimeStatistics {
-  id: number;
-  averageScore?: number;
-  meanScore?: number;
-  rankings?: Ranking[];
-  stats?: {
-    scoreDistribution?: ScoreDistribution[];
-    statusDistribution?: StatusDistribution[];
-  };
-}
+export type AnimeStatistics = MediaStatistics;
+export type Ranking = MediaRanking;
+export type ScoreDistribution = MediaScoreDistribution;
+export type StatusDistribution = MediaStatusDistribution;
 
 // ========== Streaming Types ==========
 
@@ -173,7 +149,7 @@ export interface AnimeSeasonalResponse {
 }
 
 export interface AnimeStatisticsResponse {
-  Media: AnimeStatistics;
+  Media: MediaStatistics;
 }
 
 export interface StreamingEpisodesResponse {

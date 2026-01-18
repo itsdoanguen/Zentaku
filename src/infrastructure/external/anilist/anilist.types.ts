@@ -106,3 +106,37 @@ export interface MediaNode {
   season?: string;
   seasonYear?: number;
 }
+
+// ========== Statistics Types ==========
+
+export interface MediaRanking {
+  id: number;
+  rank: number;
+  type: string;
+  format?: string;
+  year?: number;
+  season?: string;
+  allTime?: boolean;
+  context: string;
+}
+
+export interface MediaScoreDistribution {
+  score: number;
+  amount: number;
+}
+
+export interface MediaStatusDistribution {
+  status: string;
+  amount: number;
+}
+
+export interface MediaStatistics {
+  id: number;
+  averageScore?: number;
+  meanScore?: number;
+  rankings?: MediaRanking[];
+  stats?: {
+    scoreDistribution?: MediaScoreDistribution[];
+    statusDistribution?: MediaStatusDistribution[];
+  };
+}

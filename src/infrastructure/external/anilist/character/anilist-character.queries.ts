@@ -13,7 +13,7 @@ query ($id: Int) {
     media {
       nodes {
         id
-        title { romaji english }
+        title { romaji english native}
         coverImage { large }
         type
         format

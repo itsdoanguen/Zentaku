@@ -1,6 +1,6 @@
 import { NotFoundError } from '../../../../shared/utils/error';
 import logger from '../../../../shared/utils/logger';
-import type { PageInfo } from '../anilist.types';
+import type { MediaStatistics, PageInfo } from '../anilist.types';
 import AnilistClient from '../AnilistClient';
 import {
   ANIME_BATCH_INFO_QS,
@@ -25,7 +25,6 @@ import type {
   AnimeSearchResult,
   AnimeSeasonalResponse,
   AnimeSeasonalResult,
-  AnimeStatistics,
   AnimeStatisticsResponse,
   StreamingEpisode,
   StreamingEpisodesResponse,
@@ -239,9 +238,9 @@ class AnilistAnimeClient extends AnilistClient {
    * Fetch statistics for an anime
    *
    * @param {number} animeId - Anime ID
-   * @returns {Promise<AnimeStatistics>} - Anime statistics
+   * @returns {Promise<MediaStatistics>} - Anime statistics
    */
-  async fetchStatistics(animeId: number): Promise<AnimeStatistics> {
+  async fetchStatistics(animeId: number): Promise<MediaStatistics> {
     const data = await this.executeQuery<AnimeStatisticsResponse>(
       ANIME_STATS_QS,
       { id: animeId },

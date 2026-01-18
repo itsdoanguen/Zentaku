@@ -22,7 +22,7 @@ query ($id: Int) {
     staffMedia(page: 1, perPage: 25, sort: POPULARITY_DESC) {
       nodes {
         id
-        title { romaji english }
+        title { romaji english native }
         coverImage { large }
         type
         format
