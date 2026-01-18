@@ -1,6 +1,6 @@
 import type { ExternalIdField, MediaType } from '../../core/base/BaseMediaService';
 import { BaseMediaService } from '../../core/base/BaseMediaService';
-import type AnilistAnimeClient from '../../infrastructure/external/anilist/AnilistAnimeClient';
+import type AnilistAnimeClient from '../../infrastructure/external/anilist/anime/AnilistAnimeClient';
 import type AnimeAdapter from './anime.adapter';
 import type AnimeRepository from './anime.repository';
 

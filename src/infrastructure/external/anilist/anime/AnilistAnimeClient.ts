@@ -1,5 +1,7 @@
-import { NotFoundError } from '../../../shared/utils/error';
-import logger from '../../../shared/utils/logger';
+import { NotFoundError } from '../../../../shared/utils/error';
+import logger from '../../../../shared/utils/logger';
+import type { CharacterEdge, PageInfo, StaffEdge } from '../anilist.types';
+import AnilistClient from '../AnilistClient';
 import {
   ANIME_BATCH_INFO_QS,
   ANIME_CHARACTERS_QS,
@@ -12,9 +14,7 @@ import {
   ANIME_STAFF_QS,
   ANIME_STATS_QS,
   ANIME_WHERE_TO_WATCH_QS,
-  CHARACTER_INFO_QS,
-  STAFF_INFO_QS,
-} from './anilist.queries';
+} from './anilist-anime.queries';
 import type {
   AnimeBatchInfo,
   AnimeBatchResponse,
@@ -29,19 +29,11 @@ import type {
   AnimeSeasonalResult,
   AnimeStatistics,
   AnimeStatisticsResponse,
-  CharacterEdge,
-  CharacterInfo,
-  CharacterInfoResponse,
   CharactersResponse,
-  PageInfo,
-  StaffEdge,
-  StaffInfo,
-  StaffInfoResponse,
   StaffResponse,
   StreamingEpisode,
   StreamingEpisodesResponse,
-} from './anilist.types';
-import AnilistClient from './AnilistClient';
+} from './anilist-anime.types';
 
 /**
  * AniList Anime Client
@@ -327,48 +319,6 @@ class AnilistAnimeClient extends AnilistClient {
     );
 
     return data.Media?.streamingEpisodes || [];
-  }
-
-  /**
-   * Fetch detailed character information by ID
-   *
-   * @param {number} characterId - Character ID
-   * @returns {Promise<CharacterInfo>} - Character information
-   * @throws {NotFoundError} - If character not found
-   */
-  async fetchCharacterById(characterId: number): Promise<CharacterInfo> {
-    const data = await this.executeQuery<CharacterInfoResponse>(
-      CHARACTER_INFO_QS,
-      { id: characterId },
-      `fetchCharacterById(${characterId})`
-    );
-
-    if (!data?.Character) {
-      throw new NotFoundError(`Character with ID ${characterId} not found`);
-    }
-
-    return data.Character;
-  }
-
-  /**
-   * Fetch detailed staff information by ID
-   *
-   * @param {number} staffId - Staff ID
-   * @returns {Promise<StaffInfo>} - Staff information
-   * @throws {NotFoundError} - If staff not found
-   */
-  async fetchStaffById(staffId: number): Promise<StaffInfo> {
-    const data = await this.executeQuery<StaffInfoResponse>(
-      STAFF_INFO_QS,
-      { id: staffId },
-      `fetchStaffById(${staffId})`
-    );
-
-    if (!data?.Staff) {
-      throw new NotFoundError(`Staff with ID ${staffId} not found`);
-    }
-
-    return data.Staff;
   }
 }
 

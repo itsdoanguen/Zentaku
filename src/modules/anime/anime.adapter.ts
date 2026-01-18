@@ -10,14 +10,15 @@
 
 import type { AnimeMetadata, MediaItem } from '@prisma/client';
 import type {
-  AnimeInfo,
-  AnimeLightweight,
   CoverImage,
   Studio,
   Tag,
   Trailer,
 } from '../../infrastructure/external/anilist/anilist.types';
-
+import type {
+  AnimeInfo,
+  AnimeLightweight,
+} from '../../infrastructure/external/anilist/anime/anilist-anime.types';
 /**
  * Prisma MediaItem with AnimeMetadata relation
  */

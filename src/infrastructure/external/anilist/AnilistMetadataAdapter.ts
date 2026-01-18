@@ -12,13 +12,11 @@ import type {
   StaffInfo,
   TrendingOptions,
 } from '../../../core/interfaces/IMetadataSource';
-import AnilistAnimeClient from './AnilistAnimeClient';
-import type {
-  AnimeSearchCriteria,
-  AnimeStatistics,
-  CharacterEdge,
-  StaffEdge,
-} from './anilist.types';
+import type { CharacterEdge, StaffEdge } from './anilist.types';
+import type { AnimeSearchCriteria, AnimeStatistics } from './anime/anilist-anime.types';
+import AnilistAnimeClient from './anime/AnilistAnimeClient';
+import AnilistCharacterClient from './character/AnilistCharacterClient';
+import AnilistStaffClient from './staff/AnilistStaffClient';
 
 /**
  * AniList Metadata Adapter
@@ -29,9 +27,13 @@ import type {
 class AnilistMetadataAdapter implements BaseMetadataSource {
   readonly sourceName = 'AniList';
   private readonly animeClient: AnilistAnimeClient;
+  private readonly characterClient: AnilistCharacterClient;
+  private readonly staffClient: AnilistStaffClient;
 
   constructor() {
     this.animeClient = new AnilistAnimeClient();
+    this.characterClient = new AnilistCharacterClient();
+    this.staffClient = new AnilistStaffClient();
   }
 
   // ==================== PRIVATE METHODS ===================
@@ -278,7 +280,7 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
    * @returns Character information
    */
   async getCharacter(characterId: number): Promise<CharacterInfo> {
-    return this.animeClient.fetchCharacterById(characterId) as unknown as CharacterInfo;
+    return this.characterClient.fetchById(characterId) as unknown as CharacterInfo;
   }
 
   /**
@@ -288,7 +290,7 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
    * @returns Staff information
    */
   async getStaffById(staffId: number): Promise<StaffInfo> {
-    return this.animeClient.fetchStaffById(staffId) as unknown as StaffInfo;
+    return this.staffClient.fetchById(staffId) as unknown as StaffInfo;
   }
 
   /**
