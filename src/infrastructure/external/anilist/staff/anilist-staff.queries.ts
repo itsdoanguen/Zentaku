@@ -35,3 +35,27 @@ query ($id: Int) {
   }
 }
 `;
+
+export const MEDIA_STAFF_QS = `
+query ($id: Int, $type: MediaType, $page: Int, $perpage: Int) {
+  Media(id: $id, type: $type) {
+    staff(page: $page, perPage: $perpage) {
+      pageInfo {
+        total
+        currentPage
+        lastPage
+        hasNextPage
+        perPage
+      }
+      edges {
+        node {
+          id
+          name { full native }
+          image { large }
+        }
+        role
+      }
+    }
+  }
+}
+`;

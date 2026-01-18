@@ -3,7 +3,13 @@
  * TypeScript interfaces for character-specific GraphQL query responses
  */
 
-import type { CharacterImage, CharacterName, MediaNode } from '../anilist.types';
+import type {
+  CharacterEdge,
+  CharacterImage,
+  CharacterName,
+  MediaNode,
+  PageInfo,
+} from '../anilist.types';
 
 // ========== Character Types ==========
 
@@ -21,4 +27,13 @@ export interface CharacterInfo {
 
 export interface CharacterInfoResponse {
   Character: CharacterInfo;
+}
+
+export interface MediaCharactersResponse {
+  Media: {
+    characters: {
+      pageInfo: PageInfo;
+      edges: CharacterEdge[];
+    };
+  };
 }

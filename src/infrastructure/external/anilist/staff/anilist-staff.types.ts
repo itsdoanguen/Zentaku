@@ -3,7 +3,14 @@
  * TypeScript interfaces for staff-specific GraphQL query responses
  */
 
-import type { CharacterImage, CharacterName, MediaDate, MediaNode } from '../anilist.types';
+import type {
+  CharacterImage,
+  CharacterName,
+  MediaDate,
+  MediaNode,
+  PageInfo,
+  StaffEdge,
+} from '../anilist.types';
 
 // ========== Staff Types ==========
 
@@ -30,4 +37,13 @@ export interface StaffInfo {
 
 export interface StaffInfoResponse {
   Staff: StaffInfo;
+}
+
+export interface MediaStaffResponse {
+  Media: {
+    staff: {
+      pageInfo: PageInfo;
+      edges: StaffEdge[];
+    };
+  };
 }

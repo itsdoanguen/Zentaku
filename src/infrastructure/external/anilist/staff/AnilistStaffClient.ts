@@ -1,7 +1,8 @@
 import { NotFoundError } from '../../../../shared/utils/error';
+import type { PageInfo, StaffEdge } from '../anilist.types';
 import AnilistClient from '../AnilistClient';
-import { STAFF_INFO_QS } from './anilist-staff.queries';
-import type { StaffInfo, StaffInfoResponse } from './anilist-staff.types';
+import { MEDIA_STAFF_QS, STAFF_INFO_QS } from './anilist-staff.queries';
+import type { MediaStaffResponse, StaffInfo, StaffInfoResponse } from './anilist-staff.types';
 
 /**
  * AniList Staff Client
@@ -29,6 +30,33 @@ class AnilistStaffClient extends AnilistClient {
     }
 
     return data.Staff;
+  }
+
+  /**
+   * Fetch staff for ANY media (anime, manga, novel)
+   *
+   * @param {number} mediaId - Media ID
+   * @param {'ANIME' | 'MANGA'} mediaType - Media type
+   * @param {object} options - Pagination options
+   * @returns {Promise<{ pageInfo: PageInfo; edges: StaffEdge[] }>} - Staff with pageInfo and edges
+   */
+  async fetchByMediaId(
+    mediaId: number,
+    mediaType: 'ANIME' | 'MANGA',
+    options: { page?: number; perPage?: number } = {}
+  ): Promise<{ pageInfo: PageInfo; edges: StaffEdge[] }> {
+    const { page = 1, perPage = 25 } = options;
+
+    const data = await this.executeQuery<MediaStaffResponse>(
+      MEDIA_STAFF_QS,
+      { id: mediaId, type: mediaType, page, perpage: perPage },
+      `fetchStaff(${mediaType}:${mediaId})`
+    );
+
+    return {
+      pageInfo: data.Media?.staff?.pageInfo || ({} as PageInfo),
+      edges: data.Media?.staff?.edges || [],
+    };
   }
 }
 

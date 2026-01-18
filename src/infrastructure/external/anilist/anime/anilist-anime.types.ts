@@ -5,12 +5,10 @@
 
 import type {
   AnimeTitle,
-  CharacterEdge,
   CoverImage,
   MediaDate,
   NextAiringEpisode,
   PageInfo,
-  StaffEdge,
   Studio,
   Tag,
   Trailer,
@@ -171,24 +169,6 @@ export interface AnimeSeasonalResponse {
   Page: {
     pageInfo: PageInfo;
     media: AnimeSeasonalResult[];
-  };
-}
-
-export interface CharactersResponse {
-  Media: {
-    characters: {
-      pageInfo: PageInfo;
-      edges: CharacterEdge[];
-    };
-  };
-}
-
-export interface StaffResponse {
-  Media: {
-    staff: {
-      pageInfo: PageInfo;
-      edges: StaffEdge[];
-    };
   };
 }
 

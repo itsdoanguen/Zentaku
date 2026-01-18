@@ -26,3 +26,33 @@ query ($id: Int) {
   }
 }
 `;
+
+export const MEDIA_CHARACTERS_QS = `
+query ($id: Int, $type: MediaType, $page: Int, $perpage: Int) {
+  Media(id: $id, type: $type) {
+    characters(page: $page, perPage: $perpage) {
+      pageInfo {
+        total
+        currentPage
+        lastPage
+        hasNextPage
+        perPage
+      }
+      edges {
+        node {
+          id
+          name { full native }
+          image { large }
+        }
+        role
+        voiceActors(language: JAPANESE) {
+          id
+          name { full native }
+          image { large }
+          language
+        }
+      }
+    }
+  }
+}
+`;

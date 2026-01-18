@@ -1,17 +1,15 @@
 import { NotFoundError } from '../../../../shared/utils/error';
 import logger from '../../../../shared/utils/logger';
-import type { CharacterEdge, PageInfo, StaffEdge } from '../anilist.types';
+import type { PageInfo } from '../anilist.types';
 import AnilistClient from '../AnilistClient';
 import {
   ANIME_BATCH_INFO_QS,
-  ANIME_CHARACTERS_QS,
   ANIME_COVERS_BATCH_QS,
   ANIME_ID_SEARCH_QS,
   ANIME_INFO_LIGHTWEIGHT_QS,
   ANIME_INFO_QS,
   ANIME_SEARCH_CRITERIA_QS,
   ANIME_SEASON_TREND_QS,
-  ANIME_STAFF_QS,
   ANIME_STATS_QS,
   ANIME_WHERE_TO_WATCH_QS,
 } from './anilist-anime.queries';
@@ -29,8 +27,6 @@ import type {
   AnimeSeasonalResult,
   AnimeStatistics,
   AnimeStatisticsResponse,
-  CharactersResponse,
-  StaffResponse,
   StreamingEpisode,
   StreamingEpisodesResponse,
 } from './anilist-anime.types';
@@ -236,56 +232,6 @@ class AnilistAnimeClient extends AnilistClient {
     return {
       pageInfo: data.Page?.pageInfo || ({} as PageInfo),
       media: data.Page?.media || [],
-    };
-  }
-
-  /**
-   * Fetch characters for an anime
-   *
-   * @param {number} animeId - Anime ID
-   * @param {object} options - Pagination options
-   * @returns {Promise<{ pageInfo: PageInfo; edges: CharacterEdge[] }>} - Characters with pageInfo and edges
-   */
-  async fetchCharacters(
-    animeId: number,
-    options: { page?: number; perPage?: number } = {}
-  ): Promise<{ pageInfo: PageInfo; edges: CharacterEdge[] }> {
-    const { page = 1, perPage = 10 } = options;
-
-    const data = await this.executeQuery<CharactersResponse>(
-      ANIME_CHARACTERS_QS,
-      { id: animeId, page, perpage: perPage },
-      `fetchAnimeCharacters(${animeId})`
-    );
-
-    return {
-      pageInfo: data.Media?.characters?.pageInfo || ({} as PageInfo),
-      edges: data.Media?.characters?.edges || [],
-    };
-  }
-
-  /**
-   * Fetch staff for an anime
-   *
-   * @param {number} animeId - Anime ID
-   * @param {object} options - Pagination options
-   * @returns {Promise<{ pageInfo: PageInfo; edges: StaffEdge[] }>} - Staff with pageInfo and edges
-   */
-  async fetchStaff(
-    animeId: number,
-    options: { page?: number; perPage?: number } = {}
-  ): Promise<{ pageInfo: PageInfo; edges: StaffEdge[] }> {
-    const { page = 1, perPage = 10 } = options;
-
-    const data = await this.executeQuery<StaffResponse>(
-      ANIME_STAFF_QS,
-      { id: animeId, page, perpage: perPage },
-      `fetchAnimeStaff(${animeId})`
-    );
-
-    return {
-      pageInfo: data.Media?.staff?.pageInfo || ({} as PageInfo),
-      edges: data.Media?.staff?.edges || [],
     };
   }
 

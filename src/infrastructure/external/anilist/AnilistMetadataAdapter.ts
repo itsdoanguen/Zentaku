@@ -239,28 +239,42 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
    * Get characters for a media
    *
    * @param mediaId - Media ID
+   * @param mediaType - Media type (defaults to ANIME)
    * @param options - Pagination options
    * @returns Characters with pageInfo and edges
    */
   async getCharacters(
     mediaId: number,
+    mediaType: MediaType = 'ANIME',
     options: { page?: number; perPage?: number } = {}
   ): Promise<{ pageInfo: PageInfo; edges: CharacterEdge[] }> {
-    return this.animeClient.fetchCharacters(mediaId, this.mapSearchOptionsToAnilistType(options));
+    if (mediaType !== 'ANIME' && mediaType !== 'MANGA') {
+      throw new Error(
+        `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
+      );
+    }
+    return this.characterClient.fetchByMediaId(mediaId, mediaType, options);
   }
 
   /**
    * Get staff for a media
    *
    * @param mediaId - Media ID
+   * @param mediaType - Media type (defaults to ANIME)
    * @param options - Pagination options
    * @returns Staff with pageInfo and edges
    */
   async getStaff(
     mediaId: number,
+    mediaType: MediaType = 'ANIME',
     options: { page?: number; perPage?: number } = {}
   ): Promise<{ pageInfo: PageInfo; edges: StaffEdge[] }> {
-    return this.animeClient.fetchStaff(mediaId, options);
+    if (mediaType !== 'ANIME' && mediaType !== 'MANGA') {
+      throw new Error(
+        `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
+      );
+    }
+    return this.staffClient.fetchByMediaId(mediaId, mediaType, options);
   }
 
   /**

@@ -122,60 +122,6 @@ query ($genres: [String], $season: MediaSeason, $seasonYear: Int, $format: Media
 }
 `;
 
-export const ANIME_CHARACTERS_QS = `
-query ($id: Int, $page: Int, $perpage: Int) {
-  Media(id: $id) {
-    characters(page: $page, perPage: $perpage) {
-      pageInfo {
-        total
-        currentPage
-        lastPage
-        hasNextPage
-        perPage
-      }
-      edges {
-        node {
-          id
-          name { full native }
-          image { large }
-        }
-        role
-        voiceActors {
-          id
-          name { full native }
-          image { large }
-          language
-        }
-      }
-    }
-  }
-}
-`;
-
-export const ANIME_STAFF_QS = `
-query ($id: Int, $page: Int, $perpage: Int) {
-  Media(id: $id) {
-    staff(page: $page, perPage: $perpage) {
-      pageInfo {
-        total
-        currentPage
-        lastPage
-        hasNextPage
-        perPage
-      }
-      edges {
-        node {
-          id
-          name { full native }
-          image { large }
-        }
-        role
-      }
-    }
-  }
-}
-`;
-
 export const ANIME_STATS_QS = `
 query ($id: Int) {
   Media(id: $id, type: ANIME) {
