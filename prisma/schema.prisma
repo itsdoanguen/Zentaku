@@ -156,7 +156,7 @@ model MediaItem {
   favorites    Int?
   meanScore    Float?
 
-  // Inheritance Extensions (1-1 Optional)
+  // Inheritance Extensions
   animeMetadata AnimeMetadata?
   bookMetadata  BookMetadata?
 
@@ -221,14 +221,14 @@ model LibraryEntry {
 
   progressLogs ProgressLog[]
 
-  @@unique([userId, mediaId]) // Mỗi user chỉ có 1 entry cho 1 media
+  @@unique([userId, mediaId])
   @@map("library_entries")
 }
 
 model ProgressLog {
   id             BigInt   @id @default(autoincrement())
   entryId        BigInt
-  userId         BigInt // Denormalized for easier querying
+  userId         BigInt
   progressNumber Int
   createdAt      DateTime @default(now())
 
@@ -250,7 +250,7 @@ model CustomList {
   description String?     @db.Text
   privacy     PrivacyMode @default(PUBLIC)
   bannerImage String?
-  settings    Json? // { viewMode: "grid", sortBy: "score" }
+  settings    Json?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -259,7 +259,7 @@ model CustomList {
   invitations ListInvitation[]
 
   // Polymorphic Relations
-  activities Activity[] // Activity liên quan đến List này
+  activities Activity[]
 
   @@map("custom_lists")
 }
@@ -313,7 +313,7 @@ model Community {
   owner      User              @relation(fields: [ownerId], references: [id])
   members    CommunityMember[]
   channels   Channel[]
-  activities Activity[] // Activity: "Joined Server X"
+  activities Activity[]
 
   @@map("communities")
 }
@@ -334,8 +334,8 @@ model CommunityMember {
 
 model Channel {
   id          BigInt      @id @default(autoincrement())
-  communityId BigInt? // Null nếu là DM/Group Chat
-  name        String? // Null nếu là DM
+  communityId BigInt?
+  name        String?
   type        ChannelType
   isPrivate   Boolean     @default(false)
   position    Int         @default(0)
@@ -343,10 +343,9 @@ model Channel {
 
   community Community? @relation(fields: [communityId], references: [id], onDelete: Cascade)
 
-  participants ChannelParticipant[] // Cho DM
+  participants ChannelParticipant[]
   messages     Message[]
 
-  // Extension: Watch Party
   watchRoomConfig WatchRoomConfig?
 
   @@map("channels")
@@ -371,7 +370,7 @@ model Message {
   senderId        BigInt
   replyToId       BigInt?
   content         String?  @db.Text
-  attachments     Json? // [{url: "...", type: "img"}]
+  attachments     Json?
   isSystemMessage Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -385,44 +384,41 @@ model Message {
 }
 
 // =========================================================
-// 7. INTEGRATION BRIDGES (Kết nối Chat - Media - User)
+// 7. INTEGRATION BRIDGES 
 // =========================================================
 
-// BRIDGE 1: Watch Party Config (Chat + Media)
+// BRIDGE 1: Watch Party Config 
 model WatchRoomConfig {
-  channelId BigInt  @id // PK đồng thời là FK
+  channelId BigInt  @id
   channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
-  mediaId BigInt? // Phim đang chiếu
+  mediaId BigInt?
   media   MediaItem? @relation(fields: [mediaId], references: [id])
 
-  hostId BigInt? // Người đang cầm remote
+  hostId BigInt?
   host   User?   @relation(fields: [hostId], references: [id])
 
   isPlaying        Boolean  @default(false)
   currentTimestamp Float    @default(0.0)
   currentSourceUrl String?
-  playlistQueue    Json? // [{mediaId: 1, ep: 2}, ...]
-  settings         Json? // { allowChat: true }
+  playlistQueue    Json?
+  settings         Json?
   lastSyncedAt     DateTime @default(now())
 
   @@map("watch_room_configs")
 }
 
 // BRIDGE 2: Activities & Comments (Polymorphic)
-// Sử dụng "Prisma way": Explicit Nullable Relations
-// Thay vì `target_type` string, ta dùng quan hệ trực tiếp
 
 model Activity {
   id        BigInt   @id @default(autoincrement())
   userId    BigInt
   type      String // "WATCHED", "RATED", "JOINED", "CREATED_LIST"
   createdAt DateTime @default(now())
-  metaData  Json? // Snapshot data (tên phim tại thời điểm xem)
+  metaData  Json?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Polymorphic Targets (Chỉ 1 trong các field này được có giá trị)
   mediaId BigInt?
   media   MediaItem? @relation(fields: [mediaId], references: [id])
 
@@ -449,12 +445,9 @@ model Comment {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Polymorphic Targets
   mediaId BigInt?
-  //media       MediaItem? @relation... (Optional: Nếu muốn comment vào phim)
 
   listId BigInt?
-  //list        CustomList? @relation... (Optional: Nếu muốn comment vào list)
 
   activityId BigInt?
   activity   Activity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
