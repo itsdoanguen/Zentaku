@@ -3,6 +3,152 @@
  * Contains all GraphQL queries for anime-specific operations
  */
 
+export const ANIME_OVERVIEW_QS = `
+query ($id: Int) {
+  Media(id: $id, type: ANIME) {
+    id
+    
+    relations {
+      edges {
+        id
+        relationType
+        node {
+          id
+          type
+          format
+          title {
+            romaji
+            english
+            native
+          }
+          coverImage {
+            large
+          }
+          status
+          episodes
+          chapters
+          volumes
+          averageScore
+        }
+      }
+    }
+    
+    characters(page: 1, perPage: 6, sort: [ROLE, RELEVANCE]) {
+      edges {
+        id
+        role
+        voiceActors(language: JAPANESE, sort: [RELEVANCE]) {
+          id
+          name {
+            full
+            native
+          }
+          image {
+            large
+          }
+          language
+        }
+        node {
+          id
+          name {
+            full
+            native
+          }
+          image {
+            large
+          }
+        }
+      }
+      pageInfo {
+        total
+        currentPage
+        lastPage
+        hasNextPage
+      }
+    }
+    
+    staff(page: 1, perPage: 6, sort: [RELEVANCE]) {
+      edges {
+        id
+        role
+        node {
+          id
+          name {
+            full
+            native
+          }
+          image {
+            large
+          }
+          primaryOccupations
+        }
+      }
+      pageInfo {
+        total
+        currentPage
+        lastPage
+        hasNextPage
+      }
+    }
+    
+    stats {
+      scoreDistribution {
+        score
+        amount
+      }
+      statusDistribution {
+        status
+        amount
+      }
+    }
+    
+    rankings {
+      id
+      rank
+      type
+      format
+      year
+      season
+      allTime
+      context
+    }
+    
+    recommendations(page: 1, perPage: 6, sort: [RATING_DESC]) {
+      edges {
+        node {
+          id
+          rating
+          userRating
+          mediaRecommendation {
+            id
+            type
+            format
+            title {
+              romaji
+              english
+              native
+            }
+            coverImage {
+              large
+            }
+            averageScore
+            popularity
+            favourites
+            episodes
+          }
+        }
+      }
+      pageInfo {
+        total
+        currentPage
+        lastPage
+        hasNextPage
+      }
+    }
+  }
+}
+`;
+
 export const ANIME_INFO_QS = `
 query ($id: Int) {
   Media(id: $id, type: ANIME) {
