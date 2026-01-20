@@ -256,12 +256,12 @@ class Container {
     try {
       logger.info('[Container] Starting graceful shutdown...');
 
-      // Disconnect Prisma if it was initialized
-      if (this.singletons.has('prisma')) {
-        const prisma = this.singletons.get('prisma');
-        if (prisma && typeof prisma.$disconnect === 'function') {
-          await prisma.$disconnect();
-          logger.info('[Container] Prisma disconnected');
+      // Disconnect TypeORM DataSource if it was initialized
+      if (this.singletons.has('dataSource')) {
+        const dataSource = this.singletons.get('dataSource');
+        if (dataSource && typeof dataSource.destroy === 'function') {
+          await dataSource.destroy();
+          logger.info('[Container] TypeORM DataSource disconnected');
         }
       }
 

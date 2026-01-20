@@ -2,16 +2,25 @@
  * Repository Types
  *
  * Type definitions specific to the repository/data access layer.
- * These types work with Prisma and provide type-safe database operations.
+ * These types work with TypeORM and provide type-safe database operations.
  */
 
-import type { Prisma } from '@prisma/client';
+import type { EntityManager } from 'typeorm';
 import type { PaginatedResult } from './common';
 
 /**
- * Prisma transaction client type
+ * TypeORM transaction manager type
  */
-export type PrismaTransaction = Prisma.TransactionClient;
+export type TransactionManager = EntityManager;
+
+/**
+ * TypeORM transaction isolation levels
+ */
+export type IsolationLevel =
+  | 'READ UNCOMMITTED'
+  | 'READ COMMITTED'
+  | 'REPEATABLE READ'
+  | 'SERIALIZABLE';
 
 /**
  * Base where clause (generic)
@@ -180,11 +189,6 @@ export type PrismaModelDelegate = {
 };
 
 /**
- * Extract model name from Prisma client
- */
-export type PrismaModelName = Exclude<keyof Prisma.TypeMap['model'], symbol | number>;
-
-/**
  * Repository pagination result
  */
 export interface RepositoryPaginatedResult<T> extends PaginatedResult<T> {
@@ -197,7 +201,7 @@ export interface RepositoryPaginatedResult<T> extends PaginatedResult<T> {
 /**
  * Repository factory function type
  */
-export type RepositoryFactory<T> = (_prisma: Prisma.TransactionClient) => T;
+export type RepositoryFactory<T> = (_manager: EntityManager) => T;
 
 /**
  * Soft delete fields
@@ -288,7 +292,7 @@ export interface RepositoryError extends Error {
 /**
  * Transaction callback type
  */
-export type TransactionCallback<T> = (_tx: PrismaTransaction) => Promise<T>;
+export type TransactionCallback<T> = (_tx: TransactionManager) => Promise<T>;
 
 /**
  * Transaction options
@@ -296,7 +300,7 @@ export type TransactionCallback<T> = (_tx: PrismaTransaction) => Promise<T>;
 export interface TransactionOptions {
   maxWait?: number;
   timeout?: number;
-  isolationLevel?: Prisma.TransactionIsolationLevel;
+  isolationLevel?: IsolationLevel;
 }
 
 /**

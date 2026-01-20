@@ -1,7 +1,7 @@
 /**
  * Base Repository
  *
- * Provides common Prisma CRUD operations for all repositories.
+ * Provides common TypeORM CRUD operations for all repositories.
  * This class serves as a foundation for specific repositories,
  * eliminating code duplication and ensuring consistent data access patterns.
  *
@@ -10,29 +10,38 @@
  * - Pagination support
  * - Transaction support
  * - Existence checks
- * - Raw query escape hatch
+ * - Query builder support
  *
  * @abstract
- * @template T - Prisma model type
- * @template ModelName - Prisma model name
+ * @template T - Entity type
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type {
+  DeepPartial,
+  FindOptionsWhere,
+  ObjectLiteral,
+  Repository,
+  FindManyOptions as TypeORMFindManyOptions,
+} from 'typeorm';
 
 /**
  * Options for finding a single record
  */
-export interface FindOneOptions {
-  include?: Record<string, boolean | object>;
-  select?: Record<string, boolean>;
+export interface FindOneOptions<T = any> {
+  where?: FindOptionsWhere<T>;
+  relations?: string[];
+  select?: (keyof T)[];
+  order?: TypeORMFindManyOptions<T>['order'];
 }
 
 /**
  * Options for finding multiple records
  */
-export interface FindManyOptions<T = unknown> extends FindOneOptions {
-  where?: Partial<T> | Record<string, unknown>;
-  orderBy?: Record<string, 'asc' | 'desc'> | Array<Record<string, 'asc' | 'desc'>>;
+export interface FindManyOptions<T = any> {
+  where?: FindOptionsWhere<T>;
+  relations?: string[];
+  select?: (keyof T)[];
+  order?: TypeORMFindManyOptions<T>['order'];
   skip?: number;
   take?: number;
 }
@@ -47,10 +56,9 @@ export interface BatchResult {
 /**
  * Pagination options
  */
-export interface PaginationOptions<T = unknown> extends Omit<FindManyOptions<T>, 'skip' | 'take'> {
+export interface PaginationOptions<T = any> extends Omit<FindManyOptions<T>, 'skip' | 'take'> {
   page?: number;
   perPage?: number;
-  where?: Partial<T> | Record<string, unknown>;
 }
 
 /**
@@ -69,351 +77,173 @@ export interface PaginatedResult<T> {
 /**
  * Base Repository Abstract Class
  */
-export abstract class BaseRepository<T = unknown, ModelName extends string = string> {
-  protected readonly prisma: PrismaClient;
-  protected readonly model: unknown;
-  protected readonly modelName: ModelName;
+export abstract class BaseRepository<T extends ObjectLiteral = ObjectLiteral> {
+  protected readonly repository: Repository<T>;
 
   /**
    * Create a base repository instance
    *
-   * @param prisma - Prisma client instance
-   * @param modelName - Name of Prisma model (e.g., 'mediaItem', 'user')
+   * @param repository - TypeORM repository instance
    * @throws {Error} If trying to instantiate abstract class directly
-   * @throws {Error} If prisma client is not provided
-   * @throws {Error} If model name is invalid
+   * @throws {Error} If repository is not provided
    */
-  constructor(prisma: PrismaClient, modelName: ModelName) {
+  constructor(repository: Repository<T>) {
     if (new.target === BaseRepository) {
       throw new Error('BaseRepository is abstract and cannot be instantiated directly');
     }
 
-    if (!prisma) {
-      throw new Error('Prisma client is required');
+    if (!repository) {
+      throw new Error('Repository is required');
     }
 
-    if (!modelName || !(prisma as unknown as Record<string, unknown>)[modelName]) {
-      throw new Error(`Invalid model name: ${modelName}. Model does not exist in Prisma schema.`);
-    }
-
-    this.prisma = prisma;
-    this.model = (prisma as unknown as Record<string, unknown>)[modelName];
-    this.modelName = modelName;
+    this.repository = repository;
   }
 
-  // ============================================
-  // BASIC READ OPERATIONS
-  // ============================================
+  // ==================== BASIC CRUD ====================
 
   /**
-   * Find a single record by database ID
-   *
-   * @param id - Record database ID
-   * @param options - Query options
-   * @returns Found record or null if not found
-   *
-   * @example
-   * const user = await userRepo.findById(1, { include: { profile: true } });
+   * Find a single record by ID
    */
-  async findById(id: number | bigint, options: FindOneOptions = {}): Promise<T | null> {
-    return (this.model as any).findUnique({
-      where: { id },
-      ...options,
+  async findById(id: number | bigint, options?: FindOneOptions<T>): Promise<T | null> {
+    return this.repository.findOne({
+      where: { id } as unknown as FindOptionsWhere<T>,
+      relations: options?.relations,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      select: options?.select as any,
+      order: options?.order,
     });
   }
 
   /**
-   * Find a single record by arbitrary where clause
-   *
-   * @param where - Where conditions
-   * @param options - Query options
-   * @returns Found record or null
-   *
-   * @example
-   * const user = await userRepo.findOne({ email: 'user@example.com' });
+   * Find a single record matching criteria
    */
-  async findOne(where: Record<string, unknown>, options: FindOneOptions = {}): Promise<T | null> {
-    return (this.model as any).findUnique({
-      where,
-      ...options,
+  async findOne(options: FindOneOptions<T>): Promise<T | null> {
+    return this.repository.findOne({
+      where: options.where,
+      relations: options.relations,
+      select: options.select as any,
+      order: options.order,
     });
-  }
-
-  /**
-   * Find first record matching criteria
-   * Similar to findOne but uses findFirst (less strict)
-   *
-   * @param options - Query options
-   * @returns Found record or null
-   *
-   * @example
-   * const latestPost = await postRepo.findFirst({
-   *   where: { published: true },
-   *   orderBy: { createdAt: 'desc' }
-   * });
-   */
-  async findFirst(options: FindManyOptions = {}): Promise<T | null> {
-    return (this.model as any).findFirst(options);
   }
 
   /**
    * Find multiple records
-   *
-   * @param options - Query options
-   * @returns Array of records
-   *
-   * @example
-   * const posts = await postRepo.findMany({
-   *   where: { authorId: 1 },
-   *   orderBy: { createdAt: 'desc' },
-   *   take: 10
-   * });
    */
-  async findMany(options: FindManyOptions = {}): Promise<T[]> {
-    return (this.model as any).findMany(options);
+  async findMany(options?: FindManyOptions<T>): Promise<T[]> {
+    return this.repository.find({
+      where: options?.where,
+      relations: options?.relations,
+      select: options?.select as any,
+      order: options?.order,
+      skip: options?.skip,
+      take: options?.take,
+    });
   }
 
   /**
-   * Find all records (use with caution on large tables)
-   *
-   * @param options - Query options
-   * @returns Array of all records
+   * Find all records
    */
-  async findAll(options: FindOneOptions = {}): Promise<T[]> {
-    return (this.model as any).findMany(options);
+  async findAll(options?: Omit<FindManyOptions<T>, 'skip' | 'take'>): Promise<T[]> {
+    return this.findMany(options);
   }
-
-  /**
-   * Count records matching criteria
-   *
-   * @param where - Where conditions
-   * @returns Count of matching records
-   *
-   * @example
-   * const publishedCount = await postRepo.count({ published: true });
-   */
-  async count(where: Record<string, unknown> = {}): Promise<number> {
-    return (this.model as any).count({ where });
-  }
-
-  /**
-   * Check if record exists
-   *
-   * @param where - Where conditions
-   * @returns True if exists, false otherwise
-   *
-   * @example
-   * const emailExists = await userRepo.exists({ email: 'test@example.com' });
-   */
-  async exists(where: Record<string, unknown>): Promise<boolean> {
-    const count = await this.count(where);
-    return count > 0;
-  }
-
-  // ============================================
-  // CREATE OPERATIONS
-  // ============================================
 
   /**
    * Create a new record
-   *
-   * @param data - Data to create
-   * @param options - Additional options
-   * @returns Created record
-   *
-   * @example
-   * const user = await userRepo.create({
-   *   email: 'user@example.com',
-   *   name: 'John Doe'
-   * });
    */
-  async create(data: Partial<T>, options: FindOneOptions = {}): Promise<T> {
-    return (this.model as any).create({
-      data,
-      ...options,
-    });
+  async create(data: DeepPartial<T>): Promise<T> {
+    const entity = this.repository.create(data);
+    return this.repository.save(entity);
   }
 
   /**
    * Create multiple records
-   *
-   * @param data - Array of data to create
-   * @param options - Additional options
-   * @returns Object with count of created records
-   *
-   * @example
-   * const result = await userRepo.createMany([
-   *   { email: 'user1@example.com', name: 'User 1' },
-   *   { email: 'user2@example.com', name: 'User 2' }
-   * ]);
    */
-  async createMany(
-    data: Partial<T>[],
-    options: { skipDuplicates?: boolean } = {}
-  ): Promise<BatchResult> {
-    return (this.model as any).createMany({
-      data,
-      ...options,
-    });
-  }
-
-  // ============================================
-  // UPDATE OPERATIONS
-  // ============================================
-
-  /**
-   * Update a single record
-   *
-   * @param where - Where conditions to find record
-   * @param data - Data to update
-   * @param options - Additional options
-   * @returns Updated record
-   * @throws {Error} If record not found
-   *
-   * @example
-   * const user = await userRepo.update(
-   *   { id: 1 },
-   *   { name: 'Updated Name' }
-   * );
-   */
-  async update(
-    where: Record<string, unknown>,
-    data: Partial<T>,
-    options: FindOneOptions = {}
-  ): Promise<T> {
-    return (this.model as any).update({
-      where,
-      data,
-      ...options,
-    });
+  async createMany(dataArray: DeepPartial<T>[]): Promise<T[]> {
+    const entities = this.repository.create(dataArray);
+    return this.repository.save(entities);
   }
 
   /**
-   * Update multiple records
-   *
-   * @param where - Where conditions
-   * @param data - Data to update
-   * @returns Object with count of updated records
-   *
-   * @example
-   * const result = await postRepo.updateMany(
-   *   { authorId: 1 },
-   *   { published: true }
-   * );
+   * Update a record by ID
    */
-  async updateMany(where: Record<string, unknown>, data: Partial<T>): Promise<BatchResult> {
-    return (this.model as any).updateMany({
-      where,
-      data,
-    });
-  }
-
-  // ============================================
-  // UPSERT OPERATIONS
-  // ============================================
-
-  /**
-   * Upsert a record (create if doesn't exist, update if exists)
-   *
-   * @param where - Where conditions for finding existing record
-   * @param create - Data for creating new record
-   * @param update - Data for updating existing record
-   * @param options - Additional options
-   * @returns Created or updated record
-   *
-   * @example
-   * const user = await userRepo.upsert(
-   *   { email: 'user@example.com' },
-   *   { email: 'user@example.com', name: 'New User' },
-   *   { name: 'Updated User' }
-   * );
-   */
-  async upsert(
-    where: Record<string, unknown>,
-    create: Partial<T>,
-    update: Partial<T>,
-    options: FindOneOptions = {}
-  ): Promise<T> {
-    const { include, select } = options;
-
-    return (this.model as any).upsert({
-      where,
-      create,
-      update,
-      ...(include && { include }),
-      ...(select && { select }),
-    });
-  }
-
-  // ============================================
-  // DELETE OPERATIONS
-  // ============================================
-
-  /**
-   * Delete a single record
-   *
-   * @param where - Where conditions
-   * @returns Deleted record
-   * @throws {Error} If record not found
-   *
-   * @example
-   * const deletedUser = await userRepo.delete({ id: 1 });
-   */
-  async delete(where: Record<string, unknown>): Promise<T> {
-    return (this.model as any).delete({ where });
+  async update(id: number | bigint, data: DeepPartial<T>): Promise<T | null> {
+    await this.repository.update({ id } as unknown as FindOptionsWhere<T>, data as any);
+    return this.findById(id);
   }
 
   /**
-   * Delete multiple records
-   *
-   * @param where - Where conditions
-   * @returns Object with count of deleted records
-   *
-   * @example
-   * const result = await postRepo.deleteMany({ published: false });
+   * Update multiple records matching criteria
    */
-  async deleteMany(where: Record<string, unknown>): Promise<BatchResult> {
-    return (this.model as any).deleteMany({ where });
+  async updateMany(where: FindOptionsWhere<T>, data: DeepPartial<T>): Promise<BatchResult> {
+    const result = await this.repository.update(where, data as any);
+    return { count: result.affected || 0 };
   }
 
-  // ============================================
-  // PAGINATION SUPPORT
-  // ============================================
+  /**
+   * Delete a record by ID (hard delete)
+   */
+  async delete(id: number | bigint): Promise<boolean> {
+    const result = await this.repository.delete({ id } as unknown as FindOptionsWhere<T>);
+    return (result.affected || 0) > 0;
+  }
+
+  /**
+   * Delete multiple records (hard delete)
+   */
+  async deleteMany(where: FindOptionsWhere<T>): Promise<BatchResult> {
+    const result = await this.repository.delete(where);
+    return { count: result.affected || 0 };
+  }
+
+  /**
+   * Soft delete a record by ID
+   */
+  async softDelete(id: number | bigint): Promise<boolean> {
+    const result = await this.repository.softDelete({ id } as unknown as FindOptionsWhere<T>);
+    return (result.affected || 0) > 0;
+  }
+
+  /**
+   * Restore a soft-deleted record
+   */
+  async restore(id: number | bigint): Promise<boolean> {
+    const result = await this.repository.restore({ id } as unknown as FindOptionsWhere<T>);
+    return (result.affected || 0) > 0;
+  }
+
+  // ==================== QUERY OPERATIONS ====================
+
+  /**
+   * Count records matching criteria
+   */
+  async count(where?: FindOptionsWhere<T>): Promise<number> {
+    return this.repository.count({ where });
+  }
+
+  /**
+   * Check if record exists
+   */
+  async exists(where: FindOptionsWhere<T>): Promise<boolean> {
+    const count = await this.count(where);
+    return count > 0;
+  }
 
   /**
    * Find records with pagination
-   *
-   * Returns paginated results with metadata
-   *
-   * @param options - Query options with pagination
-   * @returns Pagination result
-   *
-   * @example
-   * const result = await postRepo.findPaginated({
-   *   page: 2,
-   *   perPage: 10,
-   *   where: { published: true },
-   *   orderBy: { createdAt: 'desc' }
-   * });
-   * // result = { data: [...], total: 50, page: 2, perPage: 10, totalPages: 5, ... }
    */
-  async findPaginated({
-    page = 1,
-    perPage = 20,
-    where = {},
-    ...options
-  }: PaginationOptions): Promise<PaginatedResult<T>> {
+  async paginate(options: PaginationOptions<T>): Promise<PaginatedResult<T>> {
+    const page = Math.max(options.page || 1, 1);
+    const perPage = Math.max(options.perPage || 10, 1);
     const skip = (page - 1) * perPage;
 
-    const [data, total] = await Promise.all([
-      (this.model as any).findMany({
-        where,
-        skip,
-        take: perPage,
-        ...options,
-      }),
-      this.count(where),
-    ]);
+    const [data, total] = await this.repository.findAndCount({
+      where: options.where,
+      relations: options.relations,
+      select: options.select as any,
+      order: options.order,
+      skip,
+      take: perPage,
+    });
 
     const totalPages = Math.ceil(total / perPage);
 
@@ -428,99 +258,32 @@ export abstract class BaseRepository<T = unknown, ModelName extends string = str
     };
   }
 
-  // ============================================
-  // RAW QUERIES (Escape Hatch)
-  // ============================================
+  // ==================== ADVANCED OPERATIONS ====================
+
+  /**
+   * Upsert (insert or update) a record
+   */
+  async upsert(where: FindOptionsWhere<T>, data: DeepPartial<T>): Promise<T> {
+    const existing = await this.findOne({ where });
+
+    if (existing) {
+      return this.update((existing as any).id, data) as Promise<T>;
+    }
+
+    return this.create(data);
+  }
+
+  /**
+   * Get the underlying TypeORM repository
+   */
+  getRepository(): Repository<T> {
+    return this.repository;
+  }
 
   /**
    * Execute raw SQL query
-   *
-   * Use this as an escape hatch when Prisma's query builder is insufficient.
-   * Be careful with SQL injection - use parameterized queries.
-   *
-   * @param query - SQL query template
-   * @param params - Query parameters
-   * @returns Query result
-   *
-   * @example
-   * const result = await repo.rawQuery`
-   *   SELECT * FROM users WHERE email = ${email}
-   * `;
    */
-  async rawQuery<R = unknown>(query: TemplateStringsArray, ...params: unknown[]): Promise<R> {
-    return this.prisma.$queryRaw(query as never, ...params) as Promise<R>;
-  }
-
-  /**
-   * Execute raw SQL with unsafe string interpolation
-   *
-   * @param query - SQL query string
-   * @returns Query result
-   */
-  async rawQueryUnsafe<R = unknown>(query: string): Promise<R> {
-    return this.prisma.$queryRawUnsafe(query) as Promise<R>;
-  }
-
-  /**
-   * Execute raw SQL write operation
-   *
-   * @param query - SQL query template
-   * @param params - Query parameters
-   * @returns Number of affected rows
-   */
-  async executeRaw(query: TemplateStringsArray, ...params: unknown[]): Promise<number> {
-    return this.prisma.$executeRaw(query as never, ...params);
-  }
-
-  // ============================================
-  // DIRECT ACCESS
-  // ============================================
-
-  /**
-   * Get Prisma client instance
-   *
-   * Use this when you need direct access to Prisma client
-   * for operations not covered by base repository methods.
-   *
-   * @returns Prisma client instance
-   *
-   * @example
-   * const prisma = repo.getPrismaClient();
-   * const result = await prisma.user.findMany({
-   *   where: { conditions },
-   *   include: { relations }
-   * });
-   */
-  getPrismaClient(): PrismaClient {
-    return this.prisma;
-  }
-
-  /**
-   * Get Prisma model delegate
-   *
-   * Use this for direct access to the model's methods.
-   *
-   * @returns Prisma model delegate
-   *
-   * @example
-   * const model = repo.getModel();
-   * const result = await model.aggregate({
-   *   _avg: { score: true },
-   *   _count: true
-   * });
-   */
-  getModel(): unknown {
-    return this.model;
-  }
-
-  /**
-   * Get model name
-   *
-   * @returns Model name
-   */
-  getModelName(): ModelName {
-    return this.modelName;
+  async query<R = any>(query: string, parameters?: any[]): Promise<R> {
+    return this.repository.query(query, parameters);
   }
 }
-
-export default BaseRepository;

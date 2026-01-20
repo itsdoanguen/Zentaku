@@ -18,7 +18,7 @@
  * @extends BaseRepository
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { FindOptionsWhere, ObjectLiteral, Repository } from 'typeorm';
 import { BaseRepository, type FindManyOptions, type FindOneOptions } from './BaseRepository';
 
 /**
@@ -38,18 +38,20 @@ export interface TopRatedOptions extends MediaSearchOptions {
 /**
  * Base Media Repository Abstract Class
  */
-export abstract class BaseMediaRepository<T = unknown> extends BaseRepository<T, 'mediaItem'> {
+export abstract class BaseMediaRepository<
+  T extends ObjectLiteral = ObjectLiteral,
+> extends BaseRepository<T> {
   protected readonly metadataRelation: string;
 
   /**
    * Create a media repository instance
    *
-   * @param prisma - Prisma client instance
+   * @param repository - TypeORM repository instance
    * @param metadataRelation - Name of metadata relation (e.g., 'animeMetadata', 'bookMetadata')
    * @throws {Error} If metadata relation name is not provided
    */
-  constructor(prisma: PrismaClient, metadataRelation: string) {
-    super(prisma, 'mediaItem');
+  constructor(repository: Repository<T>, metadataRelation: string) {
+    super(repository);
 
     if (!metadataRelation) {
       throw new Error('Metadata relation name is required for MediaRepository');
@@ -63,36 +65,33 @@ export abstract class BaseMediaRepository<T = unknown> extends BaseRepository<T,
   // ============================================
 
   /**
-   * Get default include for media queries
+   * Get default relations for media queries
    *
    * Automatically includes the specific metadata relation.
-   * Override this method in child classes if different include is needed.
+   * Override this method in child classes if different relations are needed.
    *
    * @protected
-   * @returns Include object for Prisma queries
+   * @returns Relations array for TypeORM queries
    */
-  protected _getDefaultInclude(): Record<string, boolean> {
-    return {
-      [this.metadataRelation]: true,
-    };
+  protected _getDefaultRelations(): string[] {
+    return [this.metadataRelation];
   }
 
   /**
-   * Merge user-provided options with default include
+   * Merge user-provided options with default relations
    *
    * @protected
    * @param options - User-provided options
    * @returns Merged options
    */
-  protected _mergeWithDefaultInclude(options: FindOneOptions = {}): FindOneOptions {
-    if (options.include) {
-      // User provided custom include, respect it
+  protected _mergeWithDefaultRelations(options: FindOneOptions = {}): FindOneOptions {
+    if (options.relations) {
       return options;
     }
 
     return {
       ...options,
-      include: this._getDefaultInclude(),
+      relations: this._getDefaultRelations(),
     };
   }
 
@@ -123,7 +122,13 @@ export abstract class BaseMediaRepository<T = unknown> extends BaseRepository<T,
     value: number | string,
     options: FindOneOptions = {}
   ): Promise<T | null> {
-    return this.findOne({ [fieldName]: value }, this._mergeWithDefaultInclude(options));
+    const mergedOptions = this._mergeWithDefaultRelations(options);
+    return this.findOne({
+      where: { [fieldName]: value } as unknown as FindOptionsWhere<T>,
+      relations: mergedOptions.relations,
+      select: mergedOptions.select as any,
+      order: mergedOptions.order,
+    });
   }
 
   /**
@@ -153,11 +158,14 @@ export abstract class BaseMediaRepository<T = unknown> extends BaseRepository<T,
       return [];
     }
 
-    return this.findMany({
-      where: {
-        [fieldName]: { in: values },
-      },
-      ...this._mergeWithDefaultInclude(options),
+    const repository = this.getRepository();
+    const mergedOptions = this._mergeWithDefaultRelations(options);
+
+    return repository.find({
+      where: { [fieldName]: values } as any,
+      relations: mergedOptions.relations,
+      select: mergedOptions.select as any,
+      order: mergedOptions.order,
     });
   }
 
@@ -184,17 +192,14 @@ export abstract class BaseMediaRepository<T = unknown> extends BaseRepository<T,
    * }
    */
   shouldSync(media: T | null | { lastSyncedAt?: Date | null }, thresholdDays = 7): boolean {
-    // No media exists
     if (!media) {
       return true;
     }
 
-    // Type guard to check if media is an object
     if (typeof media !== 'object') {
       return true;
     }
 
-    // Type guard to check if media has lastSyncedAt property
     if (!('lastSyncedAt' in media)) {
       return true;
     }
@@ -221,8 +226,8 @@ export abstract class BaseMediaRepository<T = unknown> extends BaseRepository<T,
    * @example
    * await animeRepo.updateSyncTimestamp(anime.id);
    */
-  async updateSyncTimestamp(id: number | bigint, syncDate: Date = new Date()): Promise<T> {
-    return this.update({ id }, { lastSyncedAt: syncDate } as unknown as Partial<T>);
+  async updateSyncTimestamp(id: number | bigint, syncDate: Date = new Date()): Promise<T | null> {
+    return this.update(id, { lastSyncedAt: syncDate } as any);
   }
 
   // ============================================
@@ -238,14 +243,19 @@ export abstract class BaseMediaRepository<T = unknown> extends BaseRepository<T,
    *
    * @example
    * const airingAnime = await animeRepo.findByStatus('RELEASING', {
-   *   orderBy: { averageScore: 'desc' },
+   *   order: { averageScore: 'DESC' },
    *   take: 20
    * });
    */
   async findByStatus(status: string, options: FindOneOptions = {}): Promise<T[]> {
-    return this.findMany({
-      where: { status },
-      ...this._mergeWithDefaultInclude(options),
+    const repository = this.getRepository();
+    const mergedOptions = this._mergeWithDefaultRelations(options);
+
+    return repository.find({
+      where: { status } as any,
+      relations: mergedOptions.relations,
+      select: mergedOptions.select as any,
+      order: mergedOptions.order,
     });
   }
 
@@ -294,15 +304,24 @@ export abstract class BaseMediaRepository<T = unknown> extends BaseRepository<T,
    */
   async findTopRated(options: TopRatedOptions = {}): Promise<T[]> {
     const { limit = 20, minScore, ...restOptions } = options;
+    const repository = this.getRepository();
 
-    const where = minScore ? { averageScore: { gte: minScore } } : {};
+    const queryBuilder = repository.createQueryBuilder('media');
 
-    return this.findMany({
-      where,
-      orderBy: { averageScore: 'desc' },
-      take: limit,
-      ...this._mergeWithDefaultInclude(restOptions),
-    });
+    if (minScore !== undefined) {
+      queryBuilder.where('media.averageScore >= :minScore', { minScore });
+    }
+
+    queryBuilder.orderBy('media.averageScore', 'DESC').take(limit);
+
+    const relations = this._mergeWithDefaultRelations(restOptions).relations;
+    if (relations) {
+      Object.keys(relations).forEach((relation) => {
+        queryBuilder.leftJoinAndSelect(`media.${relation}`, relation);
+      });
+    }
+
+    return queryBuilder.getMany();
   }
 
   // ============================================
@@ -317,11 +336,16 @@ export abstract class BaseMediaRepository<T = unknown> extends BaseRepository<T,
    * @returns Array of media items
    */
   async findWithAdultFilter(includeAdult = false, options: FindOneOptions = {}): Promise<T[]> {
-    const where = includeAdult ? {} : { isAdult: false };
+    const repository = this.getRepository();
+    const mergedOptions = this._mergeWithDefaultRelations(options);
 
-    return this.findMany({
+    const where: any = includeAdult ? {} : { isAdult: false };
+
+    return repository.find({
       where,
-      ...this._mergeWithDefaultInclude(options),
+      relations: mergedOptions.relations,
+      select: mergedOptions.select as any,
+      order: mergedOptions.order,
     });
   }
 
@@ -348,7 +372,7 @@ export abstract class BaseMediaRepository<T = unknown> extends BaseRepository<T,
    */
   protected async _getWithMetadata(fieldName: string, value: number | string): Promise<T | null> {
     return this._findByExternalId(fieldName, value, {
-      include: this._getDefaultInclude(),
+      relations: this._getDefaultRelations(),
     });
   }
 
@@ -370,19 +394,25 @@ export abstract class BaseMediaRepository<T = unknown> extends BaseRepository<T,
    */
   async searchByTitle(query: string, options: MediaSearchOptions = {}): Promise<T[]> {
     const { limit = 20, ...restOptions } = options;
+    const repository = this.getRepository();
 
-    return this.findMany({
-      where: {
-        OR: [
-          { titleRomaji: { contains: query, mode: 'insensitive' } },
-          { titleEnglish: { contains: query, mode: 'insensitive' } },
-          { titleNative: { contains: query, mode: 'insensitive' } },
-        ],
-      },
-      take: limit,
-      orderBy: { averageScore: 'desc' },
-      ...this._mergeWithDefaultInclude(restOptions),
-    });
+    const queryBuilder = repository.createQueryBuilder('media');
+
+    queryBuilder
+      .where('LOWER(media.titleRomaji) LIKE LOWER(:query)', { query: `%${query}%` })
+      .orWhere('LOWER(media.titleEnglish) LIKE LOWER(:query)', { query: `%${query}%` })
+      .orWhere('LOWER(media.titleNative) LIKE LOWER(:query)', { query: `%${query}%` })
+      .orderBy('media.averageScore', 'DESC')
+      .take(limit);
+
+    const relations = this._mergeWithDefaultRelations(restOptions).relations;
+    if (relations) {
+      Object.keys(relations).forEach((relation) => {
+        queryBuilder.leftJoinAndSelect(`media.${relation}`, relation);
+      });
+    }
+
+    return queryBuilder.getMany();
   }
 }
 
