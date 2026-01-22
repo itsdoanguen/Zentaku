@@ -44,11 +44,6 @@
     "**/*.lock": true
   },
 
-  // Prisma
-  "[prisma]": {
-    "editor.defaultFormatter": "Prisma.prisma"
-  },
-
   //cSpell
   "cSpell.words": [
     "anilist",

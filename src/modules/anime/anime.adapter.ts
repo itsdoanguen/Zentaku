@@ -341,14 +341,14 @@ class AnimeAdapter {
   }
 
   /**
-   * Map AniList status enum to Prisma MediaStatus enum
+   * Map AniList status enum to TypeORM MediaStatus enum
    *
    * Ensures compatibility between AniList's status values
    * and our database schema.
    *
    * @private
    * @param anilistStatus - Status from AniList API
-   * @returns Mapped status for Prisma enum
+   * @returns Mapped status for TypeORM enum
    */
   private _mapAnilistStatus(
     anilistStatus: string | undefined

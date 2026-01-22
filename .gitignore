@@ -24,11 +24,9 @@ dist/
 build/
 *.tsbuildinfo
 
-# Prisma
-/src/generated/prisma
-/prisma/migrations
-prisma/*.db
-prisma/*.db-journal
+# TypeORM
+/src/migrations/*.ts
+!src/migrations/.gitkeep
 
 # Logs
 npm-debug.log*

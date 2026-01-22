@@ -170,7 +170,7 @@ export interface BulkDeleteOptions {
 }
 
 /**
- * Prisma model delegates (for type inference)
+ * TypeORM repository delegates (for type inference)
  */
 export type PrismaModelDelegate = {
   findUnique: Function;

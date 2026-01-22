@@ -56,6 +56,7 @@ export const initializeDatabase = async (): Promise<void> => {
   try {
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
+      // eslint-disable-next-line no-console
       console.log('✓ TypeORM DataSource initialized');
     }
   } catch (error) {
@@ -71,6 +72,7 @@ export const closeDatabase = async (): Promise<void> => {
   try {
     if (AppDataSource.isInitialized) {
       await AppDataSource.destroy();
+      // eslint-disable-next-line no-console
       console.log('✓ TypeORM DataSource closed');
     }
   } catch (error) {
