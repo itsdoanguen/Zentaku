@@ -1,49 +1,38 @@
-import type { AnimeMetadata, MediaItem, PrismaClient } from '@prisma/client';
+import type { Repository } from 'typeorm';
+import { AppDataSource } from '../../config/database';
 import { BaseMediaRepository } from '../../core/base/BaseMediaRepository';
-import type { FindOneOptions } from '../../core/types/repository';
-
-/**
- * MediaItem with AnimeMetadata relation
- */
-interface MediaItemWithAnimeMetadata extends MediaItem {
-  animeMetadata: AnimeMetadata | null;
-}
+import { AnimeItem } from '../../entities';
 
 /**
  * Anime create/update data structure
  */
 interface AnimeCreateData {
   idAnilist: number;
-  idMal: number | null;
-  lastSyncedAt: Date;
+  idMal?: number | null;
+  lastSyncedAt?: Date;
   titleRomaji: string;
-  titleEnglish: string | null;
-  titleNative: string | null;
-  type: 'ANIME';
+  titleEnglish?: string | null;
+  titleNative?: string | null;
   status: 'RELEASING' | 'FINISHED' | 'NOT_YET_RELEASED' | 'CANCELLED';
-  coverImage: string | null;
-  bannerImage: string | null;
-  isAdult: boolean;
-  averageScore: number | null;
-  meanScore: number | null;
-  description: string | null;
-  synonyms: string[] | null;
-  genres: string[] | null;
-  tags: unknown[] | null;
-  popularity: number | null;
-  favorites: number | null;
-  animeMetadata: {
-    create: {
-      episodeCount: number | null;
-      durationMin: number | null;
-      season: string | null;
-      seasonYear: number | null;
-      studio: string | null;
-      source: string | null;
-      trailerUrl: string | null;
-      nextAiringEpisode: object | null;
-    };
-  };
+  coverImage?: string | null;
+  bannerImage?: string | null;
+  isAdult?: boolean;
+  averageScore?: number | null;
+  meanScore?: number | null;
+  description?: string | null;
+  synonyms?: string[] | null;
+  genres?: string[] | null;
+  tags?: unknown[] | null;
+  popularity?: number | null;
+  favorites?: number | null;
+  episodeCount?: number | null;
+  durationMin?: number | null;
+  season?: string | null;
+  seasonYear?: number | null;
+  studio?: string | null;
+  source?: string | null;
+  trailerUrl?: string | null;
+  nextAiringEpisode?: object | null;
 }
 
 /**
@@ -59,14 +48,14 @@ interface AnimeCreateData {
  *
  * @extends BaseMediaRepository
  */
-class AnimeRepository extends BaseMediaRepository<MediaItemWithAnimeMetadata> {
+class AnimeRepository extends BaseMediaRepository<AnimeItem> {
   /**
    * Create anime repository instance
    *
-   * @param prisma - Prisma client instance (injected by DI container)
+   * @param repository - TypeORM repository instance (injected by DI container)
    */
-  constructor(prisma: PrismaClient) {
-    super(prisma, 'animeMetadata');
+  constructor(repository?: Repository<AnimeItem>) {
+    super(repository || AppDataSource.getRepository(AnimeItem), '');
   }
 
   // ==================== IMediaRepository IMPLEMENTATIONS ====================
@@ -77,10 +66,8 @@ class AnimeRepository extends BaseMediaRepository<MediaItemWithAnimeMetadata> {
    * @returns Anime with metadata or null
    * @override
    */
-  async findByExternalId(externalId: number): Promise<MediaItemWithAnimeMetadata | null> {
-    return this._findByExternalId('idAnilist', externalId, {
-      include: this._getDefaultInclude(),
-    });
+  async findByExternalId(externalId: number): Promise<AnimeItem | null> {
+    return this.findOne({ where: { idAnilist: externalId } as any });
   }
 
   /**
@@ -89,13 +76,8 @@ class AnimeRepository extends BaseMediaRepository<MediaItemWithAnimeMetadata> {
    * @returns Array of anime with metadata
    * @override
    */
-  async findManyByExternalIds(externalIds: number[]): Promise<MediaItemWithAnimeMetadata[]> {
-    return this.findMany({
-      where: {
-        idAnilist: { in: externalIds },
-      },
-      include: this._getDefaultInclude(),
-    }) as Promise<MediaItemWithAnimeMetadata[]>;
+  async findManyByExternalIds(externalIds: number[]): Promise<AnimeItem[]> {
+    return this.findMany({ where: { idAnilist: externalIds as any } });
   }
 
   /**
@@ -107,18 +89,14 @@ class AnimeRepository extends BaseMediaRepository<MediaItemWithAnimeMetadata> {
    */
   async countByQuery(filter: { query?: string }): Promise<number> {
     if (!filter.query) {
-      return this.count({ where: { type: 'ANIME' } });
+      return this.count();
     }
-    return this.count({
-      where: {
-        type: 'ANIME',
-        OR: [
-          { titleRomaji: { contains: filter.query, mode: 'insensitive' } },
-          { titleEnglish: { contains: filter.query, mode: 'insensitive' } },
-          { titleNative: { contains: filter.query, mode: 'insensitive' } },
-        ],
-      },
-    });
+    const qb = this.repository.createQueryBuilder('anime');
+    qb.where(
+      'anime.titleRomaji LIKE :query OR anime.titleEnglish LIKE :query OR anime.titleNative LIKE :query',
+      { query: `%${filter.query}%` }
+    );
+    return qb.getCount();
   }
 
   // ==================== PUBLIC API ====================
@@ -126,28 +104,20 @@ class AnimeRepository extends BaseMediaRepository<MediaItemWithAnimeMetadata> {
    * Find anime by AniList ID
    *
    * @param anilistId - AniList anime ID
-   * @param options - Query options
    * @returns Anime with metadata or null
    */
-  async findByAnilistId(
-    anilistId: number,
-    options: FindOneOptions = {}
-  ): Promise<MediaItemWithAnimeMetadata | null> {
-    return this._findByExternalId('idAnilist', anilistId, options);
+  async findByAnilistId(anilistId: number): Promise<AnimeItem | null> {
+    return this.findOne({ where: { idAnilist: anilistId } as any });
   }
 
   /**
    * Find multiple anime by AniList IDs
    *
    * @param anilistIds - Array of AniList IDs
-   * @param options - Query options
    * @returns Array of anime with metadata
    */
-  async findByAnilistIds(
-    anilistIds: number[],
-    options: FindOneOptions = {}
-  ): Promise<MediaItemWithAnimeMetadata[]> {
-    return this._findByExternalIds('idAnilist', anilistIds, options);
+  async findByAnilistIds(anilistIds: number[]): Promise<AnimeItem[]> {
+    return this.findMany({ where: { idAnilist: anilistIds as any } });
   }
 
   /**
@@ -169,34 +139,22 @@ class AnimeRepository extends BaseMediaRepository<MediaItemWithAnimeMetadata> {
    * const transformedData = animeAdapter.fromAnilist(anilistData);
    * const anime = await animeRepo.upsertAnime(transformedData);
    */
-  async upsertAnime(transformedData: AnimeCreateData): Promise<MediaItemWithAnimeMetadata> {
-    const { idAnilist, animeMetadata, ...coreFields } = transformedData;
+  async upsertAnime(transformedData: AnimeCreateData): Promise<AnimeItem> {
+    const { idAnilist, ...fields } = transformedData;
 
-    return this.upsert(
-      { idAnilist },
-      {
-        ...coreFields,
-        idAnilist,
-        type: 'ANIME',
-        lastSyncedAt: new Date(),
-        animeMetadata: {
-          create: animeMetadata.create,
-        },
-      } as any,
-      {
-        ...coreFields,
-        lastSyncedAt: new Date(),
-        animeMetadata: {
-          upsert: {
-            create: animeMetadata.create,
-            update: animeMetadata.create,
-          },
-        },
-      } as any,
-      {
-        include: this._getDefaultInclude(),
-      }
-    ) as Promise<MediaItemWithAnimeMetadata>;
+    const existing = await this.findByAnilistId(idAnilist);
+
+    if (!existing) {
+      return this.create({ idAnilist, ...fields, lastSyncedAt: new Date() } as any);
+    }
+
+    const updated = await this.update(existing.id, { ...fields, lastSyncedAt: new Date() } as any);
+
+    if (!updated) {
+      throw new Error(`Failed to update anime with idAnilist: ${idAnilist}`);
+    }
+
+    return updated;
   }
 
   /**
@@ -204,84 +162,41 @@ class AnimeRepository extends BaseMediaRepository<MediaItemWithAnimeMetadata> {
    *
    * @param season - Season (WINTER, SPRING, SUMMER, FALL)
    * @param year - Year
-   * @param options - Query options
    * @returns Array of anime in the season
    */
-  async findBySeason(
-    season: string,
-    year: number,
-    options: FindOneOptions = {}
-  ): Promise<MediaItemWithAnimeMetadata[]> {
-    return this.findMany({
-      where: {
-        type: 'ANIME',
-        animeMetadata: {
-          season,
-          seasonYear: year,
-        },
-      },
-      ...this._mergeWithDefaultInclude(options),
-    }) as Promise<MediaItemWithAnimeMetadata[]>;
+  async findBySeason(season: string, year: number): Promise<AnimeItem[]> {
+    return this.findMany({ where: { season, seasonYear: year } as any });
   }
 
   /**
    * Find anime by genre
    *
    * @param genre - Genre name
-   * @param options - Query options
    * @returns Array of anime with the genre
    */
-  async findByGenre(
-    genre: string,
-    options: FindOneOptions = {}
-  ): Promise<MediaItemWithAnimeMetadata[]> {
-    return this.findMany({
-      where: {
-        type: 'ANIME',
-        genres: {
-          array_contains: genre,
-        },
-      },
-      ...this._mergeWithDefaultInclude(options),
-    }) as Promise<MediaItemWithAnimeMetadata[]>;
+  async findByGenre(genre: string): Promise<AnimeItem[]> {
+    const qb = this.repository.createQueryBuilder('anime');
+    qb.where('JSON_CONTAINS(anime.genres, :genre)', { genre: JSON.stringify(genre) });
+    return qb.getMany();
   }
 
   /**
    * Find currently airing anime
    *
-   * @param options - Query options
    * @returns Array of airing anime
    */
-  async findAiring(options: FindOneOptions = {}): Promise<MediaItemWithAnimeMetadata[]> {
-    return this.findMany({
-      where: {
-        type: 'ANIME',
-        status: 'RELEASING',
-      },
-      ...this._mergeWithDefaultInclude(options),
-    }) as Promise<MediaItemWithAnimeMetadata[]>;
+  async findAiring(): Promise<AnimeItem[]> {
+    return this.findMany({ where: { status: 'RELEASING' } as any });
   }
 
   /**
    * Find anime by studio
    *
    * @param studio - Studio name
-   * @param options - Query options
    * @returns Array of anime by the studio
    */
-  async findByStudio(
-    studio: string,
-    options: FindOneOptions = {}
-  ): Promise<MediaItemWithAnimeMetadata[]> {
-    return this.findMany({
-      where: {
-        type: 'ANIME',
-        animeMetadata: {
-          studio,
-        },
-      },
-      ...this._mergeWithDefaultInclude(options),
-    }) as Promise<MediaItemWithAnimeMetadata[]>;
+  async findByStudio(studio: string): Promise<AnimeItem[]> {
+    return this.findMany({ where: { studio } as any });
   }
 }
 

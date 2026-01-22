@@ -2,13 +2,13 @@
  * Anime Adapter
  *
  * Transforms data between different representations:
- * - AniList API GraphQL response → Prisma Database format
- * - Prisma Database model → API Response format
+ * - AniList API GraphQL response → TypeORM Entity format
+ * - TypeORM Entity → API Response format
  *
  * @module AnimeAdapter
  */
 
-import type { AnimeMetadata, MediaItem } from '@prisma/client';
+import type { AnimeItem } from '../../entities';
 import type {
   CoverImage,
   Studio,
@@ -19,48 +19,38 @@ import type {
   AnimeInfo,
   AnimeLightweight,
 } from '../../infrastructure/external/anilist/anime/anilist-anime.types';
-/**
- * Prisma MediaItem with AnimeMetadata relation
- */
-interface MediaItemWithMetadata extends MediaItem {
-  animeMetadata: AnimeMetadata | null;
-}
 
 /**
- * Data structure for Prisma create/upsert operations
+ * Data structure for TypeORM create/upsert operations
  */
-interface PrismaAnimeCreateData {
+interface TypeORMAnimeCreateData {
   idAnilist: number;
-  idMal: number | null;
-  lastSyncedAt: Date;
+  idMal?: number | null;
+  lastSyncedAt?: Date;
   titleRomaji: string;
-  titleEnglish: string | null;
-  titleNative: string | null;
-  type: 'ANIME';
+  titleEnglish?: string | null;
+  titleNative?: string | null;
   status: 'RELEASING' | 'FINISHED' | 'NOT_YET_RELEASED' | 'CANCELLED';
-  coverImage: string | null;
-  bannerImage: string | null;
-  isAdult: boolean;
-  averageScore: number | null;
-  description: string | null;
-  synonyms: string[] | null;
-  genres: string[] | null;
-  tags: Tag[] | null;
-  popularity: number | null;
-  favorites: number | null;
-  meanScore: number | null;
-  animeMetadata: {
-    create: {
-      episodeCount: number | null;
-      durationMin: number | null;
-      season: string | null;
-      seasonYear: number | null;
-      studio: string | null;
-      source: string | null;
-      trailerUrl: string | null;
-      nextAiringEpisode: object | null;
-    };
-  };
+  coverImage?: string | null;
+  bannerImage?: string | null;
+  isAdult?: boolean;
+  averageScore?: number | null;
+  description?: string | null;
+  synonyms?: string[] | null;
+  genres?: string[] | null;
+  tags?: Tag[] | null;
+  popularity?: number | null;
+  favorites?: number | null;
+  meanScore?: number | null;
+  // Anime-specific fields
+  episodeCount?: number | null;
+  durationMin?: number | null;
+  season?: string | null;
+  seasonYear?: number | null;
+  studio?: string | null;
+  source?: string | null;
+  trailerUrl?: string | null;
+  nextAiringEpisode?: object | null;
 }
 
 /**
@@ -119,89 +109,72 @@ class AnimeAdapter {
   // ============================================
 
   /**
-   * Transform AniList GraphQL response to Prisma MediaItem format
+   * Transform AniList GraphQL response to TypeORM AnimeItem format
    *
-   * This method prepares data for Prisma's create/update operations.
-   * It handles nested AnimeMetadata creation and ensures all fields
-   * match the Prisma schema types.
+   * This method prepares data for TypeORM's create/update operations.
+   * All fields are flattened (no nested metadata object).
    *
    * @param externalData - Raw data from AniList GraphQL API
-   * @returns Data formatted for Prisma upsert operation
+   * @returns Data formatted for TypeORM upsert operation
    * @throws {Error} If required fields are missing
    *
    * @example
    * const externalData = await anilistClient.fetchById(1);
    * const dbData = animeAdapter.fromExternal(externalData);
-   * await prisma.mediaItem.upsert({
-   *   where: { idAnilist: dbData.idAnilist },
-   *   create: dbData,
-   *   update: dbData
-   * });
+   * await animeRepo.upsertAnime(dbData);
    */
-  fromExternal(externalData: AnimeInfo): PrismaAnimeCreateData {
+  fromExternal(externalData: AnimeInfo): TypeORMAnimeCreateData {
     if (!externalData || !externalData.id) {
       throw new Error('Invalid AniList data: missing required id field');
     }
 
     return {
-      // ========== MediaItem Core Fields ==========
       idAnilist: externalData.id,
       idMal: externalData.idMal || null,
       lastSyncedAt: new Date(),
 
-      // Title fields
       titleRomaji: externalData.title?.romaji || 'Unknown Title',
       titleEnglish: externalData.title?.english || null,
       titleNative: externalData.title?.native || null,
 
-      // Media type and status
-      type: 'ANIME' as const,
       status: this._mapAnilistStatus(externalData.status),
 
-      // Images
       coverImage: this._extractCoverImage(externalData.coverImage),
       bannerImage: externalData.bannerImage || null,
 
-      // Scoring and metadata
       isAdult: externalData.isAdult || false,
       averageScore: this._normalizeScore(externalData.averageScore),
       meanScore: this._normalizeScore(externalData.meanScore),
       description: this._cleanDescription(externalData.description),
 
-      // ========== Additional Metadata Fields ==========
       synonyms: externalData.synonyms || null,
       genres: externalData.genres || null,
       tags: externalData.tags || null,
       popularity: externalData.popularity || null,
       favorites: externalData.favourites || null,
 
-      // ========== AnimeMetadata Nested Create ==========
-      animeMetadata: {
-        create: {
-          episodeCount: externalData.episodes || null,
-          durationMin: externalData.duration || null,
-          season: externalData.season || null,
-          seasonYear: externalData.seasonYear || null,
-          studio: this._extractStudio(externalData.studios),
-          source: externalData.source || null,
-          trailerUrl: this._buildTrailerUrl(externalData.trailer),
-          nextAiringEpisode: externalData.nextAiringEpisode || null,
-        },
-      },
+      episodeCount: externalData.episodes || null,
+      durationMin: externalData.duration || null,
+      season: externalData.season || null,
+      seasonYear: externalData.seasonYear || null,
+      studio: this._extractStudio(externalData.studios),
+      source: externalData.source || null,
+      trailerUrl: this._buildTrailerUrl(externalData.trailer),
+      nextAiringEpisode: externalData.nextAiringEpisode || null,
     };
   }
 
   /**
-   * Transform AniList lightweight data (for batch operations)
+   * Transform AniList lightweight data
    *
    * Used when fetching multiple anime at once or when only
-   * basic information is needed (e.g., for list displays).
+   * basic information is needed
    *
    * @param externalData - Lightweight AniList data
-   * @returns Minimal data for Prisma operations
+   * @returns Minimal data for TypeORM operations
    * @throws {Error} If required fields are missing
    */
-  fromAnilistLightweight(externalData: AnimeLightweight): Partial<PrismaAnimeCreateData> {
+  fromAnilistLightweight(externalData: AnimeLightweight): Partial<TypeORMAnimeCreateData> {
     if (!externalData || !externalData.id) {
       throw new Error('Invalid AniList data: missing required id field');
     }
@@ -211,22 +184,10 @@ class AnimeAdapter {
       titleRomaji: externalData.title?.romaji || 'Unknown Title',
       titleEnglish: externalData.title?.english || null,
       titleNative: externalData.title?.native || null,
-      type: 'ANIME' as const,
       coverImage: this._extractCoverImage(externalData.coverImage),
       lastSyncedAt: new Date(),
-
-      animeMetadata: {
-        create: {
-          episodeCount: externalData.episodes || null,
-          durationMin: null,
-          season: null,
-          seasonYear: null,
-          studio: null,
-          source: null,
-          trailerUrl: null,
-          nextAiringEpisode: externalData.nextAiringEpisode || null,
-        },
-      },
+      episodeCount: externalData.episodes || null,
+      nextAiringEpisode: externalData.nextAiringEpisode || null,
     };
   }
 
@@ -235,94 +196,84 @@ class AnimeAdapter {
   // ============================================
 
   /**
-   * Transform Prisma MediaItem model to API response format
+   * Transform TypeORM AnimeItem to API response format
    *
    * This method creates a clean, client-friendly response by:
-   * - Flattening nested relations
+   * - Flattening fields (anime-specific fields are directly on entity)
    * - Renaming fields for consistency
    * - Formatting dates and scores
    * - Removing internal database fields
    *
-   * @param animeModel - Prisma MediaItem with animeMetadata relation
+   * @param animeModel - TypeORM AnimeItem entity
    * @returns Formatted API response or null if input is null
    *
    * @example
-   * const anime = await prisma.mediaItem.findUnique({
-   *   where: { idAnilist: 1 },
-   *   include: { animeMetadata: true }
-   * });
+   * const anime = await animeRepo.findByAnilistId(1);
    * const response = animeAdapter.toResponse(anime);
-   * res.json({ success: true, data: response });
    */
-  toResponse(animeModel: MediaItemWithMetadata | null): AnimeResponse | null {
+  toResponse(animeModel: AnimeItem | null): AnimeResponse | null {
     if (!animeModel) {
       return null;
     }
-
     if (!animeModel.idAnilist) {
       throw new Error('Invalid Anime model: missing idAnilist field');
     }
 
     return {
       idAnilist: animeModel.idAnilist,
-      malId: animeModel.idMal,
+      malId: animeModel.idMal ?? null,
 
       title: {
         romaji: animeModel.titleRomaji,
-        english: animeModel.titleEnglish,
-        native: animeModel.titleNative,
+        english: animeModel.titleEnglish ?? null,
+        native: animeModel.titleNative ?? null,
       },
 
-      coverImage: animeModel.coverImage,
-      bannerImage: animeModel.bannerImage,
+      coverImage: animeModel.coverImage ?? null,
+      bannerImage: animeModel.bannerImage ?? null,
 
-      type: animeModel.type,
+      type: 'ANIME',
       status: animeModel.status,
       isAdult: animeModel.isAdult,
 
-      score: animeModel.averageScore,
-      meanScore: animeModel.meanScore,
+      score: animeModel.averageScore ?? null,
+      meanScore: animeModel.meanScore ?? null,
 
-      description: animeModel.description,
+      description: animeModel.description ?? null,
 
-      // Additional metadata
       synonyms: animeModel.synonyms as string[] | null,
       genres: animeModel.genres as string[] | null,
       tags: animeModel.tags as Tag[] | null,
-      popularity: animeModel.popularity,
-      favorites: animeModel.favorites,
+      popularity: animeModel.popularity ?? null,
+      favorites: animeModel.favorites ?? null,
 
-      // Anime-specific metadata
-      episodes: animeModel.animeMetadata?.episodeCount ?? null,
-      duration: animeModel.animeMetadata?.durationMin ?? null,
-      season: animeModel.animeMetadata?.season ?? null,
-      seasonYear: animeModel.animeMetadata?.seasonYear ?? null,
-      studio: animeModel.animeMetadata?.studio ?? null,
-      source: animeModel.animeMetadata?.source ?? null,
-      trailerUrl: animeModel.animeMetadata?.trailerUrl ?? null,
-      nextAiringEpisode: (animeModel.animeMetadata?.nextAiringEpisode as object | null) ?? null,
+      episodes: animeModel.episodeCount ?? null,
+      duration: animeModel.durationMin ?? null,
+      season: animeModel.season ?? null,
+      seasonYear: animeModel.seasonYear ?? null,
+      studio: animeModel.studio ?? null,
+      source: animeModel.source ?? null,
+      trailerUrl: animeModel.trailerUrl ?? null,
+      nextAiringEpisode: (animeModel.nextAiringEpisode as object | null) ?? null,
 
       lastSyncedAt: this._formatDate(animeModel.lastSyncedAt),
     };
   }
 
   /**
-   * Transform array of Prisma MediaItem models to API response format
+   * Transform array of TypeORM AnimeItem entities to API response format
    *
-   * Efficiently maps multiple anime models using toResponse().
+   * Efficiently maps multiple anime entities using toResponse().
    * Filters out any null results.
    *
-   * @param animeList - Array of Prisma MediaItem models
+   * @param animeList - Array of TypeORM AnimeItem entities
    * @returns Array of formatted API responses
    *
    * @example
-   * const animeList = await prisma.mediaItem.findMany({
-   *   where: { type: 'ANIME' },
-   *   include: { animeMetadata: true }
-   * });
+   * const animeList = await animeRepo.findAiring();
    * const response = animeAdapter.toResponseList(animeList);
    */
-  toResponseList(animeList: MediaItemWithMetadata[]): AnimeResponse[] {
+  toResponseList(animeList: AnimeItem[]): AnimeResponse[] {
     if (!Array.isArray(animeList)) {
       return [];
     }
@@ -337,10 +288,10 @@ class AnimeAdapter {
    *
    * Returns minimal data for list views to reduce payload size.
    *
-   * @param animeModel - Prisma MediaItem model
+   * @param animeModel - TypeORM AnimeItem entity
    * @returns Minimal response object or null
    */
-  toResponseMinimal(animeModel: MediaItemWithMetadata | null): AnimeResponseMinimal | null {
+  toResponseMinimal(animeModel: AnimeItem | null): AnimeResponseMinimal | null {
     if (!animeModel) {
       return null;
     }
@@ -352,17 +303,17 @@ class AnimeAdapter {
       idAnilist: animeModel.idAnilist,
       title: {
         romaji: animeModel.titleRomaji,
-        english: animeModel.titleEnglish,
+        english: animeModel.titleEnglish ?? null,
       },
-      coverImage: animeModel.coverImage,
-      episodes: animeModel.animeMetadata?.episodeCount ?? null,
-      score: animeModel.averageScore,
+      coverImage: animeModel.coverImage ?? null,
+      episodes: animeModel.episodeCount ?? null,
+      score: animeModel.averageScore ?? null,
       status: animeModel.status,
     };
   }
 
   // ============================================
-  // HELPER METHODS (PRIVATE)
+  // HELPER METHODS
   // ============================================
 
   /**
