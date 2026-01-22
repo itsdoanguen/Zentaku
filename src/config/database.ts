@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
+import * as entities from '../entities';
 
 dotenv.config();
 
@@ -12,10 +13,27 @@ export const AppDataSource = new DataSource({
   password: process.env.DATABASE_PASSWORD,
   database: process.env.DATABASE_NAME,
 
-  // Entities - will be populated as we migrate
+  // All TypeORM entities
   entities: [
-    // TODO: Add entities as they are created
-    // 'src/entities/**/*.entity.ts'
+    entities.User,
+    entities.UserRelationship,
+    entities.MediaItem,
+    entities.AnimeItem,
+    entities.MangaItem,
+    entities.NovelItem,
+    entities.LibraryEntry,
+    entities.ProgressLog,
+    entities.CustomList,
+    entities.ListItem,
+    entities.ListInvitation,
+    entities.Community,
+    entities.CommunityMember,
+    entities.Channel,
+    entities.ChannelParticipant,
+    entities.Message,
+    entities.WatchRoomConfig,
+    entities.Activity,
+    entities.Comment,
   ],
 
   migrations: ['src/migrations/**/*.ts'],
