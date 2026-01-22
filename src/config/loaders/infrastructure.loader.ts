@@ -2,7 +2,7 @@
  * Infrastructure Layer Container Loader
  *
  * Registers core infrastructure dependencies:
- * - Database (Prisma)
+ * - Database (TypeORM DataSource)
  * - HTTP Client
  * - Logger
  * - External API Clients
@@ -11,6 +11,7 @@
  */
 
 import logger from '../../shared/utils/logger';
+import { AppDataSource } from '../database';
 
 /**
  * Load infrastructure dependencies into container
@@ -19,14 +20,13 @@ import logger from '../../shared/utils/logger';
  */
 const loadInfrastructure = (container: any): void => {
   /**
-   * Prisma Database Client
+   * TypeORM DataSource
    * Singleton instance for database operations
    */
   container.register(
-    'prisma',
+    'dataSource',
     () => {
-      const prisma = require('../database').default || require('../database');
-      return prisma;
+      return AppDataSource;
     },
     {
       singleton: true,

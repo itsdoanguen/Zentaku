@@ -48,15 +48,16 @@ const loadAnime = (container: any): void => {
       const AnimeRepository =
         require('../../modules/anime/anime.repository').default ||
         require('../../modules/anime/anime.repository');
-      const prisma = c.resolve('prisma');
-
-      const repository = new AnimeRepository(prisma);
+      const { AnimeItem } = require('../../entities');
+      const dataSource = c.resolve('dataSource');
+      const typeormRepository = dataSource.getRepository(AnimeItem);
+      const repository = new AnimeRepository(typeormRepository);
 
       return repository;
     },
     {
       singleton: true,
-      dependencies: ['prisma'],
+      dependencies: ['dataSource'],
     }
   );
 

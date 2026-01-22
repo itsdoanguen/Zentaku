@@ -21,12 +21,15 @@ import logger from '../../shared/utils/logger';
  * This function orchestrates the loading of all application modules
  * in the correct dependency order. Infrastructure must load first
  * as other modules depend on it.
- *
+
  * @param {Container} container - DI Container instance
  *
  * @example
+ * import { AppDataSource } from './config/database';
+ * import loadModules from './config/loaders';
+ * 
+ * await AppDataSource.initialize();
  * const container = new Container();
- * const loadModules = require('./loaders');
  * loadModules(container);
  */
 const loadModules = (container: any): void => {
@@ -34,7 +37,6 @@ const loadModules = (container: any): void => {
 
   infrastructureLoader(container);
 
-  // Domain Modules
   animeLoader(container);
 
   logger.debug('[Loaders] All modules registered successfully');
