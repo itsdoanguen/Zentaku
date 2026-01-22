@@ -55,7 +55,7 @@ class AnimeRepository extends BaseMediaRepository<AnimeItem> {
    * @param repository - TypeORM repository instance (injected by DI container)
    */
   constructor(repository?: Repository<AnimeItem>) {
-    super(repository || AppDataSource.getRepository(AnimeItem), '');
+    super(repository || AppDataSource.getRepository(AnimeItem));
   }
 
   // ==================== IMediaRepository IMPLEMENTATIONS ====================

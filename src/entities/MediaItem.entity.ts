@@ -35,15 +35,12 @@ export abstract class MediaItem extends SoftDeletableEntity {
   // ==================== SYNC IDS ====================
 
   @Column({ name: 'id_anilist', type: 'int', nullable: true, unique: true })
-  @Index()
   idAnilist?: number | null;
 
   @Column({ name: 'id_mal', type: 'int', nullable: true, unique: true })
-  @Index()
   idMal?: number | null;
 
   @Column({ name: 'id_mangadex', type: 'varchar', length: 255, nullable: true, unique: true })
-  @Index()
   idMangadex?: string | null;
 
   @Column({ name: 'last_synced_at', type: 'datetime', nullable: true })

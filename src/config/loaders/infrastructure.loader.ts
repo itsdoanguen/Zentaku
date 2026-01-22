@@ -70,8 +70,8 @@ const loadInfrastructure = (container: any): void => {
     'anilistAnimeClient',
     () => {
       const AnilistAnimeClient =
-        require('../../infrastructure/external/anilist/AnilistAnimeClient').default ||
-        require('../../infrastructure/external/anilist/AnilistAnimeClient');
+        require('../../infrastructure/external/anilist/anime/AnilistAnimeClient').default ||
+        require('../../infrastructure/external/anilist/anime/AnilistAnimeClient');
       const client = new AnilistAnimeClient();
       return client;
     },

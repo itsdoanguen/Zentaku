@@ -23,7 +23,7 @@
  * - Comments (one-to-many)
  */
 
-import { Column, Entity, Index, OneToMany } from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
 import type { Activity } from './Activity.entity';
 import { SoftDeletableEntity } from './base/SoftDeletableEntity';
 import type { ChannelParticipant } from './ChannelParticipant.entity';
@@ -42,11 +42,9 @@ import type { WatchRoomConfig } from './WatchRoomConfig.entity';
 @Entity('users')
 export class User extends SoftDeletableEntity {
   @Column({ type: 'varchar', length: 255, unique: true })
-  @Index()
   username!: string;
 
   @Column({ type: 'varchar', length: 255, unique: true })
-  @Index()
   email!: string;
 
   @Column({ name: 'password_hash', type: 'varchar', length: 255 })

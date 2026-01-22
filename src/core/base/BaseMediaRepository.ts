@@ -41,23 +41,13 @@ export interface TopRatedOptions extends MediaSearchOptions {
 export abstract class BaseMediaRepository<
   T extends ObjectLiteral = ObjectLiteral,
 > extends BaseRepository<T> {
-  protected readonly metadataRelation: string;
-
   /**
    * Create a media repository instance
    *
    * @param repository - TypeORM repository instance
-   * @param metadataRelation - Name of metadata relation (e.g., 'animeMetadata', 'bookMetadata')
-   * @throws {Error} If metadata relation name is not provided
    */
-  constructor(repository: Repository<T>, metadataRelation: string) {
+  constructor(repository: Repository<T>) {
     super(repository);
-
-    if (!metadataRelation) {
-      throw new Error('Metadata relation name is required for MediaRepository');
-    }
-
-    this.metadataRelation = metadataRelation;
   }
 
   // ============================================
@@ -67,14 +57,14 @@ export abstract class BaseMediaRepository<
   /**
    * Get default relations for media queries
    *
-   * Automatically includes the specific metadata relation.
-   * Override this method in child classes if different relations are needed.
+   * Returns empty array since entities are now flat (no separate metadata tables).
+   * Override this method in child classes if relations are needed.
    *
    * @protected
    * @returns Relations array for TypeORM queries
    */
   protected _getDefaultRelations(): string[] {
-    return [this.metadataRelation];
+    return [];
   }
 
   /**

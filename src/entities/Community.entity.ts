@@ -37,7 +37,6 @@ export class Community extends SoftDeletableEntity {
   isPublic!: boolean;
 
   @Column({ name: 'invite_code', type: 'varchar', length: 50, nullable: true, unique: true })
-  @Index()
   inviteCode?: string | null;
 
   // ==================== RELATIONSHIPS ====================
