@@ -32,10 +32,6 @@ const loadAnime = (container: any): void => {
     }
   );
 
-  /**
-   * Anime Repository
-   * Data access layer for anime entities
-   */
   container.register(
     'animeRepository',
     (c: any) => {
@@ -55,10 +51,6 @@ const loadAnime = (container: any): void => {
     }
   );
 
-  /**
-   * Anime Service
-   * Business logic layer for anime operations
-   */
   container.register(
     'animeService',
     (c: any) => {
@@ -85,10 +77,6 @@ const loadAnime = (container: any): void => {
     }
   );
 
-  /**
-   * Anime Controller
-   * HTTP request handler layer for anime endpoints
-   */
   container.register(
     'animeController',
     (c: any) => {

@@ -5,19 +5,6 @@ import type AnimeService from './anime.service';
 /**
  * Anime Controller
  *
- * HTTP request handler layer for anime endpoints.
- * Extends BaseMediaController with anime-specific route handlers.
- *
- * Features:
- * - Anime detail retrieval
- * - Overview with relations, characters, staff, stats
- * - Character and staff listing with pagination
- * - Statistics retrieval
- * - Streaming platforms (Where to Watch)
- * - Request validation and parameter extraction
- * - Standardized response formatting
- * - Error handling via BaseMediaController
- *
  * @extends BaseMediaController
  */
 class AnimeController extends BaseMediaController<AnimeService> {
