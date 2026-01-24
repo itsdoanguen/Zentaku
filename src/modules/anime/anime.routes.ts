@@ -14,14 +14,14 @@ const initializeAnimeRoutes = (container: any): Router => {
 
   /**
    * @swagger
-   * /api/anilist/anime/{id}:
+   * /api/anilist/anime/{anilistId}:
    *   get:
    *     summary: Get anime basic information
    *     description: Retrieve detailed information about an anime from AniList API. Data is cached in database and synced every 7 days.
    *     tags: [Anime]
    *     parameters:
    *       - in: path
-   *         name: id
+   *         name: anilistId
    *         required: true
    *         schema:
    *           type: integer
@@ -43,7 +43,7 @@ const initializeAnimeRoutes = (container: any): Router => {
    *         $ref: '#/components/responses/ServerError'
    */
   router.get(
-    '/:id',
+    '/:anilistId',
     AnimeValidator.getByIdRules(),
     AnimeValidator.validate,
     animeController.getBasicInfo
@@ -51,14 +51,14 @@ const initializeAnimeRoutes = (container: any): Router => {
 
   /**
    * @swagger
-   * /api/anilist/anime/{id}/overview:
+   * /api/anilist/anime/{anilistId}/overview:
    *   get:
    *     summary: Get anime overview
    *     description: Retrieve comprehensive overview including relations, characters preview, staff preview, statistics, rankings, and recommendations
    *     tags: [Anime]
    *     parameters:
    *       - in: path
-   *         name: id
+   *         name: anilistId
    *         required: true
    *         schema:
    *           type: integer
@@ -146,7 +146,7 @@ const initializeAnimeRoutes = (container: any): Router => {
    *         $ref: '#/components/responses/ServerError'
    */
   router.get(
-    '/:id/overview',
+    '/:anilistId/overview',
     AnimeValidator.getByIdRules(),
     AnimeValidator.validate,
     animeController.getOverview
@@ -154,14 +154,14 @@ const initializeAnimeRoutes = (container: any): Router => {
 
   /**
    * @swagger
-   * /api/anilist/anime/{id}/characters:
+   * /api/anilist/anime/{anilistId}/characters:
    *   get:
    *     summary: Get anime characters with pagination
    *     description: Retrieve paginated list of characters for an anime, including role information and voice actors
    *     tags: [Anime]
    *     parameters:
    *       - in: path
-   *         name: id
+   *         name: anilistId
    *         required: true
    *         schema:
    *           type: integer
@@ -246,7 +246,7 @@ const initializeAnimeRoutes = (container: any): Router => {
    *         $ref: '#/components/responses/ServerError'
    */
   router.get(
-    '/:id/characters',
+    '/:anilistId/characters',
     AnimeValidator.getByIdRules(),
     AnimeValidator.validate,
     animeController.getCharacters
@@ -254,14 +254,14 @@ const initializeAnimeRoutes = (container: any): Router => {
 
   /**
    * @swagger
-   * /api/anilist/anime/{id}/staff:
+   * /api/anilist/anime/{anilistId}/staff:
    *   get:
    *     summary: Get anime staff with pagination
    *     description: Retrieve paginated list of staff members for an anime, including their roles
    *     tags: [Anime]
    *     parameters:
    *       - in: path
-   *         name: id
+   *         name: anilistId
    *         required: true
    *         schema:
    *           type: integer
@@ -331,7 +331,7 @@ const initializeAnimeRoutes = (container: any): Router => {
    *         $ref: '#/components/responses/ServerError'
    */
   router.get(
-    '/:id/staff',
+    '/:anilistId/staff',
     AnimeValidator.getByIdRules(),
     AnimeValidator.validate,
     animeController.getStaff
@@ -339,14 +339,14 @@ const initializeAnimeRoutes = (container: any): Router => {
 
   /**
    * @swagger
-   * /api/anilist/anime/{id}/stats:
+   * /api/anilist/anime/{anilistId}/stats:
    *   get:
    *     summary: Get anime statistics
    *     description: Retrieve comprehensive statistics including rankings, score distribution, and status distribution
    *     tags: [Anime]
    *     parameters:
    *       - in: path
-   *         name: id
+   *         name: anilistId
    *         required: true
    *         schema:
    *           type: integer
@@ -435,7 +435,7 @@ const initializeAnimeRoutes = (container: any): Router => {
    *         $ref: '#/components/responses/ServerError'
    */
   router.get(
-    '/:id/stats',
+    '/:anilistId/stats',
     AnimeValidator.getByIdRules(),
     AnimeValidator.validate,
     animeController.getStatistics
@@ -443,14 +443,14 @@ const initializeAnimeRoutes = (container: any): Router => {
 
   /**
    * @swagger
-   * /api/anilist/anime/{id}/watch:
+   * /api/anilist/anime/{anilistId}/watch:
    *   get:
    *     summary: Get streaming platforms for anime (Where to Watch)
    *     description: Retrieve list of legal streaming platforms where the anime can be watched. Anime-specific feature.
    *     tags: [Anime]
    *     parameters:
    *       - in: path
-   *         name: id
+   *         name: anilistId
    *         required: true
    *         schema:
    *           type: integer
@@ -501,7 +501,7 @@ const initializeAnimeRoutes = (container: any): Router => {
    *         $ref: '#/components/responses/ServerError'
    */
   router.get(
-    '/:id/watch',
+    '/:anilistId/watch',
     AnimeValidator.getByIdRules(),
     AnimeValidator.validate,
     animeController.getWhereToWatch

@@ -84,6 +84,180 @@ const options: swaggerJsdoc.Options = {
             },
           },
         },
+        PageInfo: {
+          type: 'object',
+          properties: {
+            total: {
+              type: 'integer',
+              example: 100,
+            },
+            currentPage: {
+              type: 'integer',
+              example: 1,
+            },
+            lastPage: {
+              type: 'integer',
+              example: 10,
+            },
+            hasNextPage: {
+              type: 'boolean',
+              example: true,
+            },
+            perPage: {
+              type: 'integer',
+              example: 25,
+            },
+          },
+        },
+        AnimeResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true,
+            },
+            data: {
+              type: 'object',
+              properties: {
+                idAnilist: {
+                  type: 'integer',
+                  example: 1,
+                },
+                malId: {
+                  type: 'integer',
+                  nullable: true,
+                  example: 1,
+                },
+                title: {
+                  type: 'object',
+                  properties: {
+                    romaji: {
+                      type: 'string',
+                      example: 'Cowboy Bebop',
+                    },
+                    english: {
+                      type: 'string',
+                      nullable: true,
+                      example: 'Cowboy Bebop',
+                    },
+                    native: {
+                      type: 'string',
+                      nullable: true,
+                      example: 'カウボーイビバップ',
+                    },
+                  },
+                },
+                coverImage: {
+                  type: 'string',
+                  nullable: true,
+                },
+                bannerImage: {
+                  type: 'string',
+                  nullable: true,
+                },
+                type: {
+                  type: 'string',
+                  example: 'ANIME',
+                },
+                status: {
+                  type: 'string',
+                  example: 'FINISHED',
+                },
+                isAdult: {
+                  type: 'boolean',
+                  example: false,
+                },
+                score: {
+                  type: 'number',
+                  nullable: true,
+                  example: 8.6,
+                },
+                meanScore: {
+                  type: 'number',
+                  nullable: true,
+                  example: 8.6,
+                },
+                description: {
+                  type: 'string',
+                  nullable: true,
+                },
+                genres: {
+                  type: 'array',
+                  items: {
+                    type: 'string',
+                  },
+                  nullable: true,
+                },
+                episodes: {
+                  type: 'integer',
+                  nullable: true,
+                  example: 26,
+                },
+                duration: {
+                  type: 'integer',
+                  nullable: true,
+                  example: 24,
+                },
+                season: {
+                  type: 'string',
+                  nullable: true,
+                  example: 'SPRING',
+                },
+                seasonYear: {
+                  type: 'integer',
+                  nullable: true,
+                  example: 1998,
+                },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        ValidationError: {
+          description: 'Invalid request parameters',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/ValidationError',
+              },
+            },
+          },
+        },
+        NotFoundError: {
+          description: 'Resource not found',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/Error',
+              },
+              example: {
+                success: false,
+                error: {
+                  name: 'NotFoundError',
+                  message: 'Anime not found',
+                },
+              },
+            },
+          },
+        },
+        ServerError: {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/Error',
+              },
+              example: {
+                success: false,
+                error: {
+                  name: 'InternalServerError',
+                  message: 'An unexpected error occurred',
+                },
+              },
+            },
+          },
+        },
       },
     },
     tags: [

@@ -26,6 +26,10 @@ const loadInfrastructure = (container: any): void => {
     }
   );
 
+  /**
+   * HTTP Client
+   * Singleton instance for external HTTP requests
+   */
   container.register(
     'httpClient',
     () => {
@@ -37,6 +41,10 @@ const loadInfrastructure = (container: any): void => {
     }
   );
 
+  /**
+   * Logger Utility
+   * Singleton logger instance
+   */
   container.register(
     'logger',
     () => {
@@ -47,6 +55,10 @@ const loadInfrastructure = (container: any): void => {
     }
   );
 
+  /**
+   * AniList Anime Client
+   * Handles all AniList API operations for anime
+   */
   container.register(
     'anilistAnimeClient',
     () => {
@@ -62,6 +74,10 @@ const loadInfrastructure = (container: any): void => {
     }
   );
 
+  /**
+   * AniList Character Client
+   * Handles all AniList API operations for characters
+   */
   container.register(
     'anilistCharacterClient',
     () => {
@@ -77,6 +93,10 @@ const loadInfrastructure = (container: any): void => {
     }
   );
 
+  /**
+   * AniList Staff Client
+   * Handles all AniList API operations for staff
+   */
   container.register(
     'anilistStaffClient',
     () => {
@@ -92,6 +112,10 @@ const loadInfrastructure = (container: any): void => {
     }
   );
 
+  /**
+   * AniList Metadata Adapter
+   * Implements IMetadataSource interface using AniList
+   */
   container.register(
     'anilistMetadataAdapter',
     () => {

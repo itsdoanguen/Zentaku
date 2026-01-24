@@ -66,7 +66,7 @@ export abstract class BaseMediaController<
    * GET /api/anime/:externalId
    */
   async getBasicInfo(req: Request, res: Response): Promise<Response> {
-    const externalId = this.getIntParam(req, 'externalId');
+    const externalId = this.getIntParam(req, 'anilistId');
     this.logInfo('Fetching media details', { externalId });
 
     const media = await this.service.getDetails(externalId);
@@ -89,7 +89,7 @@ export abstract class BaseMediaController<
    * GET /api/anime/:externalId/overview
    */
   async getOverview(req: Request, res: Response): Promise<Response> {
-    const externalId = this.getIntParam(req, 'externalId');
+    const externalId = this.getIntParam(req, 'anilistId');
     this.logInfo('Fetching media overview', { externalId });
 
     const overview = await this.service.getOverview(externalId);
@@ -113,7 +113,7 @@ export abstract class BaseMediaController<
    * GET /api/anime/:externalId/characters?page=1&perPage=25
    */
   async getCharacters(req: Request, res: Response): Promise<Response> {
-    const externalId = this.getIntParam(req, 'externalId');
+    const externalId = this.getIntParam(req, 'anilistId');
     const { page, perPage } = this.getPaginationParams(req, {
       page: 1,
       perPage: 25,
@@ -143,7 +143,7 @@ export abstract class BaseMediaController<
    * GET /api/anime/:externalId/staff?page=1&perPage=25
    */
   async getStaff(req: Request, res: Response): Promise<Response> {
-    const externalId = this.getIntParam(req, 'externalId');
+    const externalId = this.getIntParam(req, 'anilistId');
     const { page, perPage } = this.getPaginationParams(req, {
       page: 1,
       perPage: 25,
@@ -176,7 +176,7 @@ export abstract class BaseMediaController<
    * GET /api/anime/:externalId/statistics
    */
   async getStatistics(req: Request, res: Response): Promise<Response> {
-    const externalId = this.getIntParam(req, 'externalId');
+    const externalId = this.getIntParam(req, 'anilistId');
     this.logInfo('Fetching media statistics', { externalId });
 
     const statistics = await this.service.getStatistics(externalId);

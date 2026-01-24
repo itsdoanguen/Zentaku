@@ -35,7 +35,7 @@ class AnimeController extends BaseMediaController<AnimeService> {
    * @returns Success response with streaming data
    */
   async getWhereToWatch(req: Request, res: Response): Promise<Response> {
-    const externalId = this.getIntParam(req, 'externalId');
+    const externalId = this.getIntParam(req, 'anilistId');
     this.logInfo('Fetching streaming platforms', { externalId });
 
     const streamingData = await this.service.getWhereToWatch(externalId);
