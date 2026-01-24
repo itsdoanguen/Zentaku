@@ -291,7 +291,6 @@ export abstract class BaseService {
       name: error.name,
     });
 
-    // Re-throw known errors without modification
     if (
       error instanceof NotFoundError ||
       error instanceof ValidationError ||
@@ -300,7 +299,6 @@ export abstract class BaseService {
       throw error;
     }
 
-    // Wrap unknown errors
     throw new Error(`Service error: ${error.message}`);
   }
 

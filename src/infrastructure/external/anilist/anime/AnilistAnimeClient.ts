@@ -8,6 +8,7 @@ import {
   ANIME_ID_SEARCH_QS,
   ANIME_INFO_LIGHTWEIGHT_QS,
   ANIME_INFO_QS,
+  ANIME_OVERVIEW_QS,
   ANIME_SEARCH_CRITERIA_QS,
   ANIME_SEASON_TREND_QS,
   ANIME_STATS_QS,
@@ -21,6 +22,8 @@ import type {
   AnimeInfoResponse,
   AnimeLightweight,
   AnimeLightweightResponse,
+  AnimeOverview,
+  AnimeOverviewResponse,
   AnimeSearchResponse,
   AnimeSearchResult,
   AnimeSeasonalResponse,
@@ -70,6 +73,28 @@ class AnilistAnimeClient extends AnilistClient {
       ANIME_INFO_LIGHTWEIGHT_QS,
       { id: animeId },
       `fetchAnimeLightweight(${animeId})`
+    );
+
+    if (!data?.Media) {
+      throw new NotFoundError(`Anime with ID ${animeId} not found`);
+    }
+
+    return data.Media;
+  }
+
+  /**
+   * Fetch anime overview data
+   * Includes: relations, characters/staff preview, stats, rankings, recommendations
+   *
+   * @param {number} animeId - Anime ID
+   * @returns {Promise<AnimeOverview>} - Anime overview data
+   * @throws {NotFoundError} - If anime not found
+   */
+  async fetchOverview(animeId: number): Promise<AnimeOverview> {
+    const data = await this.executeQuery<AnimeOverviewResponse>(
+      ANIME_OVERVIEW_QS,
+      { id: animeId },
+      `fetchAnimeOverview(${animeId})`
     );
 
     if (!data?.Media) {

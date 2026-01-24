@@ -127,7 +127,7 @@ export abstract class BaseMediaService extends BaseService {
     this.externalClient = externalClient;
     this.adapter = adapter;
 
-    // Sync configuration
+    // Sync config
     this.syncThresholdDays = 7;
     this.cacheEnabled = true;
   }
@@ -194,15 +194,12 @@ export abstract class BaseMediaService extends BaseService {
     const context = `getDetails(${externalId})`;
 
     return this._executeWithErrorHandling(async () => {
-      // Validate input
       this._validateId(externalId, `${this.getMediaType()} ID`);
 
       this._logInfo(`Fetching ${this.getMediaType()} details`, { externalId });
 
-      // Get from database
       let media = await this._getFromDatabase(externalId);
 
-      // Check if sync needed and perform sync
       if (this._shouldSync(media)) {
         media = await this._syncFromExternal(externalId, media);
       }
@@ -211,7 +208,6 @@ export abstract class BaseMediaService extends BaseService {
         throw new NotFoundError(`${this.getMediaType()} with ID ${externalId} not found`);
       }
 
-      // Format response using adapter
       const formatted = this.adapter.toResponse(media);
 
       this._logInfo(`Successfully fetched ${this.getMediaType()}`, {
@@ -249,13 +245,11 @@ export abstract class BaseMediaService extends BaseService {
       return true;
     }
 
-    // Never synced before
     if (!media.lastSyncedAt) {
       this._logDebug('Sync needed: media never synced');
       return true;
     }
 
-    // Check if data is stale
     const isStale = this._isOlderThan(media.lastSyncedAt, this.syncThresholdDays);
 
     if (isStale) {
@@ -298,7 +292,6 @@ export abstract class BaseMediaService extends BaseService {
     try {
       this._logInfo(`Syncing ${this.getMediaType()} from external API`, { externalId });
 
-      // Fetch from external API (polymorphic - different for each media type)
       const externalData = await this._fetchFromExternalAPI(externalId);
 
       if (!externalData) {
@@ -307,10 +300,8 @@ export abstract class BaseMediaService extends BaseService {
         );
       }
 
-      // Transform using adapter
       const transformedData = this.adapter.fromExternal(externalData);
 
-      // Add sync metadata
       transformedData.lastSyncedAt = new Date();
       transformedData.type = this.getMediaType();
 
@@ -323,7 +314,6 @@ export abstract class BaseMediaService extends BaseService {
 
       return syncedMedia;
     } catch (error) {
-      // Fallback to cached data if available
       if (existingMedia) {
         this._logWarn(`Sync failed for ${this.getMediaType()}, using cached data`, {
           externalId,
@@ -335,7 +325,6 @@ export abstract class BaseMediaService extends BaseService {
         return existingMedia;
       }
 
-      // No cached data, propagate error
       this._logError(`Sync failed for ${this.getMediaType()} and no cache available`, {
         externalId,
         error: (error as Error).message,
@@ -428,16 +417,13 @@ export abstract class BaseMediaService extends BaseService {
 
       this._logInfo(`Searching ${this.getMediaType()}`, { query, page, perPage });
 
-      // Search in database first
       const results = await this.dbRepository.searchByTitle(query, {
         skip: pagination.skip,
         take: pagination.take,
       });
 
-      // Format results
       const formattedResults = results.map((item) => this.adapter.toResponse(item));
 
-      // Get total count for pagination
       const total = await this.dbRepository.countByQuery({ query });
       return {
         items: formattedResults,
@@ -475,12 +461,9 @@ export abstract class BaseMediaService extends BaseService {
         count: externalIds.length,
       });
 
-      // Fetch all from database
       const mediaItems = await this.dbRepository.findManyByExternalIds(externalIds);
-      // Check which need sync
       const needSync = mediaItems.filter((m) => this._shouldSync(m));
 
-      // Sync if needed
       if (needSync.length > 0) {
         this._logInfo(`Syncing ${needSync.length} ${this.getMediaType()} items`);
 
@@ -492,10 +475,8 @@ export abstract class BaseMediaService extends BaseService {
         );
       }
 
-      // Re-fetch after sync
       const updatedItems = await this.dbRepository.findManyByExternalIds(externalIds);
 
-      // Format responses
       return updatedItems.map((item) => this.adapter.toResponse(item));
     }, context);
   }
