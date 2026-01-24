@@ -1,5 +1,6 @@
 import { NotFoundError } from '../../../../shared/utils/error';
 import logger from '../../../../shared/utils/logger';
+import { MEDIA_OVERVIEW_QS, MEDIA_STATISTICS_QS } from '../anilist.queries';
 import type { MediaStatistics, PageInfo } from '../anilist.types';
 import AnilistClient from '../AnilistClient';
 import {
@@ -8,10 +9,8 @@ import {
   ANIME_ID_SEARCH_QS,
   ANIME_INFO_LIGHTWEIGHT_QS,
   ANIME_INFO_QS,
-  ANIME_OVERVIEW_QS,
   ANIME_SEARCH_CRITERIA_QS,
   ANIME_SEASON_TREND_QS,
-  ANIME_STATS_QS,
   ANIME_WHERE_TO_WATCH_QS,
 } from './anilist-anime.queries';
 import type {
@@ -92,8 +91,8 @@ class AnilistAnimeClient extends AnilistClient {
    */
   async fetchOverview(animeId: number): Promise<AnimeOverview> {
     const data = await this.executeQuery<AnimeOverviewResponse>(
-      ANIME_OVERVIEW_QS,
-      { id: animeId },
+      MEDIA_OVERVIEW_QS,
+      { id: animeId, type: 'ANIME' },
       `fetchAnimeOverview(${animeId})`
     );
 
@@ -267,8 +266,8 @@ class AnilistAnimeClient extends AnilistClient {
    */
   async fetchStatistics(animeId: number): Promise<MediaStatistics> {
     const data = await this.executeQuery<AnimeStatisticsResponse>(
-      ANIME_STATS_QS,
-      { id: animeId },
+      MEDIA_STATISTICS_QS,
+      { id: animeId, type: 'ANIME' },
       `fetchAnimeStats(${animeId})`
     );
 

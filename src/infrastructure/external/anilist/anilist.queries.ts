@@ -255,3 +255,33 @@ query ($id: Int, $type: MediaType, $page: Int, $perPage: Int) {
   }
 }
 `;
+
+export const MEDIA_STATISTICS_QS = `
+query ($id: Int, $type: MediaType) {
+  Media(id: $id, type: $type) {
+    id
+    averageScore
+    meanScore
+    rankings {
+      id
+      rank
+      type
+      format
+      year
+      season
+      allTime
+      context
+    }
+    stats {
+      scoreDistribution {
+        score
+        amount
+      }
+      statusDistribution {
+        status
+        amount
+      }
+    }
+  }
+}
+`;

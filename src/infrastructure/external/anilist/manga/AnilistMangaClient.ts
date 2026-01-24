@@ -1,5 +1,6 @@
 import { NotFoundError } from '../../../../shared/utils/error';
 import logger from '../../../../shared/utils/logger';
+import { MEDIA_STATISTICS_QS } from '../anilist.queries';
 import type { MediaStatistics, PageInfo } from '../anilist.types';
 import AnilistClient from '../AnilistClient';
 import {
@@ -9,7 +10,6 @@ import {
   MANGA_INFO_LIGHTWEIGHT_QS,
   MANGA_INFO_QS,
   MANGA_SEARCH_CRITERIA_QS,
-  MANGA_STATS_QS,
 } from './anilist-manga.queries';
 import type {
   MangaBatchInfo,
@@ -210,8 +210,8 @@ class AnilistMangaClient extends AnilistClient {
    */
   async fetchStatistics(mangaId: number): Promise<MediaStatistics> {
     const data = await this.executeQuery<MangaStatisticsResponse>(
-      MANGA_STATS_QS,
-      { id: mangaId },
+      MEDIA_STATISTICS_QS,
+      { id: mangaId, type: 'MANGA' },
       `fetchMangaStats(${mangaId})`
     );
 

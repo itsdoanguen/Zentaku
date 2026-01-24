@@ -100,35 +100,6 @@ query ($genres: [String], $format: MediaFormat, $status: MediaStatus, $countryOf
 }
 `;
 
-export const MANGA_STATS_QS = `
-query ($id: Int) {
-  Media(id: $id, type: MANGA) {
-    id
-    averageScore
-    meanScore
-    rankings {
-      id
-      rank
-      type
-      format
-      year
-      allTime
-      context
-    }
-    stats {
-      scoreDistribution {
-        score
-        amount
-      }
-      statusDistribution {
-        status
-        amount
-      }
-    }
-  }
-}
-`;
-
 export const MANGA_BATCH_INFO_QS = `
 query ($ids: [Int]) {
   Page(page: 1, perPage: 50) {

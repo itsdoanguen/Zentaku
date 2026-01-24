@@ -601,10 +601,8 @@ export abstract class BaseMediaService extends BaseService {
     const context = `search("${query}")`;
 
     return this._executeWithErrorHandling(async () => {
-      // Validate query
       this._validateString(query, 'Search query', { minLength: 1, maxLength: 100 });
 
-      // Get pagination params
       const pagination = this._getPaginationParams(page, perPage);
 
       this._logInfo(`Searching ${this.getMediaType()}`, { query, page, perPage });

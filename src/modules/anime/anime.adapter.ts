@@ -20,9 +20,6 @@ import type {
   AnimeLightweight,
 } from '../../infrastructure/external/anilist/anime/anilist-anime.types';
 
-/**
- * Data structure for TypeORM create/upsert operations
- */
 interface TypeORMAnimeCreateData {
   idAnilist: number;
   idMal?: number | null;
@@ -42,7 +39,7 @@ interface TypeORMAnimeCreateData {
   popularity?: number | null;
   favorites?: number | null;
   meanScore?: number | null;
-  // Anime-specific fields
+
   episodeCount?: number | null;
   durationMin?: number | null;
   season?: string | null;
@@ -53,9 +50,6 @@ interface TypeORMAnimeCreateData {
   nextAiringEpisode?: object | null;
 }
 
-/**
- * API Response format
- */
 interface AnimeResponse {
   idAnilist: number;
   malId: number | null;
@@ -88,9 +82,6 @@ interface AnimeResponse {
   lastSyncedAt: string | null;
 }
 
-/**
- * Minimal response for lists/cards
- */
 interface AnimeResponseMinimal {
   idAnilist: number;
   title: {
