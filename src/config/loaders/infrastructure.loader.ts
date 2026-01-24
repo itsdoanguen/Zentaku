@@ -1,12 +1,5 @@
 /**
  * Infrastructure Layer Container Loader
- *
- * Registers core infrastructure dependencies:
- * - Database (TypeORM DataSource)
- * - HTTP Client
- * - Logger
- * - External API Clients
- *
  * @module InfrastructureLoader
  */
 
@@ -73,6 +66,44 @@ const loadInfrastructure = (container: any): void => {
         require('../../infrastructure/external/anilist/anime/AnilistAnimeClient').default ||
         require('../../infrastructure/external/anilist/anime/AnilistAnimeClient');
       const client = new AnilistAnimeClient();
+      return client;
+    },
+    {
+      singleton: true,
+      dependencies: ['httpClient'],
+    }
+  );
+
+  /**
+   * AniList Character Client
+   * Handles all AniList API operations for characters
+   */
+  container.register(
+    'anilistCharacterClient',
+    () => {
+      const AnilistCharacterClient =
+        require('../../infrastructure/external/anilist/character/AnilistCharacterClient').default ||
+        require('../../infrastructure/external/anilist/character/AnilistCharacterClient');
+      const client = new AnilistCharacterClient();
+      return client;
+    },
+    {
+      singleton: true,
+      dependencies: ['httpClient'],
+    }
+  );
+
+  /**
+   * AniList Staff Client
+   * Handles all AniList API operations for staff
+   */
+  container.register(
+    'anilistStaffClient',
+    () => {
+      const AnilistStaffClient =
+        require('../../infrastructure/external/anilist/staff/AnilistStaffClient').default ||
+        require('../../infrastructure/external/anilist/staff/AnilistStaffClient');
+      const client = new AnilistStaffClient();
       return client;
     },
     {
