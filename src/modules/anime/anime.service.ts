@@ -6,6 +6,15 @@ import type AnilistStaffClient from '../../infrastructure/external/anilist/staff
 import type AnimeAdapter from './anime.adapter';
 import type AnimeRepository from './anime.repository';
 
+/**
+ * Anime Service
+ * Business logic layer for anime operations
+ *
+ * Extends BaseMediaService with anime-specific implementations
+ * Uses dependency injection for better testability
+ *
+ * @extends BaseMediaService
+ */
 class AnimeService extends BaseMediaService {
   protected override readonly dbRepository: AnimeRepository;
   protected override readonly externalClient: AnilistAnimeClient;
@@ -13,6 +22,15 @@ class AnimeService extends BaseMediaService {
   protected override readonly characterClient?: AnilistCharacterClient;
   protected override readonly staffClient?: AnilistStaffClient;
 
+  /**
+   * Constructor with dependency injection
+   *
+   * @param animeRepository - Anime database repository
+   * @param animeAdapter - Anime data adapter
+   * @param anilistAnimeClient - AniList API client
+   * @param anilistCharacterClient - Optional AniList Character client
+   * @param anilistStaffClient - Optional AniList Staff client
+   */
   constructor(
     animeRepository: AnimeRepository,
     animeAdapter: AnimeAdapter,
@@ -34,18 +52,48 @@ class AnimeService extends BaseMediaService {
     this.staffClient = anilistStaffClient;
   }
 
+  // ==================== ABSTRACT METHOD IMPLEMENTATIONS ====================
+
+  /**
+   * Get media type identifier
+   *
+   * @returns ANIME
+   * @override
+   */
   getMediaType(): MediaType {
     return 'ANIME';
   }
 
+  /**
+   * Get external ID field name
+   *
+   * @returns idAnilist
+   * @override
+   */
   getExternalIdField(): ExternalIdField {
     return 'idAnilist';
   }
 
+  // ==================== PUBLIC API ====================
+
+  /**
+   * Get anime details by Anilist ID.
+   * Delegates to base class getDetails() template method
+   *
+   * @param anilistId - The Anilist ID of the anime
+   * @returns Formatted anime details
+   */
   async getAnimeDetails(anilistId: number): Promise<unknown> {
     return this.getDetails(anilistId);
   }
 
+  /**
+   * Get anime overview data
+   * Includes: relations, characters/staff preview, stats, rankings, recommendations
+   *
+   * @param anilistId - The Anilist ID of the anime
+   * @returns Anime overview data
+   */
   async getAnimeOverview(anilistId: number): Promise<unknown> {
     return this.getOverview(anilistId);
   }
