@@ -8,40 +8,37 @@ import { errorHandler, notFound } from './middlewares/errorHandler';
 
 dotenv.config();
 
-container.initialize();
+const createApp = (): Application => {
+  const app: Application = express();
 
-const app: Application = express();
+  app.use(helmet());
+  app.use(cors());
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
-app.use(helmet());
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    req.container = container;
+    next();
+  });
 
-// Inject container into request
-app.use((req: Request, _res: Response, next: NextFunction) => {
-  req.container = container;
-  next();
-});
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'MyAnilist API Docs',
+      customfavIcon: '/assets/favicon.ico',
+    })
+  );
 
-// Swagger UI Documentation
-app.use(
-  '/api-docs',
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec, {
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'MyAnilist API Docs',
-    customfavIcon: '/assets/favicon.ico',
-  })
-);
+  // API Routes
+  const router = require('./routes')(container);
 
-// API Routes
-const router = require('./routes')(container);
-app.use('/api', router);
+  app.use('/api', router);
+  app.use(notFound);
+  app.use(errorHandler);
 
-// Handle 404
-app.use(notFound);
+  return app;
+};
 
-// Error handler
-app.use(errorHandler);
-
-export default app;
+export { container, createApp };

@@ -1,0 +1,14 @@
+Migration Commands:
+npm run migration:generate -- -n MigrationName
+
+Create an empty migration file
+npm run migration:create -- -n MigrationName
+
+Run pending migrations
+npm run migration:run
+
+Revert the last migration
+npm run migration:revert
+
+Show all migrations and their status
+npm run migration:show

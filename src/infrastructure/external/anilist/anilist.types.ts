@@ -1,6 +1,6 @@
 /**
- * AniList API Response Type Definitions
- * TypeScript interfaces for GraphQL query responses
+ * AniList API Shared Type Definitions
+ * Common TypeScript interfaces used across all AniList modules
  */
 
 // ========== Common Types ==========
@@ -49,86 +49,6 @@ export interface NextAiringEpisode {
   airingAt: number;
   timeUntilAiring: number;
   episode: number;
-}
-
-// ========== Anime Types ==========
-
-export interface AnimeInfo {
-  id: number;
-  idMal?: number;
-  siteUrl?: string;
-  title: AnimeTitle;
-  synonyms?: string[];
-  format?: string;
-  episodes?: number;
-  duration?: number;
-  status?: string;
-  startDate?: MediaDate;
-  endDate?: MediaDate;
-  season?: string;
-  seasonYear?: number;
-  coverImage: CoverImage;
-  bannerImage?: string;
-  description?: string;
-  isAdult?: boolean;
-  averageScore?: number;
-  meanScore?: number;
-  popularity?: number;
-  favourites?: number;
-  genres?: string[];
-  tags?: Tag[];
-  source?: string;
-  hashtag?: string;
-  studios?: {
-    nodes: Studio[];
-  };
-  trailer?: Trailer;
-  nextAiringEpisode?: NextAiringEpisode;
-}
-
-export interface AnimeLightweight {
-  id: number;
-  title: AnimeTitle;
-  coverImage: CoverImage;
-  episodes?: number;
-  nextAiringEpisode?: NextAiringEpisode;
-}
-
-export interface AnimeBatchInfo {
-  id: number;
-  title: AnimeTitle;
-  coverImage: CoverImage;
-  episodes?: number;
-}
-
-export interface AnimeCover {
-  id: number;
-  coverImage: CoverImage;
-}
-
-export interface AnimeSearchResult {
-  id: number;
-  title: AnimeTitle;
-  coverImage: CoverImage;
-  averageScore?: number;
-  popularity?: number;
-  episodes?: number;
-  season?: string;
-  isAdult?: boolean;
-}
-
-export interface AnimeSeasonalResult {
-  id: number;
-  title: AnimeTitle;
-  coverImage: CoverImage;
-  bannerImage?: string;
-  averageScore?: number;
-  popularity?: number;
-  episodes?: number;
-  season?: string;
-  isAdult?: boolean;
-  nextAiringEpisode?: NextAiringEpisode;
-  trending?: number;
 }
 
 // ========== Character & Staff Types ==========
@@ -187,38 +107,9 @@ export interface MediaNode {
   seasonYear?: number;
 }
 
-export interface CharacterInfo {
-  id: number;
-  name: CharacterName;
-  image: CharacterImage;
-  description?: string;
-  media?: {
-    nodes: MediaNode[];
-  };
-}
-
-export interface StaffInfo {
-  id: number;
-  name: CharacterName;
-  image: CharacterImage;
-  description?: string;
-  languageV2?: string;
-  gender?: string;
-  dateOfBirth?: MediaDate;
-  dateOfDeath?: MediaDate;
-  age?: number;
-  yearsActive?: number[];
-  homeTown?: string;
-  bloodType?: string;
-  primaryOccupations?: string[];
-  staffMedia?: {
-    nodes: MediaNode[];
-  };
-}
-
 // ========== Statistics Types ==========
 
-export interface Ranking {
+export interface MediaRanking {
   id: number;
   rank: number;
   type: string;
@@ -229,113 +120,23 @@ export interface Ranking {
   context: string;
 }
 
-export interface ScoreDistribution {
+export interface MediaScoreDistribution {
   score: number;
   amount: number;
 }
 
-export interface StatusDistribution {
+export interface MediaStatusDistribution {
   status: string;
   amount: number;
 }
 
-export interface AnimeStatistics {
+export interface MediaStatistics {
   id: number;
   averageScore?: number;
   meanScore?: number;
-  rankings?: Ranking[];
+  rankings?: MediaRanking[];
   stats?: {
-    scoreDistribution?: ScoreDistribution[];
-    statusDistribution?: StatusDistribution[];
+    scoreDistribution?: MediaScoreDistribution[];
+    statusDistribution?: MediaStatusDistribution[];
   };
-}
-
-// ========== Streaming Types ==========
-
-export interface StreamingEpisode {
-  title?: string;
-  url: string;
-  site: string;
-}
-
-// ========== Response Wrappers ==========
-
-export interface AnimeInfoResponse {
-  Media: AnimeInfo;
-}
-
-export interface AnimeLightweightResponse {
-  Media: AnimeLightweight;
-}
-
-export interface AnimeBatchResponse {
-  Page: {
-    media: AnimeBatchInfo[];
-  };
-}
-
-export interface AnimeCoversBatchResponse {
-  Page: {
-    media: AnimeCover[];
-  };
-}
-
-export interface AnimeSearchResponse {
-  Page: {
-    pageInfo: PageInfo;
-    media: AnimeSearchResult[];
-  };
-}
-
-export interface AnimeSeasonalResponse {
-  Page: {
-    pageInfo: PageInfo;
-    media: AnimeSeasonalResult[];
-  };
-}
-
-export interface CharactersResponse {
-  Media: {
-    characters: {
-      pageInfo: PageInfo;
-      edges: CharacterEdge[];
-    };
-  };
-}
-
-export interface StaffResponse {
-  Media: {
-    staff: {
-      pageInfo: PageInfo;
-      edges: StaffEdge[];
-    };
-  };
-}
-
-export interface AnimeStatisticsResponse {
-  Media: AnimeStatistics;
-}
-
-export interface StreamingEpisodesResponse {
-  Media: {
-    streamingEpisodes: StreamingEpisode[];
-  };
-}
-
-export interface CharacterInfoResponse {
-  Character: CharacterInfo;
-}
-
-export interface StaffInfoResponse {
-  Staff: StaffInfo;
-}
-
-// ========== Enums & Criteria ==========
-
-export interface AnimeSearchCriteria {
-  genres?: string[];
-  season?: string;
-  seasonYear?: number;
-  format?: string;
-  status?: string;
 }

@@ -44,26 +44,25 @@
     "**/*.lock": true
   },
 
-  // Prisma
-  "[prisma]": {
-    "editor.defaultFormatter": "Prisma.prisma"
-  },
-
   //cSpell
   "cSpell.words": [
     "anilist",
     "Anilist",
     "animes",
+    "autoincrement",
     "customfav",
     "dailymotion",
     "Dailymotion",
+    "đồng",
     "favourites",
     "mangadex",
     "Mangadex",
     "naruto",
     "perpage",
+    "rewatch",
     "romaji",
     "Romaji",
+    "thời",
     "topbar",
     "zentaku"
   ]

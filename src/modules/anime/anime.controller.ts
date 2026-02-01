@@ -1,24 +1,13 @@
 import type { Request, Response } from 'express';
-import { BaseController } from '../../core/base/BaseController';
+import { BaseMediaController } from '../../core/base/BaseMediaController';
 import type AnimeService from './anime.service';
 
 /**
  * Anime Controller
  *
- * HTTP request handler layer for anime endpoints.
- * Extends BaseController with anime-specific route handlers.
- *
- * Features:
- * - Anime detail retrieval
- * - Request validation and parameter extraction
- * - Standardized response formatting
- * - Error handling via BaseController
- *
- * @extends BaseController
+ * @extends BaseMediaController
  */
-class AnimeController extends BaseController {
-  protected override readonly service: AnimeService;
-
+class AnimeController extends BaseMediaController<AnimeService> {
   /**
    * Create anime controller instance
    *
@@ -27,44 +16,31 @@ class AnimeController extends BaseController {
   constructor(animeService: AnimeService) {
     super(animeService);
 
-    this.service = animeService;
-
-    this.getAnimeDetail = this.getAnimeDetail.bind(this);
+    this.getBasicInfo = this.getBasicInfo.bind(this);
+    this.getOverview = this.getOverview.bind(this);
+    this.getCharacters = this.getCharacters.bind(this);
+    this.getStaff = this.getStaff.bind(this);
+    this.getStatistics = this.getStatistics.bind(this);
+    this.getWhereToWatch = this.getWhereToWatch.bind(this);
   }
 
   // ==================== PUBLIC API ====================
 
   /**
-   * Get anime detail by AniList ID
+   * Get streaming platforms information for anime (Where to Watch)
    *
-   * Retrieves complete anime information including metadata.
-   * Automatically syncs from AniList if cache is stale.
-   *
-   * @route GET /api/anime/:anilistId
-   * @param req - Express request
+   * @route GET /api/anime/:externalId/watch
+   * @param req - Express request (expects :externalId param)
    * @param res - Express response
-   * @returns Success response with anime data
-   * @throws {ValidationError} If anilistId is invalid
-   * @throws {NotFoundError} If anime not found
-   *
-   * @example
-   * GET /api/anime/1
-   * Response: {
-   *   success: true,
-   *   data: {
-   *     idAnilist: 1,
-   *     title: { romaji: "Cowboy Bebop", ... },
-   *     ...
-   *   }
-   * }
+   * @returns Success response with streaming data
    */
-  async getAnimeDetail(req: Request, res: Response): Promise<Response> {
-    const anilistId = this.getIntParam(req, 'anilistId');
-    this.logInfo('Fetching anime detail', { anilistId });
+  async getWhereToWatch(req: Request, res: Response): Promise<Response> {
+    const externalId = this.getIntParam(req, 'anilistId');
+    this.logInfo('Fetching streaming platforms', { externalId });
 
-    const anime = await this.service.getAnimeDetails(anilistId);
+    const streamingData = await this.service.getWhereToWatch(externalId);
 
-    return this.success(res, anime);
+    return this.success(res, streamingData);
   }
 }
 

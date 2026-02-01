@@ -134,12 +134,10 @@ class Container {
       return this.singletons.get(name) as T;
     }
 
-    // Create new instance
     try {
       logger.debug(`[Container] Resolving: ${name}`);
       const instance = config.factory(this);
 
-      // Cache singleton
       if (config.options.singleton) {
         this.singletons.set(name, instance);
         logger.debug(`[Container] Cached singleton: ${name}`);
@@ -221,9 +219,12 @@ class Container {
     try {
       logger.info('[Container] Starting initialization...');
 
-      // Verify critical dependencies are resolvable
+      const { initializeDatabase } = require('./database');
+      await initializeDatabase();
+      logger.info('[Container] TypeORM DataSource initialized ✓');
+
       const criticalDeps = [
-        'prisma',
+        'dataSource',
         'httpClient',
         'anilistAnimeClient',
         'animeAdapter',
@@ -256,12 +257,11 @@ class Container {
     try {
       logger.info('[Container] Starting graceful shutdown...');
 
-      // Disconnect Prisma if it was initialized
-      if (this.singletons.has('prisma')) {
-        const prisma = this.singletons.get('prisma');
-        if (prisma && typeof prisma.$disconnect === 'function') {
-          await prisma.$disconnect();
-          logger.info('[Container] Prisma disconnected');
+      if (this.singletons.has('dataSource')) {
+        const dataSource = this.singletons.get('dataSource');
+        if (dataSource && typeof dataSource.destroy === 'function') {
+          await dataSource.destroy();
+          logger.info('[Container] TypeORM DataSource disconnected');
         }
       }
 
@@ -274,7 +274,6 @@ class Container {
   }
 }
 
-// Load all modules into the container
 const container = new Container();
 const loadModules = require('./loaders');
 loadModules(container);

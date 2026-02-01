@@ -10,14 +10,13 @@ import AnimeValidator = require('./anime.validator');
 const initializeAnimeRoutes = (container: any): Router => {
   const router = express.Router();
 
-  // Resolve controller from DI container
   const animeController = container.resolve('animeController');
 
   /**
    * @swagger
    * /api/anilist/anime/{anilistId}:
    *   get:
-   *     summary: Get anime details by AniList ID
+   *     summary: Get anime basic information
    *     description: Retrieve detailed information about an anime from AniList API. Data is cached in database and synced every 7 days.
    *     tags: [Anime]
    *     parameters:
@@ -35,6 +34,43 @@ const initializeAnimeRoutes = (container: any): Router => {
    *         content:
    *           application/json:
    *             schema:
+   *               $ref: '#/components/schemas/AnimeResponse'
+   *       400:
+   *         $ref: '#/components/responses/ValidationError'
+   *       404:
+   *         $ref: '#/components/responses/NotFoundError'
+   *       500:
+   *         $ref: '#/components/responses/ServerError'
+   */
+  router.get(
+    '/:anilistId',
+    AnimeValidator.getByIdRules(),
+    AnimeValidator.validate,
+    animeController.getBasicInfo
+  );
+
+  /**
+   * @swagger
+   * /api/anilist/anime/{anilistId}/overview:
+   *   get:
+   *     summary: Get anime overview
+   *     description: Retrieve comprehensive overview including relations, characters preview, staff preview, statistics, rankings, and recommendations
+   *     tags: [Anime]
+   *     parameters:
+   *       - in: path
+   *         name: anilistId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *           minimum: 1
+   *         description: The AniList ID of the anime
+   *         example: 1
+   *     responses:
+   *       200:
+   *         description: Anime overview retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
    *               type: object
    *               properties:
    *                 success:
@@ -43,164 +79,432 @@ const initializeAnimeRoutes = (container: any): Router => {
    *                 data:
    *                   type: object
    *                   properties:
-   *                     idAnilist:
+   *                     id:
    *                       type: integer
    *                       example: 1
-   *                       description: "AniList ID of the anime"
-   *                     malId:
-   *                       type: integer
-   *                       nullable: true
-   *                       example: 1
-   *                       description: "MyAnimeList ID"
-   *                     title:
+   *                     relations:
    *                       type: object
    *                       properties:
-   *                         romaji:
-   *                           type: string
-   *                           example: "Cowboy Bebop"
-   *                         english:
-   *                           type: string
-   *                           nullable: true
-   *                           example: "Cowboy Bebop"
-   *                         native:
-   *                           type: string
-   *                           nullable: true
-   *                           example: "カウボーイビバップ"
-   *                     coverImage:
-   *                       type: string
-   *                       nullable: true
-   *                       example: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1-CXtrrkMpJ8Zq.png"
-   *                     bannerImage:
-   *                       type: string
-   *                       nullable: true
-   *                       example: "https://s4.anilist.co/file/anilistcdn/media/anime/banner/1-OquNCNB6srGe.jpg"
-   *                     type:
-   *                       type: string
-   *                       example: "ANIME"
-   *                       description: "Media type"
-   *                     status:
-   *                       type: string
-   *                       enum: [FINISHED, RELEASING, NOT_YET_RELEASED, CANCELLED]
-   *                       example: "FINISHED"
-   *                     isAdult:
-   *                       type: boolean
-   *                       example: false
-   *                     score:
-   *                       type: number
-   *                       nullable: true
-   *                       example: 8.6
-   *                       description: "Average score (0-10 scale)"
-   *                     meanScore:
-   *                       type: number
-   *                       nullable: true
-   *                       example: 8.6
-   *                       description: "Mean score (0-10 scale)"
-   *                     description:
-   *                       type: string
-   *                       nullable: true
-   *                       example: "In the year 2071, humanity has colonized several of the planets..."
-   *                     synonyms:
+   *                         edges:
+   *                           type: array
+   *                           items:
+   *                             type: object
+   *                             properties:
+   *                               id:
+   *                                 type: integer
+   *                               relationType:
+   *                                 type: string
+   *                                 example: "SEQUEL"
+   *                               node:
+   *                                 type: object
+   *                     characters:
+   *                       type: object
+   *                       description: "Preview of first 6 characters"
+   *                       properties:
+   *                         edges:
+   *                           type: array
+   *                           items:
+   *                             type: object
+   *                         pageInfo:
+   *                           $ref: '#/components/schemas/PageInfo'
+   *                     staff:
+   *                       type: object
+   *                       description: "Preview of first 6 staff members"
+   *                       properties:
+   *                         edges:
+   *                           type: array
+   *                         pageInfo:
+   *                           $ref: '#/components/schemas/PageInfo'
+   *                     stats:
+   *                       type: object
+   *                       properties:
+   *                         scoreDistribution:
+   *                           type: array
+   *                           items:
+   *                             type: object
+   *                         statusDistribution:
+   *                           type: array
+   *                           items:
+   *                             type: object
+   *                     rankings:
    *                       type: array
-   *                       nullable: true
-   *                       items:
-   *                         type: string
-   *                       example: ["Cowboy Bebop"]
-   *                     genres:
-   *                       type: array
-   *                       nullable: true
-   *                       items:
-   *                         type: string
-   *                       example: ["Action", "Adventure", "Drama", "Sci-Fi"]
-   *                     tags:
-   *                       type: array
-   *                       nullable: true
    *                       items:
    *                         type: object
-   *                       description: "Array of tag objects from AniList"
-   *                     popularity:
-   *                       type: integer
-   *                       nullable: true
-   *                       example: 150000
-   *                     favorites:
-   *                       type: integer
-   *                       nullable: true
-   *                       example: 50000
-   *                     episodes:
-   *                       type: integer
-   *                       nullable: true
-   *                       example: 26
-   *                     duration:
-   *                       type: integer
-   *                       nullable: true
-   *                       example: 24
-   *                       description: "Episode duration in minutes"
-   *                     season:
-   *                       type: string
-   *                       nullable: true
-   *                       enum: [WINTER, SPRING, SUMMER, FALL]
-   *                       example: "SPRING"
-   *                     seasonYear:
-   *                       type: integer
-   *                       nullable: true
-   *                       example: 1998
-   *                     studio:
-   *                       type: string
-   *                       nullable: true
-   *                       example: "Sunrise"
-   *                       description: "Primary studio name"
-   *                     source:
-   *                       type: string
-   *                       nullable: true
-   *                       example: "ORIGINAL"
-   *                     trailerUrl:
-   *                       type: string
-   *                       nullable: true
-   *                       example: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-   *                       description: "Complete trailer URL (YouTube or Dailymotion)"
-   *                     nextAiringEpisode:
+   *                     recommendations:
    *                       type: object
-   *                       nullable: true
-   *                       description: "Information about the next airing episode"
-   *                     lastSyncedAt:
-   *                       type: string
-   *                       nullable: true
-   *                       format: date-time
-   *                       example: "2025-12-31T10:30:00.000Z"
-   *                       description: "Last time data was synced from AniList"
+   *                       description: "Preview of first 6 recommendations"
+   *                       properties:
+   *                         edges:
+   *                           type: array
+   *                         pageInfo:
+   *                           $ref: '#/components/schemas/PageInfo'
    *       400:
-   *         description: Invalid anime ID format or validation error
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/ValidationError'
+   *         $ref: '#/components/responses/ValidationError'
    *       404:
-   *         description: Anime not found on AniList
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/Error'
-   *             example:
-   *               success: false
-   *               error:
-   *                 name: "NotFoundError"
-   *                 message: "Anime with ID 999999999 not found"
+   *         $ref: '#/components/responses/NotFoundError'
    *       500:
-   *         description: Internal server error or AniList API error
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/Error'
-   *             example:
-   *               success: false
-   *               error:
-   *                 name: "AnilistAPIError"
-   *                 message: "Failed to fetch data from AniList API"
+   *         $ref: '#/components/responses/ServerError'
    */
   router.get(
-    '/:anilistId',
+    '/:anilistId/overview',
     AnimeValidator.getByIdRules(),
     AnimeValidator.validate,
-    animeController.getAnimeDetail
+    animeController.getOverview
+  );
+
+  /**
+   * @swagger
+   * /api/anilist/anime/{anilistId}/characters:
+   *   get:
+   *     summary: Get anime characters with pagination
+   *     description: Retrieve paginated list of characters for an anime, including role information and voice actors
+   *     tags: [Anime]
+   *     parameters:
+   *       - in: path
+   *         name: anilistId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *           minimum: 1
+   *         description: The AniList ID of the anime
+   *         example: 1
+   *       - in: query
+   *         name: page
+   *         schema:
+   *           type: integer
+   *           minimum: 1
+   *           default: 1
+   *         description: Page number
+   *         example: 1
+   *       - in: query
+   *         name: perPage
+   *         schema:
+   *           type: integer
+   *           minimum: 1
+   *           maximum: 50
+   *           default: 25
+   *         description: Number of items per page (max 50)
+   *         example: 25
+   *     responses:
+   *       200:
+   *         description: Characters retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 success:
+   *                   type: boolean
+   *                   example: true
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     pageInfo:
+   *                       $ref: '#/components/schemas/PageInfo'
+   *                     edges:
+   *                       type: array
+   *                       items:
+   *                         type: object
+   *                         properties:
+   *                           node:
+   *                             type: object
+   *                             properties:
+   *                               id:
+   *                                 type: integer
+   *                               name:
+   *                                 type: object
+   *                                 properties:
+   *                                   full:
+   *                                     type: string
+   *                                   native:
+   *                                     type: string
+   *                               image:
+   *                                 type: object
+   *                                 properties:
+   *                                   large:
+   *                                     type: string
+   *                           role:
+   *                             type: string
+   *                             example: "MAIN"
+   *                           voiceActors:
+   *                             type: array
+   *                             items:
+   *                               type: object
+   *                               properties:
+   *                                 id:
+   *                                   type: integer
+   *                                 name:
+   *                                   type: object
+   *                                 language:
+   *                                   type: string
+   *                                   example: "Japanese"
+   *       400:
+   *         $ref: '#/components/responses/ValidationError'
+   *       404:
+   *         $ref: '#/components/responses/NotFoundError'
+   *       500:
+   *         $ref: '#/components/responses/ServerError'
+   */
+  router.get(
+    '/:anilistId/characters',
+    AnimeValidator.getByIdRules(),
+    AnimeValidator.validate,
+    animeController.getCharacters
+  );
+
+  /**
+   * @swagger
+   * /api/anilist/anime/{anilistId}/staff:
+   *   get:
+   *     summary: Get anime staff with pagination
+   *     description: Retrieve paginated list of staff members for an anime, including their roles
+   *     tags: [Anime]
+   *     parameters:
+   *       - in: path
+   *         name: anilistId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *           minimum: 1
+   *         description: The AniList ID of the anime
+   *         example: 1
+   *       - in: query
+   *         name: page
+   *         schema:
+   *           type: integer
+   *           minimum: 1
+   *           default: 1
+   *         description: Page number
+   *         example: 1
+   *       - in: query
+   *         name: perPage
+   *         schema:
+   *           type: integer
+   *           minimum: 1
+   *           maximum: 50
+   *           default: 25
+   *         description: Number of items per page (max 50)
+   *         example: 25
+   *     responses:
+   *       200:
+   *         description: Staff retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 success:
+   *                   type: boolean
+   *                   example: true
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     pageInfo:
+   *                       $ref: '#/components/schemas/PageInfo'
+   *                     edges:
+   *                       type: array
+   *                       items:
+   *                         type: object
+   *                         properties:
+   *                           node:
+   *                             type: object
+   *                             properties:
+   *                               id:
+   *                                 type: integer
+   *                               name:
+   *                                 type: object
+   *                                 properties:
+   *                                   full:
+   *                                     type: string
+   *                                   native:
+   *                                     type: string
+   *                               image:
+   *                                 type: object
+   *                           role:
+   *                             type: string
+   *                             example: "Director"
+   *       400:
+   *         $ref: '#/components/responses/ValidationError'
+   *       404:
+   *         $ref: '#/components/responses/NotFoundError'
+   *       500:
+   *         $ref: '#/components/responses/ServerError'
+   */
+  router.get(
+    '/:anilistId/staff',
+    AnimeValidator.getByIdRules(),
+    AnimeValidator.validate,
+    animeController.getStaff
+  );
+
+  /**
+   * @swagger
+   * /api/anilist/anime/{anilistId}/stats:
+   *   get:
+   *     summary: Get anime statistics
+   *     description: Retrieve comprehensive statistics including rankings, score distribution, and status distribution
+   *     tags: [Anime]
+   *     parameters:
+   *       - in: path
+   *         name: anilistId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *           minimum: 1
+   *         description: The AniList ID of the anime
+   *         example: 1
+   *     responses:
+   *       200:
+   *         description: Statistics retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 success:
+   *                   type: boolean
+   *                   example: true
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     id:
+   *                       type: integer
+   *                       example: 1
+   *                     averageScore:
+   *                       type: number
+   *                       example: 86
+   *                     meanScore:
+   *                       type: number
+   *                       example: 86
+   *                     rankings:
+   *                       type: array
+   *                       items:
+   *                         type: object
+   *                         properties:
+   *                           id:
+   *                             type: integer
+   *                           rank:
+   *                             type: integer
+   *                             example: 28
+   *                           type:
+   *                             type: string
+   *                             example: "RATED"
+   *                           format:
+   *                             type: string
+   *                             example: "TV"
+   *                           year:
+   *                             type: integer
+   *                           season:
+   *                             type: string
+   *                             example: "SPRING"
+   *                           allTime:
+   *                             type: boolean
+   *                           context:
+   *                             type: string
+   *                             example: "highest rated all time"
+   *                     stats:
+   *                       type: object
+   *                       properties:
+   *                         scoreDistribution:
+   *                           type: array
+   *                           items:
+   *                             type: object
+   *                             properties:
+   *                               score:
+   *                                 type: integer
+   *                                 example: 90
+   *                               amount:
+   *                                 type: integer
+   *                                 example: 15000
+   *                         statusDistribution:
+   *                           type: array
+   *                           items:
+   *                             type: object
+   *                             properties:
+   *                               status:
+   *                                 type: string
+   *                                 example: "COMPLETED"
+   *                               amount:
+   *                                 type: integer
+   *                                 example: 100000
+   *       400:
+   *         $ref: '#/components/responses/ValidationError'
+   *       404:
+   *         $ref: '#/components/responses/NotFoundError'
+   *       500:
+   *         $ref: '#/components/responses/ServerError'
+   */
+  router.get(
+    '/:anilistId/stats',
+    AnimeValidator.getByIdRules(),
+    AnimeValidator.validate,
+    animeController.getStatistics
+  );
+
+  /**
+   * @swagger
+   * /api/anilist/anime/{anilistId}/watch:
+   *   get:
+   *     summary: Get streaming platforms for anime (Where to Watch)
+   *     description: Retrieve list of legal streaming platforms where the anime can be watched. Anime-specific feature.
+   *     tags: [Anime]
+   *     parameters:
+   *       - in: path
+   *         name: anilistId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *           minimum: 1
+   *         description: The AniList ID of the anime
+   *         example: 1
+   *     responses:
+   *       200:
+   *         description: Streaming platforms retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 success:
+   *                   type: boolean
+   *                   example: true
+   *                 data:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                     properties:
+   *                       title:
+   *                         type: string
+   *                         example: "Episode 1 - Asteroid Blues"
+   *                         description: "Episode title"
+   *                       url:
+   *                         type: string
+   *                         format: uri
+   *                         example: "https://www.crunchyroll.com/cowboy-bebop/episode-1"
+   *                         description: "Direct link to watch the episode"
+   *                       site:
+   *                         type: string
+   *                         example: "Crunchyroll"
+   *                         description: "Streaming platform name"
+   *                   example:
+   *                     - title: "Episode 1 - Asteroid Blues"
+   *                       url: "https://www.crunchyroll.com/cowboy-bebop/episode-1"
+   *                       site: "Crunchyroll"
+   *                     - title: "Episode 2 - Stray Dog Strut"
+   *                       url: "https://www.crunchyroll.com/cowboy-bebop/episode-2"
+   *                       site: "Crunchyroll"
+   *       400:
+   *         $ref: '#/components/responses/ValidationError'
+   *       404:
+   *         $ref: '#/components/responses/NotFoundError'
+   *       500:
+   *         $ref: '#/components/responses/ServerError'
+   */
+  router.get(
+    '/:anilistId/watch',
+    AnimeValidator.getByIdRules(),
+    AnimeValidator.validate,
+    animeController.getWhereToWatch
   );
 
   return router;

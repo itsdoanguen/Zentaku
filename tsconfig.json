@@ -1,12 +1,10 @@
 {
   "compilerOptions": {
-    /* Language and Environment */
     "target": "ES2022",
     "lib": ["ES2022"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
 
-    /* Modules */
     "module": "commonjs",
     "rootDir": "./src",
     "moduleResolution": "node",
@@ -23,7 +21,6 @@
     },
     "resolveJsonModule": true,
 
-    /* Emit */
     "outDir": "./dist",
     "declaration": true,
     "declarationMap": true,
@@ -35,13 +32,11 @@
     "incremental": true,
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
 
-    /* Interop Constraints */
     "isolatedModules": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
 
-    /* Type Checking - STRICT MODE */
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -58,10 +53,9 @@
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": false,
 
-    /* Completeness */
     "skipLibCheck": true
   },
-  "include": ["src/**/*", "src/@types/**/*", "prisma/schema.prisma"],
+  "include": ["src/**/*", "src/@types/**/*"],
   "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts", "test"],
   "ts-node": {
     "require": ["tsconfig-paths/register"],

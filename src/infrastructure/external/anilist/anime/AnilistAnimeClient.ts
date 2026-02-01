@@ -1,20 +1,18 @@
-import { NotFoundError } from '../../../shared/utils/error';
-import logger from '../../../shared/utils/logger';
+import { NotFoundError } from '../../../../shared/utils/error';
+import logger from '../../../../shared/utils/logger';
+import { MEDIA_OVERVIEW_QS, MEDIA_STATISTICS_QS } from '../anilist.queries';
+import type { MediaStatistics, PageInfo } from '../anilist.types';
+import AnilistClient from '../AnilistClient';
 import {
   ANIME_BATCH_INFO_QS,
-  ANIME_CHARACTERS_QS,
   ANIME_COVERS_BATCH_QS,
   ANIME_ID_SEARCH_QS,
   ANIME_INFO_LIGHTWEIGHT_QS,
   ANIME_INFO_QS,
   ANIME_SEARCH_CRITERIA_QS,
   ANIME_SEASON_TREND_QS,
-  ANIME_STAFF_QS,
-  ANIME_STATS_QS,
   ANIME_WHERE_TO_WATCH_QS,
-  CHARACTER_INFO_QS,
-  STAFF_INFO_QS,
-} from './anilist.queries';
+} from './anilist-anime.queries';
 import type {
   AnimeBatchInfo,
   AnimeBatchResponse,
@@ -23,25 +21,16 @@ import type {
   AnimeInfoResponse,
   AnimeLightweight,
   AnimeLightweightResponse,
+  AnimeOverview,
+  AnimeOverviewResponse,
   AnimeSearchResponse,
   AnimeSearchResult,
   AnimeSeasonalResponse,
   AnimeSeasonalResult,
-  AnimeStatistics,
   AnimeStatisticsResponse,
-  CharacterEdge,
-  CharacterInfo,
-  CharacterInfoResponse,
-  CharactersResponse,
-  PageInfo,
-  StaffEdge,
-  StaffInfo,
-  StaffInfoResponse,
-  StaffResponse,
   StreamingEpisode,
   StreamingEpisodesResponse,
-} from './anilist.types';
-import AnilistClient from './AnilistClient';
+} from './anilist-anime.types';
 
 /**
  * AniList Anime Client
@@ -83,6 +72,28 @@ class AnilistAnimeClient extends AnilistClient {
       ANIME_INFO_LIGHTWEIGHT_QS,
       { id: animeId },
       `fetchAnimeLightweight(${animeId})`
+    );
+
+    if (!data?.Media) {
+      throw new NotFoundError(`Anime with ID ${animeId} not found`);
+    }
+
+    return data.Media;
+  }
+
+  /**
+   * Fetch anime overview data
+   * Includes: relations, characters/staff preview, stats, rankings, recommendations
+   *
+   * @param {number} animeId - Anime ID
+   * @returns {Promise<AnimeOverview>} - Anime overview data
+   * @throws {NotFoundError} - If anime not found
+   */
+  async fetchOverview(animeId: number): Promise<AnimeOverview> {
+    const data = await this.executeQuery<AnimeOverviewResponse>(
+      MEDIA_OVERVIEW_QS,
+      { id: animeId, type: 'ANIME' },
+      `fetchAnimeOverview(${animeId})`
     );
 
     if (!data?.Media) {
@@ -248,65 +259,15 @@ class AnilistAnimeClient extends AnilistClient {
   }
 
   /**
-   * Fetch characters for an anime
-   *
-   * @param {number} animeId - Anime ID
-   * @param {object} options - Pagination options
-   * @returns {Promise<{ pageInfo: PageInfo; edges: CharacterEdge[] }>} - Characters with pageInfo and edges
-   */
-  async fetchCharacters(
-    animeId: number,
-    options: { page?: number; perPage?: number } = {}
-  ): Promise<{ pageInfo: PageInfo; edges: CharacterEdge[] }> {
-    const { page = 1, perPage = 10 } = options;
-
-    const data = await this.executeQuery<CharactersResponse>(
-      ANIME_CHARACTERS_QS,
-      { id: animeId, page, perpage: perPage },
-      `fetchAnimeCharacters(${animeId})`
-    );
-
-    return {
-      pageInfo: data.Media?.characters?.pageInfo || ({} as PageInfo),
-      edges: data.Media?.characters?.edges || [],
-    };
-  }
-
-  /**
-   * Fetch staff for an anime
-   *
-   * @param {number} animeId - Anime ID
-   * @param {object} options - Pagination options
-   * @returns {Promise<{ pageInfo: PageInfo; edges: StaffEdge[] }>} - Staff with pageInfo and edges
-   */
-  async fetchStaff(
-    animeId: number,
-    options: { page?: number; perPage?: number } = {}
-  ): Promise<{ pageInfo: PageInfo; edges: StaffEdge[] }> {
-    const { page = 1, perPage = 10 } = options;
-
-    const data = await this.executeQuery<StaffResponse>(
-      ANIME_STAFF_QS,
-      { id: animeId, page, perpage: perPage },
-      `fetchAnimeStaff(${animeId})`
-    );
-
-    return {
-      pageInfo: data.Media?.staff?.pageInfo || ({} as PageInfo),
-      edges: data.Media?.staff?.edges || [],
-    };
-  }
-
-  /**
    * Fetch statistics for an anime
    *
    * @param {number} animeId - Anime ID
-   * @returns {Promise<AnimeStatistics>} - Anime statistics
+   * @returns {Promise<MediaStatistics>} - Anime statistics
    */
-  async fetchStatistics(animeId: number): Promise<AnimeStatistics> {
+  async fetchStatistics(animeId: number): Promise<MediaStatistics> {
     const data = await this.executeQuery<AnimeStatisticsResponse>(
-      ANIME_STATS_QS,
-      { id: animeId },
+      MEDIA_STATISTICS_QS,
+      { id: animeId, type: 'ANIME' },
       `fetchAnimeStats(${animeId})`
     );
 
@@ -327,48 +288,6 @@ class AnilistAnimeClient extends AnilistClient {
     );
 
     return data.Media?.streamingEpisodes || [];
-  }
-
-  /**
-   * Fetch detailed character information by ID
-   *
-   * @param {number} characterId - Character ID
-   * @returns {Promise<CharacterInfo>} - Character information
-   * @throws {NotFoundError} - If character not found
-   */
-  async fetchCharacterById(characterId: number): Promise<CharacterInfo> {
-    const data = await this.executeQuery<CharacterInfoResponse>(
-      CHARACTER_INFO_QS,
-      { id: characterId },
-      `fetchCharacterById(${characterId})`
-    );
-
-    if (!data?.Character) {
-      throw new NotFoundError(`Character with ID ${characterId} not found`);
-    }
-
-    return data.Character;
-  }
-
-  /**
-   * Fetch detailed staff information by ID
-   *
-   * @param {number} staffId - Staff ID
-   * @returns {Promise<StaffInfo>} - Staff information
-   * @throws {NotFoundError} - If staff not found
-   */
-  async fetchStaffById(staffId: number): Promise<StaffInfo> {
-    const data = await this.executeQuery<StaffInfoResponse>(
-      STAFF_INFO_QS,
-      { id: staffId },
-      `fetchStaffById(${staffId})`
-    );
-
-    if (!data?.Staff) {
-      throw new NotFoundError(`Staff with ID ${staffId} not found`);
-    }
-
-    return data.Staff;
   }
 }
 

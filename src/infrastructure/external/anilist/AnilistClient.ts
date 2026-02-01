@@ -3,9 +3,6 @@ import { AnilistAPIError } from '../../../shared/utils/error';
 import logger from '../../../shared/utils/logger';
 import httpClient from '../../http/httpClient';
 
-/**
- * GraphQL Response structure from AniList API
- */
 interface GraphQLResponse<T = unknown> {
   data?: T;
   errors?: Array<{
@@ -15,9 +12,6 @@ interface GraphQLResponse<T = unknown> {
   }>;
 }
 
-/**
- * HTTP Response wrapper
- */
 interface HttpResponse<T = unknown> {
   status: number;
   data: T;

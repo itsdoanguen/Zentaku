@@ -86,6 +86,28 @@ export interface IExternalClient {
 }
 
 /**
+ * Character Client Interface
+ */
+export interface ICharacterClient {
+  fetchByMediaId(
+    mediaId: number,
+    mediaType: 'ANIME' | 'MANGA',
+    options?: { page?: number; perPage?: number }
+  ): Promise<unknown>;
+}
+
+/**
+ * Staff Client Interface
+ */
+export interface IStaffClient {
+  fetchByMediaId(
+    mediaId: number,
+    mediaType: 'ANIME' | 'MANGA',
+    options?: { page?: number; perPage?: number }
+  ): Promise<unknown>;
+}
+
+/**
  * Data Adapter Interface
  */
 export interface IMediaAdapter {
@@ -100,6 +122,8 @@ export abstract class BaseMediaService extends BaseService {
   protected readonly dbRepository: IMediaRepository;
   protected readonly externalClient: IExternalClient;
   protected readonly adapter: IMediaAdapter;
+  protected readonly characterClient?: ICharacterClient;
+  protected readonly staffClient?: IStaffClient;
   protected syncThresholdDays: number;
   protected cacheEnabled: boolean;
 
@@ -109,12 +133,16 @@ export abstract class BaseMediaService extends BaseService {
    * @param dbRepository - Database repository for media storage
    * @param externalClient - External API client (e.g., AnilistClient)
    * @param adapter - Data adapter for transformations
+   * @param characterClient - Optional character API client
+   * @param staffClient - Optional staff API client
    * @throws {Error} If trying to instantiate abstract class directly
    */
   constructor(
     dbRepository: IMediaRepository,
     externalClient: IExternalClient,
-    adapter: IMediaAdapter
+    adapter: IMediaAdapter,
+    characterClient?: ICharacterClient,
+    staffClient?: IStaffClient
   ) {
     super();
 
@@ -126,8 +154,10 @@ export abstract class BaseMediaService extends BaseService {
     this.dbRepository = dbRepository;
     this.externalClient = externalClient;
     this.adapter = adapter;
+    this.characterClient = characterClient;
+    this.staffClient = staffClient;
 
-    // Sync configuration
+    // Sync config
     this.syncThresholdDays = 7;
     this.cacheEnabled = true;
   }
@@ -171,6 +201,168 @@ export abstract class BaseMediaService extends BaseService {
   // ============================================
 
   /**
+   * Get media overview data
+   * Includes: relations, characters/staff preview, stats, rankings, recommendations
+   *
+   * @param externalId - External API ID (e.g., AniList ID)
+   * @returns Media overview data
+   * @throws {NotFoundError} If media not found or client doesn't support overview
+   * @throws {ValidationError} If ID invalid
+   *
+   * @example
+   * const overview = await animeService.getOverview(1);
+   */
+  async getOverview(externalId: number): Promise<unknown> {
+    const context = `getOverview(${externalId})`;
+
+    return this._executeWithErrorHandling(async () => {
+      this._validateId(externalId, `${this.getMediaType()} ID`);
+
+      this._logInfo(`Fetching ${this.getMediaType()} overview`, { externalId });
+
+      // Check if externalClient has fetchOverview method
+      if (!('fetchOverview' in this.externalClient)) {
+        throw new NotFoundError(`${this.getMediaType()} client does not support overview fetch`);
+      }
+
+      const overview = await (this.externalClient as any).fetchOverview(externalId);
+
+      this._logInfo(`Successfully fetched ${this.getMediaType()} overview`, { externalId });
+
+      return overview;
+    }, context);
+  }
+
+  /**
+   * Get characters for media with pagination
+   *
+   * @param externalId - External API ID
+   * @param page - Page number (default: 1)
+   * @param perPage - Items per page (default: 25)
+   * @returns Characters data with pagination
+   * @throws {NotFoundError} If character client not available
+   * @throws {ValidationError} If parameters invalid
+   *
+   * @example
+   * const characters = await animeService.getCharacters(1, 1, 25);
+   */
+  async getCharacters(
+    externalId: number,
+    page: number = 1,
+    perPage: number = 25
+  ): Promise<unknown> {
+    const context = `getCharacters(${externalId})`;
+
+    return this._executeWithErrorHandling(async () => {
+      this._validateId(externalId, `${this.getMediaType()} ID`);
+      this._validateId(page, 'Page number');
+      this._validateId(perPage, 'Per page');
+
+      if (!this.characterClient) {
+        throw new NotFoundError('Character client not available');
+      }
+
+      this._logInfo(`Fetching ${this.getMediaType()} characters`, {
+        externalId,
+        page,
+        perPage,
+      });
+
+      const mediaType = this.getMediaType() as 'ANIME' | 'MANGA';
+      const characters = await this.characterClient.fetchByMediaId(externalId, mediaType, {
+        page,
+        perPage,
+      });
+
+      this._logInfo(`Successfully fetched ${this.getMediaType()} characters`, {
+        externalId,
+        page,
+      });
+
+      return characters;
+    }, context);
+  }
+
+  /**
+   * Get staff for media with pagination
+   *
+   * @param externalId - External API ID
+   * @param page - Page number (default: 1)
+   * @param perPage - Items per page (default: 25)
+   * @returns Staff data with pagination
+   * @throws {NotFoundError} If staff client not available
+   * @throws {ValidationError} If parameters invalid
+   *
+   * @example
+   * const staff = await animeService.getStaff(1, 1, 25);
+   */
+  async getStaff(externalId: number, page: number = 1, perPage: number = 25): Promise<unknown> {
+    const context = `getStaff(${externalId})`;
+
+    return this._executeWithErrorHandling(async () => {
+      this._validateId(externalId, `${this.getMediaType()} ID`);
+      this._validateId(page, 'Page number');
+      this._validateId(perPage, 'Per page');
+
+      if (!this.staffClient) {
+        throw new NotFoundError('Staff client not available');
+      }
+
+      this._logInfo(`Fetching ${this.getMediaType()} staff`, {
+        externalId,
+        page,
+        perPage,
+      });
+
+      const mediaType = this.getMediaType() as 'ANIME' | 'MANGA';
+      const staff = await this.staffClient.fetchByMediaId(externalId, mediaType, {
+        page,
+        perPage,
+      });
+
+      this._logInfo(`Successfully fetched ${this.getMediaType()} staff`, {
+        externalId,
+        page,
+      });
+
+      return staff;
+    }, context);
+  }
+
+  /**
+   * Get statistics for media
+   * Includes: rankings, score distribution, status distribution
+   *
+   * @param externalId - External API ID
+   * @returns Media statistics
+   * @throws {NotFoundError} If media not found or client doesn't support statistics
+   * @throws {ValidationError} If ID invalid
+   *
+   * @example
+   * const stats = await animeService.getStatistics(1);
+   */
+  async getStatistics(externalId: number): Promise<unknown> {
+    const context = `getStatistics(${externalId})`;
+
+    return this._executeWithErrorHandling(async () => {
+      this._validateId(externalId, `${this.getMediaType()} ID`);
+
+      this._logInfo(`Fetching ${this.getMediaType()} statistics`, { externalId });
+
+      // Check if externalClient has fetchStatistics method
+      if (!('fetchStatistics' in this.externalClient)) {
+        throw new NotFoundError(`${this.getMediaType()} client does not support statistics fetch`);
+      }
+
+      const statistics = await (this.externalClient as any).fetchStatistics(externalId);
+
+      this._logInfo(`Successfully fetched ${this.getMediaType()} statistics`, { externalId });
+
+      return statistics;
+    }, context);
+  }
+
+  /**
    * Get media details by external ID (Template Method)
    *
    * Defines the skeleton of the algorithm to get media details.
@@ -194,15 +386,12 @@ export abstract class BaseMediaService extends BaseService {
     const context = `getDetails(${externalId})`;
 
     return this._executeWithErrorHandling(async () => {
-      // Validate input
       this._validateId(externalId, `${this.getMediaType()} ID`);
 
       this._logInfo(`Fetching ${this.getMediaType()} details`, { externalId });
 
-      // Get from database
       let media = await this._getFromDatabase(externalId);
 
-      // Check if sync needed and perform sync
       if (this._shouldSync(media)) {
         media = await this._syncFromExternal(externalId, media);
       }
@@ -211,7 +400,6 @@ export abstract class BaseMediaService extends BaseService {
         throw new NotFoundError(`${this.getMediaType()} with ID ${externalId} not found`);
       }
 
-      // Format response using adapter
       const formatted = this.adapter.toResponse(media);
 
       this._logInfo(`Successfully fetched ${this.getMediaType()}`, {
@@ -249,13 +437,11 @@ export abstract class BaseMediaService extends BaseService {
       return true;
     }
 
-    // Never synced before
     if (!media.lastSyncedAt) {
       this._logDebug('Sync needed: media never synced');
       return true;
     }
 
-    // Check if data is stale
     const isStale = this._isOlderThan(media.lastSyncedAt, this.syncThresholdDays);
 
     if (isStale) {
@@ -298,7 +484,6 @@ export abstract class BaseMediaService extends BaseService {
     try {
       this._logInfo(`Syncing ${this.getMediaType()} from external API`, { externalId });
 
-      // Fetch from external API (polymorphic - different for each media type)
       const externalData = await this._fetchFromExternalAPI(externalId);
 
       if (!externalData) {
@@ -307,10 +492,8 @@ export abstract class BaseMediaService extends BaseService {
         );
       }
 
-      // Transform using adapter
       const transformedData = this.adapter.fromExternal(externalData);
 
-      // Add sync metadata
       transformedData.lastSyncedAt = new Date();
       transformedData.type = this.getMediaType();
 
@@ -323,7 +506,6 @@ export abstract class BaseMediaService extends BaseService {
 
       return syncedMedia;
     } catch (error) {
-      // Fallback to cached data if available
       if (existingMedia) {
         this._logWarn(`Sync failed for ${this.getMediaType()}, using cached data`, {
           externalId,
@@ -335,7 +517,6 @@ export abstract class BaseMediaService extends BaseService {
         return existingMedia;
       }
 
-      // No cached data, propagate error
       this._logError(`Sync failed for ${this.getMediaType()} and no cache available`, {
         externalId,
         error: (error as Error).message,
@@ -420,24 +601,19 @@ export abstract class BaseMediaService extends BaseService {
     const context = `search("${query}")`;
 
     return this._executeWithErrorHandling(async () => {
-      // Validate query
       this._validateString(query, 'Search query', { minLength: 1, maxLength: 100 });
 
-      // Get pagination params
       const pagination = this._getPaginationParams(page, perPage);
 
       this._logInfo(`Searching ${this.getMediaType()}`, { query, page, perPage });
 
-      // Search in database first
       const results = await this.dbRepository.searchByTitle(query, {
         skip: pagination.skip,
         take: pagination.take,
       });
 
-      // Format results
       const formattedResults = results.map((item) => this.adapter.toResponse(item));
 
-      // Get total count for pagination
       const total = await this.dbRepository.countByQuery({ query });
       return {
         items: formattedResults,
@@ -475,12 +651,9 @@ export abstract class BaseMediaService extends BaseService {
         count: externalIds.length,
       });
 
-      // Fetch all from database
       const mediaItems = await this.dbRepository.findManyByExternalIds(externalIds);
-      // Check which need sync
       const needSync = mediaItems.filter((m) => this._shouldSync(m));
 
-      // Sync if needed
       if (needSync.length > 0) {
         this._logInfo(`Syncing ${needSync.length} ${this.getMediaType()} items`);
 
@@ -492,10 +665,8 @@ export abstract class BaseMediaService extends BaseService {
         );
       }
 
-      // Re-fetch after sync
       const updatedItems = await this.dbRepository.findManyByExternalIds(externalIds);
 
-      // Format responses
       return updatedItems.map((item) => this.adapter.toResponse(item));
     }, context);
   }

@@ -12,13 +12,13 @@ import type {
   StaffInfo,
   TrendingOptions,
 } from '../../../core/interfaces/IMetadataSource';
-import AnilistAnimeClient from './AnilistAnimeClient';
-import type {
-  AnimeSearchCriteria,
-  AnimeStatistics,
-  CharacterEdge,
-  StaffEdge,
-} from './anilist.types';
+import type { CharacterEdge, MediaStatistics, StaffEdge } from './anilist.types';
+import type { AnimeSearchCriteria } from './anime/anilist-anime.types';
+import AnilistAnimeClient from './anime/AnilistAnimeClient';
+import AnilistCharacterClient from './character/AnilistCharacterClient';
+import type { MangaSearchCriteria } from './manga/anilist-manga.types';
+import AnilistMangaClient from './manga/AnilistMangaClient';
+import AnilistStaffClient from './staff/AnilistStaffClient';
 
 /**
  * AniList Metadata Adapter
@@ -29,9 +29,15 @@ import type {
 class AnilistMetadataAdapter implements BaseMetadataSource {
   readonly sourceName = 'AniList';
   private readonly animeClient: AnilistAnimeClient;
+  private readonly mangaClient: AnilistMangaClient;
+  private readonly characterClient: AnilistCharacterClient;
+  private readonly staffClient: AnilistStaffClient;
 
   constructor() {
     this.animeClient = new AnilistAnimeClient();
+    this.mangaClient = new AnilistMangaClient();
+    this.characterClient = new AnilistCharacterClient();
+    this.staffClient = new AnilistStaffClient();
   }
 
   // ==================== PRIVATE METHODS ===================
@@ -39,7 +45,7 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
   /**
    * Convert generic SearchMedia type to AniList specific type
    */
-  private mapSearchMediaToAnilistType(criteria: SearchCriteria): AnimeSearchCriteria {
+  private mapSearchMediaToAnimeType(criteria: SearchCriteria): AnimeSearchCriteria {
     const anilistCriteria: AnimeSearchCriteria = {};
     if (criteria.genres) {
       anilistCriteria.genres = criteria.genres;
@@ -64,6 +70,34 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
     }
 
     return anilistCriteria;
+  }
+
+  /**
+   * Convert generic SearchMedia type to Manga specific type
+   */
+  private mapSearchMediaToMangaType(criteria: SearchCriteria): MangaSearchCriteria {
+    const mangaCriteria: MangaSearchCriteria = {};
+    if (criteria.genres) {
+      mangaCriteria.genres = criteria.genres;
+    }
+
+    if (criteria.format) {
+      mangaCriteria.format = Array.isArray(criteria.format)
+        ? criteria.format.join(',')
+        : criteria.format;
+    }
+
+    if (criteria.status) {
+      mangaCriteria.status = Array.isArray(criteria.status)
+        ? criteria.status.join(',')
+        : criteria.status;
+    }
+
+    if (criteria.countryOfOrigin) {
+      mangaCriteria.countryOfOrigin = criteria.countryOfOrigin;
+    }
+
+    return mangaCriteria;
   }
 
   /**
@@ -97,12 +131,15 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
    * @throws {Error} If unsupported media type
    */
   async getMediaInfo(mediaId: number, mediaType: MediaType = 'ANIME'): Promise<MediaInfo> {
-    if (mediaType !== 'ANIME') {
-      throw new Error(
-        `AniList adapter currently only supports ANIME media type, got: ${mediaType}`
-      );
+    if (mediaType === 'ANIME') {
+      return this.animeClient.fetchById(mediaId) as unknown as MediaInfo;
     }
-    return this.animeClient.fetchById(mediaId) as unknown as MediaInfo;
+    if (mediaType === 'MANGA') {
+      return this.mangaClient.fetchById(mediaId) as unknown as MediaInfo;
+    }
+    throw new Error(
+      `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
+    );
   }
 
   /**
@@ -117,12 +154,15 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
     mediaId: number,
     mediaType: MediaType = 'ANIME'
   ): Promise<MediaBasicInfo> {
-    if (mediaType !== 'ANIME') {
-      throw new Error(
-        `AniList adapter currently only supports ANIME media type, got: ${mediaType}`
-      );
+    if (mediaType === 'ANIME') {
+      return this.animeClient.fetchLightweight(mediaId) as unknown as MediaBasicInfo;
     }
-    return this.animeClient.fetchLightweight(mediaId) as unknown as MediaBasicInfo;
+    if (mediaType === 'MANGA') {
+      return this.mangaClient.fetchLightweight(mediaId) as unknown as MediaBasicInfo;
+    }
+    throw new Error(
+      `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
+    );
   }
 
   /**
@@ -137,12 +177,15 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
     mediaIds: number[],
     mediaType: MediaType = 'ANIME'
   ): Promise<Record<number, MediaInfo>> {
-    if (mediaType !== 'ANIME') {
-      throw new Error(
-        `AniList adapter currently only supports ANIME media type, got: ${mediaType}`
-      );
+    if (mediaType === 'ANIME') {
+      return this.animeClient.fetchBatch(mediaIds) as unknown as Record<number, MediaInfo>;
     }
-    return this.animeClient.fetchBatch(mediaIds) as unknown as Record<number, MediaInfo>;
+    if (mediaType === 'MANGA') {
+      return this.mangaClient.fetchBatch(mediaIds) as unknown as Record<number, MediaInfo>;
+    }
+    throw new Error(
+      `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
+    );
   }
 
   /**
@@ -156,13 +199,15 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
   async searchMedia(query: string, options: SearchOptions = {}): Promise<PaginatedMedia> {
     const { mediaType = 'ANIME', ...searchOptions } = options;
 
-    if (mediaType !== 'ANIME') {
-      throw new Error(
-        `AniList adapter currently only supports ANIME media type, got: ${mediaType}`
-      );
+    if (mediaType === 'ANIME') {
+      return this.animeClient.search(query, searchOptions) as unknown as PaginatedMedia;
     }
-
-    return this.animeClient.search(query, searchOptions) as unknown as PaginatedMedia;
+    if (mediaType === 'MANGA') {
+      return this.mangaClient.search(query, searchOptions) as unknown as PaginatedMedia;
+    }
+    throw new Error(
+      `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
+    );
   }
 
   /**
@@ -181,16 +226,21 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
       mediaType?: MediaType;
     };
 
-    if (mediaType !== 'ANIME') {
-      throw new Error(
-        `AniList adapter currently only supports ANIME media type, got: ${mediaType}`
-      );
+    if (mediaType === 'ANIME') {
+      return this.animeClient.searchByCriteria(
+        this.mapSearchMediaToAnimeType(otherCriteria),
+        this.mapSearchOptionsToAnilistType(options)
+      ) as unknown as PaginatedMedia;
     }
-
-    return this.animeClient.searchByCriteria(
-      this.mapSearchMediaToAnilistType(otherCriteria),
-      this.mapSearchOptionsToAnilistType(options)
-    ) as unknown as PaginatedMedia;
+    if (mediaType === 'MANGA') {
+      return this.mangaClient.searchByCriteria(
+        this.mapSearchMediaToMangaType(otherCriteria),
+        this.mapSearchOptionsToAnilistType(options)
+      ) as unknown as PaginatedMedia;
+    }
+    throw new Error(
+      `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
+    );
   }
 
   /**
@@ -214,61 +264,94 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
   }
 
   /**
-   * Get trending anime
+   * Get trending media
    *
    * @param options - Pagination options
-   * @returns Trending anime list
+   * @returns Trending media list
    */
-  async getTrending(options: TrendingOptions = {}): Promise<PaginatedMedia> {
-    return this.searchByCriteria({}, { ...options, sort: ['TRENDING_DESC', 'POPULARITY_DESC'] });
+  async getTrending(
+    options: TrendingOptions & { mediaType?: MediaType } = {}
+  ): Promise<PaginatedMedia> {
+    const { mediaType = 'ANIME', ...otherOptions } = options;
+    return this.searchByCriteria(
+      {},
+      { ...otherOptions, mediaType, sort: ['TRENDING_DESC', 'POPULARITY_DESC'] }
+    );
   }
 
   /**
-   * Get popular anime
+   * Get popular media
    *
    * @param options - Pagination options
-   * @returns Popular anime list
+   * @returns Popular media list
    */
-  async getPopular(options: TrendingOptions = {}): Promise<PaginatedMedia> {
-    return this.searchByCriteria({}, { ...options, sort: ['POPULARITY_DESC'] });
+  async getPopular(
+    options: TrendingOptions & { mediaType?: MediaType } = {}
+  ): Promise<PaginatedMedia> {
+    const { mediaType = 'ANIME', ...otherOptions } = options;
+    return this.searchByCriteria({}, { ...otherOptions, mediaType, sort: ['POPULARITY_DESC'] });
   }
 
   /**
    * Get characters for a media
    *
    * @param mediaId - Media ID
+   * @param mediaType - Media type (defaults to ANIME)
    * @param options - Pagination options
    * @returns Characters with pageInfo and edges
    */
   async getCharacters(
     mediaId: number,
+    mediaType: MediaType = 'ANIME',
     options: { page?: number; perPage?: number } = {}
   ): Promise<{ pageInfo: PageInfo; edges: CharacterEdge[] }> {
-    return this.animeClient.fetchCharacters(mediaId, this.mapSearchOptionsToAnilistType(options));
+    if (mediaType !== 'ANIME' && mediaType !== 'MANGA') {
+      throw new Error(
+        `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
+      );
+    }
+    return this.characterClient.fetchByMediaId(mediaId, mediaType, options);
   }
 
   /**
    * Get staff for a media
    *
    * @param mediaId - Media ID
+   * @param mediaType - Media type (defaults to ANIME)
    * @param options - Pagination options
    * @returns Staff with pageInfo and edges
    */
   async getStaff(
     mediaId: number,
+    mediaType: MediaType = 'ANIME',
     options: { page?: number; perPage?: number } = {}
   ): Promise<{ pageInfo: PageInfo; edges: StaffEdge[] }> {
-    return this.animeClient.fetchStaff(mediaId, options);
+    if (mediaType !== 'ANIME' && mediaType !== 'MANGA') {
+      throw new Error(
+        `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
+      );
+    }
+    return this.staffClient.fetchByMediaId(mediaId, mediaType, options);
   }
 
   /**
    * Get statistics for a media
    *
    * @param mediaId - Media ID
+   * @param mediaType - Media type (defaults to ANIME)
    * @returns Media statistics
+   * @throws {Error} If unsupported media type
    */
-  async getStatistics(mediaId: number): Promise<AnimeStatistics> {
-    return this.animeClient.fetchStatistics(mediaId);
+  async getStatistics(mediaId: number, mediaType: MediaType = 'ANIME'): Promise<MediaStatistics> {
+    if (mediaType === 'ANIME') {
+      return this.animeClient.fetchStatistics(mediaId);
+    }
+    if (mediaType === 'MANGA') {
+      return this.mangaClient.fetchStatistics(mediaId);
+    }
+    throw new Error(
+      `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
+    );
   }
 
   /**
@@ -277,8 +360,8 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
    * @param characterId - Character ID
    * @returns Character information
    */
-  async getCharacter(characterId: number): Promise<CharacterInfo> {
-    return this.animeClient.fetchCharacterById(characterId) as unknown as CharacterInfo;
+  async getCharacterInfoById(characterId: number): Promise<CharacterInfo> {
+    return this.characterClient.fetchById(characterId) as unknown as CharacterInfo;
   }
 
   /**
@@ -287,18 +370,31 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
    * @param staffId - Staff ID
    * @returns Staff information
    */
-  async getStaffById(staffId: number): Promise<StaffInfo> {
-    return this.animeClient.fetchStaffById(staffId) as unknown as StaffInfo;
+  async getStaffInfoById(staffId: number): Promise<StaffInfo> {
+    return this.staffClient.fetchById(staffId) as unknown as StaffInfo;
   }
 
   /**
    * Get cover images in batch
    *
    * @param mediaIds - Array of media ID
+   * @param mediaType - Media type (defaults to ANIME)
    * @returns Map of mediaId => cover URL
+   * @throws {Error} If unsupported media type
    */
-  async getCoversBatch(mediaIds: number[]): Promise<Record<number, string | null>> {
-    return this.animeClient.fetchCoversBatch(mediaIds);
+  async getCoversBatch(
+    mediaIds: number[],
+    mediaType: MediaType = 'ANIME'
+  ): Promise<Record<number, string | null>> {
+    if (mediaType === 'ANIME') {
+      return this.animeClient.fetchCoversBatch(mediaIds);
+    }
+    if (mediaType === 'MANGA') {
+      return this.mangaClient.fetchCoversBatch(mediaIds);
+    }
+    throw new Error(
+      `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
+    );
   }
 
   /**
@@ -317,7 +413,7 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
    * @returns True if supported
    */
   supportsMediaType(mediaType: MediaType): boolean {
-    return mediaType === 'ANIME';
+    return mediaType === 'ANIME' || mediaType === 'MANGA';
   }
 
   /**

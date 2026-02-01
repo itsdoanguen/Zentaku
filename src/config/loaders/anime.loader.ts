@@ -1,12 +1,6 @@
 /**
  * Anime Module Container Loader
  *
- * Registers all anime-related dependencies:
- * - Adapter (Data transformation)
- * - Repository (Data access)
- * - Service (Business logic)
- * - Controller (HTTP handlers)
- *
  * @module AnimeLoader
  */
 
@@ -48,15 +42,16 @@ const loadAnime = (container: any): void => {
       const AnimeRepository =
         require('../../modules/anime/anime.repository').default ||
         require('../../modules/anime/anime.repository');
-      const prisma = c.resolve('prisma');
-
-      const repository = new AnimeRepository(prisma);
+      const { AnimeItem } = require('../../entities');
+      const dataSource = c.resolve('dataSource');
+      const typeormRepository = dataSource.getRepository(AnimeItem);
+      const repository = new AnimeRepository(typeormRepository);
 
       return repository;
     },
     {
       singleton: true,
-      dependencies: ['prisma'],
+      dependencies: ['dataSource'],
     }
   );
 
@@ -74,11 +69,19 @@ const loadAnime = (container: any): void => {
       const repository = c.resolve('animeRepository');
       const adapter = c.resolve('animeAdapter');
       const anilistClient = c.resolve('anilistAnimeClient');
-      return new AnimeService(repository, adapter, anilistClient);
+      const characterClient = c.resolve('anilistCharacterClient');
+      const staffClient = c.resolve('anilistStaffClient');
+      return new AnimeService(repository, adapter, anilistClient, characterClient, staffClient);
     },
     {
       singleton: true,
-      dependencies: ['animeRepository', 'animeAdapter', 'anilistAnimeClient'],
+      dependencies: [
+        'animeRepository',
+        'animeAdapter',
+        'anilistAnimeClient',
+        'anilistCharacterClient',
+        'anilistStaffClient',
+      ],
     }
   );
 
