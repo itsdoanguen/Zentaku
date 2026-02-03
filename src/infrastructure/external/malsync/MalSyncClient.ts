@@ -93,32 +93,11 @@ class MalSyncClient {
     return identifier;
   }
 
-  /**
-   * Get HiAnime ID directly from AniList ID
-   *
-   * @param anilistId - AniList anime ID
-   * @returns HiAnime identifier or null if not available
-   * @throws Error if API request fails
-   *
-   * @example
-   * const hianimeId = await client.getHianimeIdByAnilistId(21);
-   * // Returns: "100"
-   */
   async getHianimeIdByAnilistId(anilistId: number): Promise<string | null> {
     const mapping = await this.getAnimeMapping(anilistId);
     return this.extractHianimeId(mapping);
   }
 
-  /**
-   * Check if anime is available on HiAnime
-   *
-   * @param anilistId - AniList anime ID
-   * @returns True if anime is available on HiAnime, false otherwise
-   *
-   * @example
-   * const isAvailable = await client.isAvailableOnHianime(21);
-   * // Returns: true
-   */
   async isAvailableOnHianime(anilistId: number): Promise<boolean> {
     try {
       const hianimeId = await this.getHianimeIdByAnilistId(anilistId);
