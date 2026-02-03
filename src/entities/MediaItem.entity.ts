@@ -43,6 +43,10 @@ export abstract class MediaItem extends SoftDeletableEntity {
   @Column({ name: 'id_mangadex', type: 'varchar', length: 255, nullable: true, unique: true })
   idMangadex?: string | null;
 
+  @Column({ name: 'id_hianime', type: 'varchar', length: 100, nullable: true })
+  @Index()
+  idHianime?: string | null;
+
   @Column({ name: 'last_synced_at', type: 'datetime', nullable: true })
   lastSyncedAt?: Date | null;
 
