@@ -53,13 +53,7 @@ class AnilistMangaClient extends AnilistClient {
     return data.Media;
   }
 
-  /**
-   * Fetch lightweight manga info (for lists/cards)
-   *
-   * @param {number} mangaId - Manga ID
-   * @returns {Promise<MangaLightweight>} - Basic manga data
-   * @throws {NotFoundError} - If manga not found
-   */
+  // Fetch lightweight manga info (for lists/cards). Throws NotFoundError if not found.
   async fetchLightweight(mangaId: number): Promise<MangaLightweight> {
     const data = await this.executeQuery<MangaLightweightResponse>(
       MANGA_INFO_LIGHTWEIGHT_QS,
@@ -76,9 +70,8 @@ class AnilistMangaClient extends AnilistClient {
 
   /**
    * Fetch multiple manga in batch (max 50)
-   *
-   * @param {number[]} mangaIds - Array of manga IDs
-   * @returns {Promise<Record<number, MangaBatchInfo>>} - Map of mangaId => manga data
+   * @param mangaIds Array of manga IDs
+   * @returns Map of mangaId => manga data
    */
   async fetchBatch(mangaIds: number[]): Promise<Record<number, MangaBatchInfo>> {
     if (!mangaIds || mangaIds.length === 0) {
@@ -111,12 +104,6 @@ class AnilistMangaClient extends AnilistClient {
     return result;
   }
 
-  /**
-   * Fetch cover images in batch
-   *
-   * @param {number[]} mangaIds - Array of manga IDs
-   * @returns {Promise<Record<number, string | null>>} - Map of mangaId => cover URL
-   */
   async fetchCoversBatch(mangaIds: number[]): Promise<Record<number, string | null>> {
     if (!mangaIds || mangaIds.length === 0) {
       return {};
@@ -201,12 +188,6 @@ class AnilistMangaClient extends AnilistClient {
     };
   }
 
-  /**
-   * Fetch statistics for a manga
-   *
-   * @param {number} mangaId - Manga ID
-   * @returns {Promise<MediaStatistics>} - Manga statistics
-   */
   async fetchStatistics(mangaId: number): Promise<MediaStatistics> {
     const data = await this.executeQuery<MangaStatisticsResponse>(
       MEDIA_STATISTICS_QS,

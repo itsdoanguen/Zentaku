@@ -37,11 +37,10 @@ class AnilistCharacterClient extends AnilistClient {
 
   /**
    * Fetch characters for ANY media (anime, manga, novel)
-   *
-   * @param {number} mediaId - Media ID
-   * @param {'ANIME' | 'MANGA'} mediaType - Media type
-   * @param {object} options - Pagination options
-   * @returns {Promise<{ pageInfo: PageInfo; edges: CharacterEdge[] }>} - Characters with pageInfo and edges
+   * @param mediaId Media ID
+   * @param mediaType Media type
+   * @param options Pagination options
+   * @returns Characters with pageInfo and edges
    */
   async fetchByMediaId(
     mediaId: number,
