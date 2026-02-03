@@ -28,7 +28,6 @@ import type {
 
 /**
  * AniList Manga Client
- * Handles all manga-specific operations
  *
  * @extends {AnilistClient}
  */

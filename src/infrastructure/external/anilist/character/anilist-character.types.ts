@@ -1,6 +1,5 @@
 /**
  * AniList API Character Type Definitions
- * TypeScript interfaces for character-specific GraphQL query responses
  */
 
 import type {

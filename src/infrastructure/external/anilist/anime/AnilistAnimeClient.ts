@@ -34,7 +34,6 @@ import type {
 
 /**
  * AniList Anime Client
- * Handles all anime-specific operations
  *
  * @extends {AnilistClient}
  */
@@ -83,7 +82,6 @@ class AnilistAnimeClient extends AnilistClient {
 
   /**
    * Fetch anime overview data
-   * Includes: relations, characters/staff preview, stats, rankings, recommendations
    *
    * @param {number} animeId - Anime ID
    * @returns {Promise<AnimeOverview>} - Anime overview data

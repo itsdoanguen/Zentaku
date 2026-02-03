@@ -1,6 +1,5 @@
 /**
  * AniList API Staff Type Definitions
- * TypeScript interfaces for staff-specific GraphQL query responses
  */
 
 import type {

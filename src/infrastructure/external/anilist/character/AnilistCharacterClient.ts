@@ -10,7 +10,6 @@ import type {
 
 /**
  * AniList Character Client
- * Handles all character-specific operations
  *
  * @extends {AnilistClient}
  */

@@ -1,6 +1,5 @@
 /**
  * AniList GraphQL Character Query Definitions
- * Contains all GraphQL queries for character-specific operations
  */
 
 export const CHARACTER_INFO_QS = `

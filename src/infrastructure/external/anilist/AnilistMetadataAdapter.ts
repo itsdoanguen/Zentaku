@@ -42,9 +42,6 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
 
   // ==================== PRIVATE METHODS ===================
 
-  /**
-   * Convert generic SearchMedia type to AniList specific type
-   */
   private mapSearchMediaToAnimeType(criteria: SearchCriteria): AnimeSearchCriteria {
     const anilistCriteria: AnimeSearchCriteria = {};
     if (criteria.genres) {
@@ -72,9 +69,6 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
     return anilistCriteria;
   }
 
-  /**
-   * Convert generic SearchMedia type to Manga specific type
-   */
   private mapSearchMediaToMangaType(criteria: SearchCriteria): MangaSearchCriteria {
     const mangaCriteria: MangaSearchCriteria = {};
     if (criteria.genres) {
@@ -100,9 +94,6 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
     return mangaCriteria;
   }
 
-  /**
-   * Convert search options to AniList specific format
-   */
   private mapSearchOptionsToAnilistType(options: SearchOptions): {
     page?: number;
     perPage?: number;
@@ -397,30 +388,14 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
     );
   }
 
-  /**
-   * Get source name
-   *
-   * @returns 'AniList'
-   */
   getSourceName(): string {
     return this.sourceName;
   }
 
-  /**
-   * Check if media type is supported
-   *
-   * @param mediaType - Media type to check
-   * @returns True if supported
-   */
   supportsMediaType(mediaType: MediaType): boolean {
     return mediaType === 'ANIME' || mediaType === 'MANGA';
   }
 
-  /**
-   * Get rate limit information
-   *
-   * @returns Rate limit info
-   */
   getRateLimitInfo(): { limit: number; window: number } | null {
     return {
       limit: 60,
