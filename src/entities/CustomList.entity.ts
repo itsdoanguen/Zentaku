@@ -1,15 +1,5 @@
 /**
  * Custom List Entity
- *
- * User-created lists that can be shared with others.
- * Supports collaborative editing with invitations.
- *
- * Features:
- * - Public/Private/Shared privacy modes
- * - Unique slug for URL-friendly access
- * - Optional banner image
- * - JSON settings for customization
- * - Soft delete support
  */
 
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';

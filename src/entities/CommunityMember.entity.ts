@@ -1,14 +1,5 @@
 /**
  * Community Member Entity
- *
- * Junction table for community membership.
- * Uses composite primary key (community_id, user_id).
- * Extends BaseJoinEntity (no ID, only creation timestamp).
- *
- * Features:
- * - Role-based permissions (ADMIN, MODERATOR, MEMBER)
- * - Optional nickname within community
- * - Join timestamp tracking
  */
 
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';

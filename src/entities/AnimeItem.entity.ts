@@ -1,15 +1,5 @@
 /**
  * Anime Item Entity
- *
- * Extends MediaItem for anime-specific fields.
- * Uses Single Table Inheritance with type discriminator = 'ANIME'.
- *
- * Anime-specific fields:
- * - Episode count and duration
- * - Season and year
- * - Studio and source material
- * - Trailer URL
- * - Next airing episode info
  */
 
 import { ChildEntity, Column } from 'typeorm';

@@ -5,17 +5,15 @@
  * Import this file when registering entities with TypeORM.
  */
 
-// Base entities
 export * from './base';
 
-// Enums and types
 export * from './types/enums';
 
-// User & Social
+// User
 export { User } from './User.entity';
 export { UserRelationship } from './UserRelationship.entity';
 
-// Media (Single Table Inheritance)
+// Media
 export { AnimeItem } from './AnimeItem.entity';
 export { MangaItem } from './MangaItem.entity';
 export { MediaItem } from './MediaItem.entity';

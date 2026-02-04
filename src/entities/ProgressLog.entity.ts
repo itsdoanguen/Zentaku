@@ -1,13 +1,5 @@
 /**
  * Progress Log Entity
- *
- * Records each progress update for a library entry.
- * Creates a history of when user watched/read each episode/chapter.
- *
- * Use cases:
- * - Activity feed generation
- * - Progress history tracking
- * - Statistics and analytics
  */
 
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';

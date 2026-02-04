@@ -1,14 +1,5 @@
 /**
  * User Relationship Entity
- *
- * Represents social connections between users.
- * Uses composite primary key (follower_id, following_id).
- * Extends BaseJoinEntity (no ID, only creation timestamp).
- *
- * Relationship types:
- * - FOLLOW: One-way follow
- * - FRIEND: Mutual follow (bidirectional)
- * - BLOCK: User blocking
  */
 
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';

@@ -1,13 +1,5 @@
 /**
  * Manga Item Entity
- *
- * Extends MediaItem for manga-specific fields.
- * Uses Single Table Inheritance with type discriminator = 'MANGA'.
- *
- * Manga-specific fields:
- * - Chapter and volume counts
- * - Author information (JSON array)
- * - Serialization info
  */
 
 import { ChildEntity, Column } from 'typeorm';

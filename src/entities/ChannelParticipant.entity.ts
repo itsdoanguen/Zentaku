@@ -1,13 +1,5 @@
 /**
  * Channel Participant Entity
- *
- * Junction table for channel membership.
- * Uses composite primary key (channel_id, user_id).
- * Extends BaseJoinEntity (no ID, only creation timestamp).
- *
- * Features:
- * - Track last read message (for unread indicators)
- * - Mute notifications per channel
  */
 
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';

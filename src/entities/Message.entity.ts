@@ -1,14 +1,5 @@
 /**
  * Message Entity
- *
- * Messages within channels (text, voice, watch party).
- * Supports threading with self-referential reply_to.
- *
- * Features:
- * - Text content (nullable for attachments-only)
- * - JSON attachments (files, images, embeds)
- * - Threading via self-reference
- * - System messages (automated)
  */
 
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';

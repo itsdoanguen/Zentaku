@@ -1,26 +1,5 @@
 /**
  * User Entity
- *
- * Represents a user account in the system.
- * Extends SoftDeletableEntity for soft delete support.
- *
- * Features:
- * - Unique username and email
- * - Password hashing (handled by service layer)
- * - Profile information (avatar, status message)
- * - JSON settings for user preferences
- * - Soft delete support
- *
- * Relationships:
- * - Library entries (one-to-many)
- * - Progress logs (one-to-many)
- * - Custom lists (one-to-many)
- * - Social relationships (one-to-many, bidirectional)
- * - Communities (one-to-many as owner)
- * - Community memberships (one-to-many)
- * - Messages (one-to-many)
- * - Activities (one-to-many)
- * - Comments (one-to-many)
  */
 
 import { Column, Entity, OneToMany } from 'typeorm';

@@ -1,13 +1,5 @@
 /**
  * List Invitation Entity
- *
- * Invitations for collaborative list editing.
- * Supports different permission levels (EDITOR, VIEWER).
- *
- * States:
- * - PENDING: Invitation sent, awaiting response
- * - ACCEPTED: User accepted and can access list
- * - DECLINED: User declined the invitation
  */
 
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';

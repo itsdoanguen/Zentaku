@@ -1,16 +1,5 @@
 /**
  * Library Entry Entity
- *
- * Tracks user's progress and status for a media item.
- * One entry per user per media item (unique constraint).
- *
- * Features:
- * - Watch/Read status (WATCHING, COMPLETED, etc.)
- * - Progress tracking (episodes/chapters)
- * - User scoring and notes
- * - Privacy control
- * - Rewatch/Reread count
- * - Start and finish dates
  */
 
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, Unique } from 'typeorm';
