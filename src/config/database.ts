@@ -65,9 +65,6 @@ export const initializeDatabase = async (): Promise<void> => {
   }
 };
 
-/**
- * Close database connection gracefully
- */
 export const closeDatabase = async (): Promise<void> => {
   try {
     if (AppDataSource.isInitialized) {
@@ -81,7 +78,6 @@ export const closeDatabase = async (): Promise<void> => {
   }
 };
 
-// Graceful shutdown
 process.on('beforeExit', async () => {
   await closeDatabase();
 });

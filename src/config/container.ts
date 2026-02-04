@@ -2,11 +2,6 @@
  * Dependency Injection Container
  *
  * Central registry for managing all application dependencies.
- * Provides:
- * - Inversion of Control (IoC)
- * - Dependency Injection
- * - Lifecycle management (Singleton/Transient)
- * - Lazy instantiation
  *
  * @module Container
  */
@@ -18,9 +13,6 @@ import logger from '../shared/utils/logger';
  */
 type FactoryFunction<T = unknown> = (container: Container) => T;
 
-/**
- * Registration options for dependencies
- */
 interface RegistrationOptions {
   singleton?: boolean;
   dependencies?: string[];
@@ -41,9 +33,6 @@ interface DependencyConfig<T = unknown> {
 
 /**
  * Dependency Injection Container Class
- *
- * Manages the creation and lifecycle of all application dependencies.
- * Supports both singleton and transient (new instance each time) patterns.
  */
 class Container {
   /**
@@ -177,17 +166,11 @@ class Container {
     return this.dependencies.has(name);
   }
 
-  /**
-   * Clear all singleton instances
-   */
   clearSingletons(): void {
     this.singletons.clear();
     logger.debug('[Container] Cleared all singleton instances');
   }
 
-  /**
-   * Reset the entire container
-   */
   reset(): void {
     this.dependencies.clear();
     this.singletons.clear();
@@ -195,11 +178,6 @@ class Container {
     logger.debug('[Container] Container reset');
   }
 
-  /**
-   * Get all registered dependency names
-   *
-   * @returns {string[]} Array of dependency names
-   */
   getRegistered(): string[] {
     return Array.from(this.dependencies.keys());
   }
@@ -247,12 +225,6 @@ class Container {
     }
   }
 
-  /**
-   * Gracefully shutdown the container
-   * Cleanup resources (e.g., close database connections)
-   *
-   * @returns {Promise<void>}
-   */
   async shutdown(): Promise<void> {
     try {
       logger.info('[Container] Starting graceful shutdown...');

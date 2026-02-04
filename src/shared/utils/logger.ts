@@ -23,52 +23,34 @@ class Logger {
     this.level = LogLevel[envLevel] ?? LogLevel.INFO;
   }
 
-  /**
-   * Log debug message
-   */
   debug(message: string, ...args: unknown[]): void {
     if (this.level <= LogLevel.DEBUG) {
       console.log(`[DEBUG] ${new Date().toISOString()}`, message, ...args);
     }
   }
 
-  /**
-   * Log info message
-   */
   info(message: string, ...args: unknown[]): void {
     if (this.level <= LogLevel.INFO) {
       console.log(`[INFO] ${new Date().toISOString()}`, message, ...args);
     }
   }
 
-  /**
-   * Log warning message
-   */
   warn(message: string, ...args: unknown[]): void {
     if (this.level <= LogLevel.WARN) {
       console.warn(`[WARN] ${new Date().toISOString()}`, message, ...args);
     }
   }
 
-  /**
-   * Log error message
-   */
   error(message: string, ...args: unknown[]): void {
     if (this.level <= LogLevel.ERROR) {
       console.error(`[ERROR] ${new Date().toISOString()}`, message, ...args);
     }
   }
 
-  /**
-   * Set log level dynamically
-   */
   setLevel(level: LogLevelName): void {
     this.level = LogLevel[level];
   }
 
-  /**
-   * Get current log level
-   */
   getLevel(): LogLevelName {
     return LogLevel[this.level] as LogLevelName;
   }
