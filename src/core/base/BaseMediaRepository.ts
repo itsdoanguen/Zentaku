@@ -4,40 +4,20 @@
  * Specialized repository for MediaItem entities with inheritance pattern.
  * Handles common operations for anime, manga, and novel repositories.
  *
- * Features:
- * - Automatic metadata inclusion
- * - AniList/MAL ID lookups
- * - Sync status management
- * - Media type filtering
- *
- * The MediaItem uses Single Table Inheritance pattern where:
- * - MediaItem is the base table
- * - AnimeMetadata, BookMetadata are optional 1-1 relations
- * - Type field discriminates between ANIME, MANGA, NOVEL
- *
  * @extends BaseRepository
  */
 
 import type { FindOptionsWhere, ObjectLiteral, Repository } from 'typeorm';
 import { BaseRepository, type FindManyOptions, type FindOneOptions } from './BaseRepository';
 
-/**
- * Media search options
- */
 export interface MediaSearchOptions extends Omit<FindManyOptions, 'where'> {
   limit?: number;
 }
 
-/**
- * Top rated options
- */
 export interface TopRatedOptions extends MediaSearchOptions {
   minScore?: number;
 }
 
-/**
- * Base Media Repository Abstract Class
- */
 export abstract class BaseMediaRepository<
   T extends ObjectLiteral = ObjectLiteral,
 > extends BaseRepository<T> {
@@ -56,12 +36,7 @@ export abstract class BaseMediaRepository<
 
   /**
    * Get default relations for media queries
-   *
-   * Returns empty array since entities are now flat (no separate metadata tables).
-   * Override this method in child classes if relations are needed.
-   *
    * @protected
-   * @returns Relations array for TypeORM queries
    */
   protected _getDefaultRelations(): string[] {
     return [];
@@ -69,10 +44,7 @@ export abstract class BaseMediaRepository<
 
   /**
    * Merge user-provided options with default relations
-   *
    * @protected
-   * @param options - User-provided options
-   * @returns Merged options
    */
   protected _mergeWithDefaultRelations(options: FindOneOptions = {}): FindOneOptions {
     if (options.relations) {
@@ -92,20 +64,11 @@ export abstract class BaseMediaRepository<
   /**
    * Generic method to find media by external ID field
    *
-   * This is a protected helper method. Child classes should implement
-   * public methods that call this (e.g., findByAnilistId, findByMalId).
-   *
    * @protected
    * @param fieldName - Name of the ID field (e.g., 'idAnilist', 'idMal', 'idMangadex')
    * @param value - ID value
    * @param options - Additional query options
    * @returns Media item or null if not found
-   *
-   * @example
-   * // In AnimeRepository:
-   * async findByAnilistId(anilistId: number, options = {}) {
-   *   return this._findByExternalId('idAnilist', anilistId, options);
-   * }
    */
   protected async _findByExternalId(
     fieldName: string,
@@ -124,20 +87,11 @@ export abstract class BaseMediaRepository<
   /**
    * Generic method to find multiple media by external ID field
    *
-   * This is a protected helper method. Child classes should implement
-   * public batch methods that call this (e.g., findByAnilistIds).
-   *
    * @protected
    * @param fieldName - Name of the ID field (e.g., 'idAnilist', 'idMal')
    * @param values - Array of ID values
    * @param options - Additional query options
    * @returns Array of media items
-   *
-   * @example
-   * // In AnimeRepository:
-   * async findByAnilistIds(anilistIds: number[], options = {}) {
-   *   return this._findByExternalIds('idAnilist', anilistIds, options);
-   * }
    */
   protected async _findByExternalIds(
     fieldName: string,
@@ -166,20 +120,11 @@ export abstract class BaseMediaRepository<
   /**
    * Check if media should be synced from external source
    *
-   * Returns true if:
-   * - Media doesn't exist (null)
-   * - Media never been synced (lastSyncedAt is null)
-   * - Last sync was older than threshold
+   * Should sync when: Media not exist, lastSyncedAt missing, or lastSyncedAt too old
    *
    * @param media - Media object from database
    * @param thresholdDays - Number of days before re-sync
-   * @returns True if sync is needed
-   *
-   * @example
-   * const anime = await animeRepo.findByAnilistId(1);
-   * if (animeRepo.shouldSync(anime, 7)) {
-   *   // Fetch fresh data from AniList
-   * }
+   * @returns Boolean indicating
    */
   shouldSync(media: T | null | { lastSyncedAt?: Date | null }, thresholdDays = 7): boolean {
     if (!media) {
@@ -206,16 +151,6 @@ export abstract class BaseMediaRepository<
     return diffDays >= thresholdDays;
   }
 
-  /**
-   * Update the lastSyncedAt timestamp
-   *
-   * @param id - Media database ID
-   * @param syncDate - Sync timestamp
-   * @returns Updated media
-   *
-   * @example
-   * await animeRepo.updateSyncTimestamp(anime.id);
-   */
   async updateSyncTimestamp(id: number | bigint, syncDate: Date = new Date()): Promise<T | null> {
     return this.update(id, { lastSyncedAt: syncDate } as any);
   }
@@ -230,12 +165,6 @@ export abstract class BaseMediaRepository<
    * @param status - MediaStatus enum value (RELEASING, FINISHED, etc.)
    * @param options - Additional query options
    * @returns Array of media items
-   *
-   * @example
-   * const airingAnime = await animeRepo.findByStatus('RELEASING', {
-   *   order: { averageScore: 'DESC' },
-   *   take: 20
-   * });
    */
   async findByStatus(status: string, options: FindOneOptions = {}): Promise<T[]> {
     const repository = this.getRepository();
@@ -249,32 +178,17 @@ export abstract class BaseMediaRepository<
     });
   }
 
-  /**
-   * Find releasing (currently airing) media
-   *
-   * @param options - Additional query options
-   * @returns Array of releasing media
-   */
+  //Find releasing (currently airing) media
   async findReleasing(options: FindOneOptions = {}): Promise<T[]> {
     return this.findByStatus('RELEASING', options);
   }
 
-  /**
-   * Find finished media
-   *
-   * @param options - Additional query options
-   * @returns Array of finished media
-   */
+  //Find finished media
   async findFinished(options: FindOneOptions = {}): Promise<T[]> {
     return this.findByStatus('FINISHED', options);
   }
 
-  /**
-   * Find upcoming media (not yet released)
-   *
-   * @param options - Additional query options
-   * @returns Array of upcoming media
-   */
+  //Find upcoming media (not yet released)
   async findUpcoming(options: FindOneOptions = {}): Promise<T[]> {
     return this.findByStatus('NOT_YET_RELEASED', options);
   }
@@ -283,15 +197,7 @@ export abstract class BaseMediaRepository<
   // SCORING & POPULARITY
   // ============================================
 
-  /**
-   * Find top rated media
-   *
-   * @param options - Query options
-   * @returns Array of top rated media
-   *
-   * @example
-   * const topAnime = await animeRepo.findTopRated({ limit: 10, minScore: 8.0 });
-   */
+  //Find top rated media
   async findTopRated(options: TopRatedOptions = {}): Promise<T[]> {
     const { limit = 20, minScore, ...restOptions } = options;
     const repository = this.getRepository();
@@ -318,13 +224,6 @@ export abstract class BaseMediaRepository<
   // ADULT CONTENT FILTERING
   // ============================================
 
-  /**
-   * Find media with adult content filter
-   *
-   * @param includeAdult - Whether to include adult content
-   * @param options - Additional query options
-   * @returns Array of media items
-   */
   async findWithAdultFilter(includeAdult = false, options: FindOneOptions = {}): Promise<T[]> {
     const repository = this.getRepository();
     const mergedOptions = this._mergeWithDefaultRelations(options);
@@ -370,18 +269,6 @@ export abstract class BaseMediaRepository<
   // SEARCH OPERATIONS
   // ============================================
 
-  /**
-   * Search media by title (case-insensitive)
-   *
-   * Searches in romaji, english, and native titles.
-   *
-   * @param query - Search query
-   * @param options - Additional query options
-   * @returns Array of matching media
-   *
-   * @example
-   * const results = await animeRepo.searchByTitle('naruto', { limit: 10 });
-   */
   async searchByTitle(query: string, options: MediaSearchOptions = {}): Promise<T[]> {
     const { limit = 20, ...restOptions } = options;
     const repository = this.getRepository();

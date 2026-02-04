@@ -4,31 +4,15 @@
  * Provides common functionality for all service layer classes.
  * This class serves as a foundation for specific services,
  * ensuring consistent patterns for validation, error handling, logging, and pagination.
- *
- * Features:
- * - Input validation (IDs, strings, enums)
- * - Pagination support with metadata
- * - Standardized error handling
- * - Shared logging utilities
- * - Common utility methods (retry, sleep, date calculations)
- *
  * @abstract
  */
 
 import { AnilistAPIError, NotFoundError, ValidationError } from '../../shared/utils/error';
 import logger from '../../shared/utils/logger';
-
-/**
- * Options for string validation
- */
 export interface StringValidationOptions {
   minLength?: number;
   maxLength?: number;
 }
-
-/**
- * Pagination parameters
- */
 export interface PaginationParams {
   skip: number;
   take: number;
@@ -36,9 +20,6 @@ export interface PaginationParams {
   pageSize: number;
 }
 
-/**
- * Pagination metadata for responses
- */
 export interface PaginationMeta {
   currentPage: number;
   perPage: number;
@@ -75,16 +56,6 @@ export abstract class BaseService {
 
   /**
    * Validates that the provided ID is a positive integer
-   *
-   * @param id - The ID to validate
-   * @param fieldName - The name of the field being validated (for error messages)
-   * @returns The validated positive integer ID
-   * @throws {ValidationError} If the ID is not a positive integer
-   *
-   * @example
-   * const animeId = this._validateId(params.id, 'Anime ID');
-   * // Returns: 123 (validated number)
-   * // Throws: ValidationError if invalid
    */
   protected _validateId(id: unknown, fieldName: string = 'ID'): number {
     if (id === null || id === undefined) {
@@ -111,7 +82,6 @@ export abstract class BaseService {
    * @param fieldName - The name of the field being validated (for error messages)
    * @param options - Additional validation options (minLength, maxLength)
    * @returns The validated and trimmed string
-   * @throws {ValidationError} If the string is invalid
    *
    * @example
    * const title = this._validateString(data.title, 'Title', {
@@ -212,10 +182,6 @@ export abstract class BaseService {
    * @param totalCount - Total number of items
    * @param pageSize - Number of items per page
    * @returns Total number of pages
-   *
-   * @example
-   * const totalPages = this._getTotalPages(95, 20);
-   * // Returns: 5
    */
   protected _getTotalPages(totalCount: number, pageSize: number): number {
     return Math.ceil(totalCount / pageSize);
@@ -231,19 +197,6 @@ export abstract class BaseService {
    * @param perPage - Items per page
    * @param total - Total number of items
    * @returns Complete pagination metadata object
-   *
-   * @example
-   * const meta = this._buildPaginationMeta(2, 20, 95);
-   * // Returns: {
-   * //   currentPage: 2,
-   * //   perPage: 20,
-   * //   total: 95,
-   * //   totalPages: 5,
-   * //   hasNextPage: true,
-   * //   hasPreviousPage: true,
-   * //   nextPage: 3,
-   * //   previousPage: 1
-   * // }
    */
   protected _buildPaginationMeta(page: number, perPage: number, total: number): PaginationMeta {
     const totalPages = this._getTotalPages(total, perPage);
@@ -273,13 +226,6 @@ export abstract class BaseService {
    * @param error - The error to handle
    * @param context - Context where error occurred (optional)
    * @throws Re-throws the error after logging
-   *
-   * @example
-   * try {
-   *   // ... operation
-   * } catch (error) {
-   *   this._handleError(error as Error, 'fetching anime');
-   * }
    */
   protected _handleError(error: Error, context: string = ''): never {
     const errorContext = context
@@ -311,12 +257,6 @@ export abstract class BaseService {
    * @param operation - Async function to execute
    * @param context - Context for error messages
    * @returns Result of the operation
-   *
-   * @example
-   * return this._executeWithErrorHandling(
-   *   async () => await this.repository.findById(id),
-   *   'fetching anime by ID'
-   * );
    */
   protected async _executeWithErrorHandling<T>(
     operation: () => Promise<T>,
@@ -333,54 +273,18 @@ export abstract class BaseService {
   // LOGGING UTILITIES
   // ============================================
 
-  /**
-   * Log info message with service context
-   *
-   * @param message - Message to log
-   * @param meta - Additional metadata (optional)
-   *
-   * @example
-   * this._logInfo('Anime fetched successfully', { animeId: 123 });
-   */
   protected _logInfo(message: string, meta: unknown = {}): void {
     this.logger.info(`[${this.constructor.name}] ${message}`, meta);
   }
 
-  /**
-   * Log warning message with service context
-   *
-   * @param message - Message to log
-   * @param meta - Additional metadata (optional)
-   *
-   * @example
-   * this._logWarn('Cache miss, fetching from API', { key: 'anime:123' });
-   */
   protected _logWarn(message: string, meta: unknown = {}): void {
     this.logger.warn(`[${this.constructor.name}] ${message}`, meta);
   }
 
-  /**
-   * Log error message with service context
-   *
-   * @param message - Message to log
-   * @param meta - Additional metadata (optional)
-   *
-   * @example
-   * this._logError('Failed to fetch anime', { error: error.message });
-   */
   protected _logError(message: string, meta: unknown = {}): void {
     this.logger.error(`[${this.constructor.name}] ${message}`, meta);
   }
 
-  /**
-   * Log debug message with service context
-   *
-   * @param message - Message to log
-   * @param meta - Additional metadata (optional)
-   *
-   * @example
-   * this._logDebug('Processing anime data', { rawData });
-   */
   protected _logDebug(message: string, meta: unknown = {}): void {
     this.logger.debug(`[${this.constructor.name}] ${message}`, meta);
   }
@@ -389,48 +293,17 @@ export abstract class BaseService {
   // COMMON UTILITY METHODS
   // ============================================
 
-  /**
-   * Check if value exists (not null or undefined)
-   *
-   * @param value - Value to check
-   * @returns True if value exists, false otherwise
-   *
-   * @example
-   * if (this._exists(data.description)) {
-   *   // ... process description
-   * }
-   */
   protected _exists(value: unknown): boolean {
     return value !== null && value !== undefined;
   }
 
-  /**
-   * Check if string is empty or contains only whitespace
-   *
-   * @param str - String to check
-   * @returns True if empty or whitespace, false otherwise
-   *
-   * @example
-   * if (!this._isEmpty(title)) {
-   *   // ... process title
-   * }
-   */
   protected _isEmpty(str: string | null | undefined): boolean {
     return !str || str.trim().length === 0;
   }
 
   /**
    * Safely parse JSON string with fallback
-   *
-   * @param jsonString - JSON string to parse
-   * @param defaultValue - Default value if parsing fails (default: null)
    * @returns Parsed object or default value
-   *
-   * @example
-   * const config = this._parseJSON<AppConfig>(
-   *   data.settings,
-   *   { theme: 'dark' }
-   * );
    */
   protected _parseJSON<T = unknown>(jsonString: string, defaultValue: T | null = null): T | null {
     try {
@@ -445,15 +318,6 @@ export abstract class BaseService {
   // ASYNC UTILITIES
   // ============================================
 
-  /**
-   * Sleep/delay execution for specified milliseconds
-   *
-   * @param ms - Milliseconds to sleep
-   * @returns Promise that resolves after delay
-   *
-   * @example
-   * await this._sleep(1000); // Wait 1 second
-   */
   protected async _sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
@@ -507,36 +371,11 @@ export abstract class BaseService {
   // DATE/TIME HELPER METHODS
   // ============================================
 
-  /**
-   * Calculate the number of days between two dates
-   *
-   * @param date1 - First date
-   * @param date2 - Second date
-   * @returns Number of days between the dates (absolute value)
-   *
-   * @example
-   * const days = this._daysBetween(new Date('2024-01-01'), new Date('2024-01-15'));
-   * // Returns: 14
-   */
   protected _daysBetween(date1: Date, date2: Date): number {
     const diffTime = Math.abs(date2.getTime() - date1.getTime());
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
   }
 
-  /**
-   * Check if a date is older than specified number of days
-   *
-   * Returns true if date is null/undefined (considered stale).
-   *
-   * @param date - Date to check (can be Date, string, or null/undefined)
-   * @param days - Number of days threshold
-   * @returns True if date is older than specified days or null/undefined
-   *
-   * @example
-   * if (this._isOlderThan(cachedData.timestamp, 7)) {
-   *   // Cache is older than 7 days, refresh
-   * }
-   */
   protected _isOlderThan(date: Date | string | null | undefined, days: number): boolean {
     if (!date) return true;
     const daysDiff = this._daysBetween(new Date(date), new Date());
