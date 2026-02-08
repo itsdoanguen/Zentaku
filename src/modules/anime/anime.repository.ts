@@ -122,9 +122,6 @@ class AnimeRepository extends BaseMediaRepository<AnimeItem> {
 
   /**
    * Find anime by HiAnime identifier
-   *
-   * @param hianimeId - HiAnime identifier
-   * @param options - Additional query options
    * @returns Anime item or null
    */
   async findByHianimeId(hianimeId: string, options = {}): Promise<AnimeItem | null> {
@@ -133,9 +130,6 @@ class AnimeRepository extends BaseMediaRepository<AnimeItem> {
 
   /**
    * Find multiple anime by HiAnime identifiers
-   *
-   * @param hianimeIds - Array of HiAnime identifiers
-   * @param options - Additional query options
    * @returns Array of anime items
    */
   async findManyByHianimeIds(hianimeIds: string[], options = {}): Promise<AnimeItem[]> {
@@ -143,17 +137,15 @@ class AnimeRepository extends BaseMediaRepository<AnimeItem> {
   }
 
   /**
-   * Update HiAnime ID for an anime
+   * Update HiAnime ID for an anime in the database
    *
-   * @param anilistId - AniList anime ID
-   * @param hianimeId - HiAnime identifier to set
    * @returns Updated anime item
    */
   async updateHianimeId(anilistId: number, hianimeId: string): Promise<AnimeItem> {
     const anime = await this.findByAnilistId(anilistId);
 
     if (!anime) {
-      throw new Error(`Anime with AniList ID ${anilistId} not found`);
+      throw new Error(`Anime with AniList ID ${anilistId} not found in database`);
     }
 
     const updated = await this.update(anime.id, { idHianime: hianimeId } as any);
@@ -202,44 +194,20 @@ class AnimeRepository extends BaseMediaRepository<AnimeItem> {
     return updated;
   }
 
-  /**
-   * Find anime by season
-   *
-   * @param season - Season (WINTER, SPRING, SUMMER, FALL)
-   * @param year - Year
-   * @returns Array of anime in the season
-   */
   async findBySeason(season: string, year: number): Promise<AnimeItem[]> {
     return this.findMany({ where: { season, seasonYear: year } as any });
   }
 
-  /**
-   * Find anime by genre
-   *
-   * @param genre - Genre name
-   * @returns Array of anime with the genre
-   */
   async findByGenre(genre: string): Promise<AnimeItem[]> {
     const qb = this.repository.createQueryBuilder('anime');
     qb.where('JSON_CONTAINS(anime.genres, :genre)', { genre: JSON.stringify(genre) });
     return qb.getMany();
   }
 
-  /**
-   * Find currently airing anime
-   *
-   * @returns Array of airing anime
-   */
   async findAiring(): Promise<AnimeItem[]> {
     return this.findMany({ where: { status: 'RELEASING' } as any });
   }
 
-  /**
-   * Find anime by studio
-   *
-   * @param studio - Studio name
-   * @returns Array of anime by the studio
-   */
   async findByStudio(studio: string): Promise<AnimeItem[]> {
     return this.findMany({ where: { studio } as any });
   }
