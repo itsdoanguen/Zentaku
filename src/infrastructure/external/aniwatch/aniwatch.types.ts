@@ -65,19 +65,23 @@ export interface AniwatchError {
   statusCode: number;
 }
 
-export enum StreamingServer {
-  HD_1 = 'hd-1',
-  HD_2 = 'hd-2',
+export const STREAMING_SERVERS = ['hd-1', 'hd-2', 'meg-1', 'meg-2'] as const;
+export type StreamingServer = (typeof STREAMING_SERVERS)[number];
 
-  MEG_1 = 'meg-1',
-  MEG_2 = 'meg-2',
-}
+export const StreamingServerEnum = {
+  HD_1: 'hd-1' as StreamingServer,
+  HD_2: 'hd-2' as StreamingServer,
+  MEG_1: 'meg-1' as StreamingServer,
+  MEG_2: 'meg-2' as StreamingServer,
+} as const;
 
-export enum AudioCategory {
-  SUB = 'sub',
-  DUB = 'dub',
-  RAW = 'raw',
-}
+export const AUDIO_CATEGORIES = ['sub', 'dub', 'raw'] as const;
+export type AudioCategory = (typeof AUDIO_CATEGORIES)[number];
+export const AudioCategoryEnum = {
+  SUB: 'sub' as AudioCategory,
+  DUB: 'dub' as AudioCategory,
+  RAW: 'raw' as AudioCategory,
+} as const;
 
 export enum AniwatchEndpoint {
   EPISODE_SOURCES = '/anime/episode/sources',

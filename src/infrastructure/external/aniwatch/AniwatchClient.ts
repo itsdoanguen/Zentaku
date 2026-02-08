@@ -10,10 +10,17 @@ import httpClient from '../../http/httpClient';
 import type {
   AnimeEpisodes,
   AniwatchError,
+  AudioCategory,
   EpisodeServers,
   EpisodeSources,
+  StreamingServer,
 } from './aniwatch.types';
-import { AudioCategory, StreamingServer } from './aniwatch.types';
+import {
+  AUDIO_CATEGORIES,
+  AudioCategoryEnum,
+  STREAMING_SERVERS,
+  StreamingServerEnum,
+} from './aniwatch.types';
 
 class AniwatchClient {
   private readonly baseUrl: string;
@@ -38,8 +45,8 @@ class AniwatchClient {
    */
   async getEpisodeSources(
     episodeId: string,
-    server: string = StreamingServer.HD_1,
-    category: AudioCategory | string = AudioCategory.SUB
+    server: StreamingServer = StreamingServerEnum.HD_1,
+    category: AudioCategory = AudioCategoryEnum.SUB
   ): Promise<EpisodeSources> {
     try {
       logger.info(
@@ -194,17 +201,12 @@ class AniwatchClient {
     }
   }
 
-  getAvailableServers(): string[] {
-    return [
-      StreamingServer.HD_1,
-      StreamingServer.HD_2,
-      StreamingServer.MEG_1,
-      StreamingServer.MEG_2,
-    ];
+  getAvailableServers(): readonly string[] {
+    return STREAMING_SERVERS;
   }
 
-  getAvailableCategories(): string[] {
-    return [AudioCategory.SUB, AudioCategory.DUB, AudioCategory.RAW];
+  getAvailableCategories(): readonly string[] {
+    return AUDIO_CATEGORIES;
   }
 }
 

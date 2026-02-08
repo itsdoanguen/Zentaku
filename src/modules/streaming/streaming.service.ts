@@ -10,8 +10,10 @@
 import { BaseService } from '../../core/base/BaseService';
 import type { IStreamingService } from '../../core/interfaces/IStreamingService';
 import type {
+  AudioCategory,
   AvailableEpisodesResponse,
   EpisodeSourcesResponse,
+  StreamingServer,
   SyncHianimeIdResponse,
 } from '../../core/types/streaming.types';
 import type AniwatchClient from '../../infrastructure/external/aniwatch/AniwatchClient';
@@ -81,15 +83,15 @@ class StreamingService extends BaseService implements IStreamingService {
    *
    * @param anilistId - AniList anime ID
    * @param episodeNumber - Episode number
-   * @param server - Streaming server (default: "hd-1")
-   * @param category - Audio category (default: "sub")
+   * @param server - Streaming server (optional)
+   * @param category - Audio category (optional)
    * @returns Episode sources with streaming links
    */
   async getEpisodeSources(
     anilistId: number,
     episodeNumber: number,
-    server: string = 'hd-1',
-    category: 'sub' | 'dub' | 'raw' = 'sub'
+    server?: StreamingServer,
+    category?: AudioCategory
   ): Promise<EpisodeSourcesResponse> {
     const validAnilistId = this._validateId(anilistId, 'AniList ID');
     const validEpisodeNumber = this._validateId(episodeNumber, 'Episode Number');

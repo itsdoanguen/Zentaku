@@ -1,5 +1,9 @@
 import type { NextFunction, Request, Response } from 'express';
 import { param, query, validationResult } from 'express-validator';
+import {
+  AUDIO_CATEGORIES,
+  STREAMING_SERVERS,
+} from '../../infrastructure/external/aniwatch/aniwatch.types';
 
 const handleValidationErrors = (req: Request, res: Response, next: NextFunction): void => {
   const errors = validationResult(req);
@@ -27,13 +31,13 @@ export const validateGetEpisodeSources = [
 
   query('server')
     .optional()
-    .isIn(['hd-1', 'hd-2', 'meg-1', 'meg-2'])
-    .withMessage('Invalid server. Must be: hd-1, hd-2, meg-1, or meg-2'),
+    .isIn([...STREAMING_SERVERS])
+    .withMessage(`Invalid server. Must be one of: ${STREAMING_SERVERS.join(', ')}`),
 
   query('category')
     .optional()
-    .isIn(['sub', 'dub', 'raw'])
-    .withMessage('Invalid category. Must be: sub, dub, or raw'),
+    .isIn([...AUDIO_CATEGORIES])
+    .withMessage(`Invalid category. Must be one of: ${AUDIO_CATEGORIES.join(', ')}`),
 
   handleValidationErrors,
 ];

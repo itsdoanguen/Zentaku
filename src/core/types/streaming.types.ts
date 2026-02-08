@@ -1,4 +1,11 @@
-import type { EpisodeSources } from '../../infrastructure/external/aniwatch/aniwatch.types';
+import type {
+  AudioCategory,
+  EpisodeSources,
+  StreamingServer,
+} from '../../infrastructure/external/aniwatch/aniwatch.types';
+
+// Re-export for convenience
+export type { AudioCategory, StreamingServer };
 
 export interface GetEpisodeSourcesParams {
   anilistId: number;
@@ -6,10 +13,6 @@ export interface GetEpisodeSourcesParams {
   server?: StreamingServer;
   category?: AudioCategory;
 }
-
-export type StreamingServer = 'hd-1' | 'hd-2' | 'meg-1' | 'meg-2';
-
-export type AudioCategory = 'sub' | 'dub' | 'raw';
 
 export interface EpisodeSourcesResponse extends EpisodeSources {
   anilistId: number;

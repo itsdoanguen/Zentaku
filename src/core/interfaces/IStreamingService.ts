@@ -1,6 +1,8 @@
 import type {
+  AudioCategory,
   AvailableEpisodesResponse,
   EpisodeSourcesResponse,
+  StreamingServer,
   SyncHianimeIdResponse,
 } from '../types/streaming.types';
 
@@ -19,8 +21,8 @@ export interface IStreamingService {
   getEpisodeSources(
     anilistId: number,
     episodeNumber: number,
-    server?: string,
-    category?: 'sub' | 'dub' | 'raw'
+    server?: StreamingServer,
+    category?: AudioCategory
   ): Promise<EpisodeSourcesResponse>;
 
   /**

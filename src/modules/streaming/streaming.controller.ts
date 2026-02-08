@@ -9,6 +9,7 @@
 
 import type { Request, Response } from 'express';
 import { BaseController } from '../../core/base/BaseController';
+import type { AudioCategory, StreamingServer } from '../../core/types/streaming.types';
 import type StreamingService from './streaming.service';
 
 class StreamingController extends BaseController<StreamingService> {
@@ -27,8 +28,8 @@ class StreamingController extends BaseController<StreamingService> {
   getEpisodeSources = this.asyncHandler(async (req: Request, res: Response) => {
     const anilistId = this.getIntParam(req, 'anilistId');
     const episodeNumber = this.getIntParam(req, 'episodeNumber');
-    const server = req.query.server as string | undefined;
-    const category = req.query.category as 'sub' | 'dub' | 'raw' | undefined;
+    const server = req.query.server as StreamingServer | undefined;
+    const category = req.query.category as AudioCategory | undefined;
 
     this.logInfo('Fetching episode sources', {
       anilistId,
