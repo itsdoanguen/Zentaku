@@ -121,6 +121,51 @@ class AnimeRepository extends BaseMediaRepository<AnimeItem> {
   }
 
   /**
+   * Find anime by HiAnime identifier
+   *
+   * @param hianimeId - HiAnime identifier
+   * @param options - Additional query options
+   * @returns Anime item or null
+   */
+  async findByHianimeId(hianimeId: string, options = {}): Promise<AnimeItem | null> {
+    return this._findByExternalId('idHianime', hianimeId, options);
+  }
+
+  /**
+   * Find multiple anime by HiAnime identifiers
+   *
+   * @param hianimeIds - Array of HiAnime identifiers
+   * @param options - Additional query options
+   * @returns Array of anime items
+   */
+  async findManyByHianimeIds(hianimeIds: string[], options = {}): Promise<AnimeItem[]> {
+    return this._findByExternalIds('idHianime', hianimeIds, options);
+  }
+
+  /**
+   * Update HiAnime ID for an anime
+   *
+   * @param anilistId - AniList anime ID
+   * @param hianimeId - HiAnime identifier to set
+   * @returns Updated anime item
+   */
+  async updateHianimeId(anilistId: number, hianimeId: string): Promise<AnimeItem> {
+    const anime = await this.findByAnilistId(anilistId);
+
+    if (!anime) {
+      throw new Error(`Anime with AniList ID ${anilistId} not found`);
+    }
+
+    const updated = await this.update(anime.id, { idHianime: hianimeId } as any);
+
+    if (!updated) {
+      throw new Error(`Failed to update HiAnime ID for anime with AniList ID ${anilistId}`);
+    }
+
+    return updated;
+  }
+
+  /**
    * Create or update anime entry
    *
    * This method expects data already transformed by AnimeAdapter.
