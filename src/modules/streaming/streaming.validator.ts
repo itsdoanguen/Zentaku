@@ -48,6 +48,17 @@ export const validateGetEpisodes = [
   handleValidationErrors,
 ];
 
+export const validateGetEpisodeServers = [
+  param('anilistId').isInt({ min: 1 }).withMessage('AniList ID must be a positive integer').toInt(),
+
+  param('episodeNumber')
+    .isInt({ min: 1 })
+    .withMessage('Episode number must be a positive integer')
+    .toInt(),
+
+  handleValidationErrors,
+];
+
 export const validateSyncHianimeId = [
   param('anilistId').isInt({ min: 1 }).withMessage('AniList ID must be a positive integer').toInt(),
 

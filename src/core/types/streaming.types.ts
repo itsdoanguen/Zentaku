@@ -1,5 +1,6 @@
 import type {
   AudioCategory,
+  EpisodeServers,
   EpisodeSources,
   StreamingServer,
 } from '../../infrastructure/external/aniwatch/aniwatch.types';
@@ -39,6 +40,12 @@ export interface EpisodeInfo {
   title: string;
   episodeId: string;
   isFiller?: boolean;
+}
+
+export interface EpisodeServersResponse extends EpisodeServers {
+  anilistId: number;
+  episodeNumber: number;
+  hianimeId: string;
 }
 
 export enum StreamingErrorCode {

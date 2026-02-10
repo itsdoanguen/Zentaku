@@ -65,6 +65,11 @@ export interface AniwatchError {
   statusCode: number;
 }
 
+export interface AniwatchWrappedResponse<T> {
+  success: boolean;
+  data: T;
+}
+
 export const STREAMING_SERVERS = ['hd-1', 'hd-2', 'meg-1', 'meg-2'] as const;
 export type StreamingServer = (typeof STREAMING_SERVERS)[number];
 

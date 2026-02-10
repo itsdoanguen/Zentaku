@@ -10,6 +10,7 @@ import httpClient from '../../http/httpClient';
 import type {
   AnimeEpisodes,
   AniwatchError,
+  AniwatchWrappedResponse,
   AudioCategory,
   EpisodeServers,
   EpisodeSources,
@@ -53,22 +54,19 @@ class AniwatchClient {
         `[Aniwatch] Fetching sources for episode: ${episodeId} (server: ${server}, category: ${category})`
       );
 
-      const response = await httpClient.get<EpisodeSources>(
-        `${this.baseUrl}/anime/episode/sources`,
-        {
-          params: {
-            episodeId,
-            server,
-            category,
-          },
-        }
-      );
+      const url = `${this.baseUrl}/api/anime/episode/sources?episodeId=${encodeURIComponent(episodeId)}&server=${server}&category=${category}`;
+
+      logger.debug(`[Aniwatch] Request URL: ${url}`);
+
+      const response = await httpClient.get<AniwatchWrappedResponse<EpisodeSources>>(url);
+
+      const data = 'success' in response.data ? response.data.data : response.data;
 
       logger.info(
-        `[Aniwatch] Successfully fetched ${response.data.sources.length} sources for episode: ${episodeId}`
+        `[Aniwatch] Successfully fetched ${data.sources.length} sources for episode: ${episodeId}`
       );
 
-      return response.data;
+      return data;
     } catch (error) {
       const axiosError = error as AxiosError<AniwatchError>;
 
@@ -103,21 +101,19 @@ class AniwatchClient {
   async getEpisodeServers(episodeId: string): Promise<EpisodeServers> {
     try {
       logger.info(`[Aniwatch] Fetching servers for episode: ${episodeId}`);
+      const url = `${this.baseUrl}/api/anime/episode/servers?episodeId=${encodeURIComponent(episodeId)}`;
 
-      const response = await httpClient.get<EpisodeServers>(
-        `${this.baseUrl}/anime/episode/servers`,
-        {
-          params: {
-            episodeId,
-          },
-        }
-      );
+      logger.debug(`[Aniwatch] Request URL: ${url}`);
+
+      const response = await httpClient.get<AniwatchWrappedResponse<EpisodeServers>>(url);
+
+      const data = 'success' in response.data ? response.data.data : response.data;
 
       logger.info(
-        `[Aniwatch] Successfully fetched servers for episode: ${episodeId} (sub: ${response.data.sub.length}, dub: ${response.data.dub.length})`
+        `[Aniwatch] Successfully fetched servers for episode: ${episodeId} (sub: ${data.sub.length}, dub: ${data.dub.length})`
       );
 
-      return response.data;
+      return data;
     } catch (error) {
       const axiosError = error as AxiosError<AniwatchError>;
 
@@ -153,15 +149,17 @@ class AniwatchClient {
     try {
       logger.info(`[Aniwatch] Fetching episodes list for anime: ${animeId}`);
 
-      const response = await httpClient.get<AnimeEpisodes>(
-        `${this.baseUrl}/anime/episodes/${animeId}`
+      const response = await httpClient.get<AniwatchWrappedResponse<AnimeEpisodes>>(
+        `${this.baseUrl}/api/anime/${animeId}/episodes`
       );
+
+      const data = 'success' in response.data ? response.data.data : response.data;
 
       logger.info(
-        `[Aniwatch] Successfully fetched ${response.data.totalEpisodes} episodes for anime: ${animeId}`
+        `[Aniwatch] Successfully fetched ${data.totalEpisodes} episodes for anime: ${animeId}`
       );
 
-      return response.data;
+      return data;
     } catch (error) {
       const axiosError = error as AxiosError<AniwatchError>;
 

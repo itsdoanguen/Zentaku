@@ -33,14 +33,15 @@ const loadStreaming = (container: any): void => {
     (c: any) => {
       const StreamingService = require('../../modules/streaming/streaming.service').default;
       const animeRepository = c.resolve('animeRepository');
+      const animeService = c.resolve('animeService');
       const malSyncClient = c.resolve('malSyncClient');
       const aniwatchClient = c.resolve('aniwatchClient');
 
-      return new StreamingService(animeRepository, malSyncClient, aniwatchClient);
+      return new StreamingService(animeRepository, animeService, malSyncClient, aniwatchClient);
     },
     {
       singleton: true,
-      dependencies: ['animeRepository', 'malSyncClient', 'aniwatchClient'],
+      dependencies: ['animeRepository', 'animeService', 'malSyncClient', 'aniwatchClient'],
     }
   );
 

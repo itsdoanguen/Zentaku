@@ -12,6 +12,7 @@ import type { IStreamingService } from '../../core/interfaces/IStreamingService'
 import type {
   AudioCategory,
   AvailableEpisodesResponse,
+  EpisodeServersResponse,
   EpisodeSourcesResponse,
   StreamingServer,
   SyncHianimeIdResponse,
@@ -20,10 +21,12 @@ import type AniwatchClient from '../../infrastructure/external/aniwatch/Aniwatch
 import type MalSyncClient from '../../infrastructure/external/malsync/MalSyncClient';
 import { NotFoundError, ValidationError } from '../../shared/utils/error';
 import type AnimeRepository from '../anime/anime.repository';
+import type AnimeService from '../anime/anime.service';
 
 class StreamingService extends BaseService implements IStreamingService {
   constructor(
     private readonly animeRepository: AnimeRepository,
+    private readonly animeService: AnimeService,
     private readonly malSyncClient: MalSyncClient,
     private readonly aniwatchClient: AniwatchClient
   ) {
@@ -42,9 +45,19 @@ class StreamingService extends BaseService implements IStreamingService {
 
     this.logger.info(`[StreamingService] Syncing HiAnime ID for AniList ID: ${validId}`);
 
-    const anime = await this.animeRepository.findByAnilistId(validId);
+    let anime = await this.animeRepository.findByAnilistId(validId);
     if (!anime) {
-      throw new NotFoundError(`Anime with AniList ID ${validId} not found in database`);
+      this.logger.info(
+        `[StreamingService] Anime ${validId} not found in DB, fetching from AniList...`
+      );
+      await this.animeService.getAnimeDetails(validId);
+      anime = await this.animeRepository.findByAnilistId(validId);
+
+      if (!anime) {
+        throw new NotFoundError(
+          `Anime with AniList ID ${validId} not found on AniList or failed to sync`
+        );
+      }
     }
 
     if (anime.idHianime) {
@@ -63,7 +76,7 @@ class StreamingService extends BaseService implements IStreamingService {
       throw new NotFoundError(`Anime with AniList ID ${validId} not available on HiAnime`);
     }
 
-    // Validate HiAnime ID format and length before saving
+    this.logger.info(`[StreamingService] HiAnime ID found: ${hianimeId}, validating...`);
     this._validateHianimeId(hianimeId);
 
     await this.animeRepository.updateHianimeId(validId, hianimeId);
@@ -105,9 +118,22 @@ class StreamingService extends BaseService implements IStreamingService {
 
     const hianimeId = await this._getOrSyncHianimeId(validAnilistId);
 
-    const episodeId = this.aniwatchClient.buildEpisodeId(hianimeId, validEpisodeNumber);
+    const episodesData = await this.aniwatchClient.getAnimeEpisodes(hianimeId);
+    const episode = episodesData.episodes.find((ep) => ep.number === validEpisodeNumber);
 
-    const sources = await this.aniwatchClient.getEpisodeSources(episodeId, server, category);
+    if (!episode) {
+      throw new NotFoundError(
+        `Episode ${validEpisodeNumber} not found for anime ${validAnilistId}`
+      );
+    }
+
+    this.logger.debug(`[StreamingService] Found episodeId: ${episode.episodeId}`);
+
+    const sources = await this.aniwatchClient.getEpisodeSources(
+      episode.episodeId,
+      server,
+      category
+    );
 
     this.logger.debug(`[StreamingService] Sources fetched successfully`);
 
@@ -145,6 +171,53 @@ class StreamingService extends BaseService implements IStreamingService {
   }
 
   /**
+   * Get available servers for a specific episode
+   *
+   * @param anilistId - AniList anime ID
+   * @param episodeNumber - Episode number
+   * @returns Available servers for the episode
+   */
+  async getEpisodeServers(
+    anilistId: number,
+    episodeNumber: number
+  ): Promise<EpisodeServersResponse> {
+    const validAnilistId = this._validateId(anilistId, 'AniList ID');
+    const validEpisodeNumber = this._validateId(episodeNumber, 'Episode Number');
+
+    this.logger.info(`[StreamingService] Getting episode servers:`, {
+      anilistId: validAnilistId,
+      episodeNumber: validEpisodeNumber,
+    });
+
+    const hianimeId = await this._getOrSyncHianimeId(validAnilistId);
+
+    // Get episodes list to find the real episodeId
+    const episodesData = await this.aniwatchClient.getAnimeEpisodes(hianimeId);
+    const episode = episodesData.episodes.find((ep) => ep.number === validEpisodeNumber);
+
+    if (!episode) {
+      throw new NotFoundError(
+        `Episode ${validEpisodeNumber} not found for anime ${validAnilistId}`
+      );
+    }
+
+    this.logger.debug(`[StreamingService] Found episodeId: ${episode.episodeId}`);
+
+    const servers = await this.aniwatchClient.getEpisodeServers(episode.episodeId);
+
+    this.logger.debug(
+      `[StreamingService] Found servers - sub: ${servers.sub.length}, dub: ${servers.dub.length}, raw: ${servers.raw.length}`
+    );
+
+    return {
+      ...servers,
+      anilistId: validAnilistId,
+      episodeNumber: validEpisodeNumber,
+      hianimeId,
+    };
+  }
+
+  /**
    * Get HiAnime ID from database or sync from MALSync
    *
    * @private
@@ -152,10 +225,20 @@ class StreamingService extends BaseService implements IStreamingService {
    * @returns HiAnime identifier
    */
   private async _getOrSyncHianimeId(anilistId: number): Promise<string> {
-    const anime = await this.animeRepository.findByAnilistId(anilistId);
+    let anime = await this.animeRepository.findByAnilistId(anilistId);
 
     if (!anime) {
-      throw new NotFoundError(`Anime with AniList ID ${anilistId} not found in database`);
+      this.logger.debug(
+        `[StreamingService] Anime ${anilistId} not found in DB, auto-syncing from AniList...`
+      );
+      await this.animeService.getAnimeDetails(anilistId);
+      anime = await this.animeRepository.findByAnilistId(anilistId);
+
+      if (!anime) {
+        throw new NotFoundError(
+          `Anime with AniList ID ${anilistId} not found on AniList or failed to sync`
+        );
+      }
     }
 
     if (anime.idHianime) {

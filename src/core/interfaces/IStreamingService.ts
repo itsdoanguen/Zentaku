@@ -1,6 +1,7 @@
 import type {
   AudioCategory,
   AvailableEpisodesResponse,
+  EpisodeServersResponse,
   EpisodeSourcesResponse,
   StreamingServer,
   SyncHianimeIdResponse,
@@ -29,4 +30,9 @@ export interface IStreamingService {
    * Get available episodes for an anime
    */
   getAvailableEpisodes(anilistId: number): Promise<AvailableEpisodesResponse>;
+
+  /**
+   * Get available servers for a specific episode
+   */
+  getEpisodeServers(anilistId: number, episodeNumber: number): Promise<EpisodeServersResponse>;
 }

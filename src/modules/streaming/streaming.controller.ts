@@ -66,6 +66,24 @@ class StreamingController extends BaseController<StreamingService> {
   });
 
   /**
+   * GET /streaming/:anilistId/episodes/:episodeNumber/servers
+   * Get available servers for a specific episode
+   *
+   * @param req - Express request
+   * @param res - Express response
+   */
+  getEpisodeServers = this.asyncHandler(async (req: Request, res: Response) => {
+    const anilistId = this.getIntParam(req, 'anilistId');
+    const episodeNumber = this.getIntParam(req, 'episodeNumber');
+
+    this.logInfo('Fetching episode servers', { anilistId, episodeNumber });
+
+    const servers = await this.service.getEpisodeServers(anilistId, episodeNumber);
+
+    return this.success(res, servers);
+  });
+
+  /**
    * POST /streaming/:anilistId/sync
    * Manually trigger HiAnime ID sync
    *

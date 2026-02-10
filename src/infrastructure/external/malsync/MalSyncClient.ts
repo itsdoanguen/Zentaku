@@ -60,7 +60,7 @@ class MalSyncClient {
    * @example
    * const response = await client.getAnimeMapping(21);
    * const hianimeId = client.extractHianimeId(response);
-   * // Returns: "100" (for One Piece)
+   * // Returns: "one-piece-100" (full slug from URL)
    */
   extractHianimeId(response: MalSyncResponse): string | null {
     if (!response.Sites?.Zoro) {
@@ -84,13 +84,30 @@ class MalSyncClient {
       return null;
     }
 
-    const identifier = zoroSite.identifier;
+    //"https://hianime.to/one-piece-100" → "one-piece-100"
+    if (!zoroSite.url) {
+      logger.warn(`[MALSync] Missing URL for "${response.title}"`);
+      return null;
+    }
 
-    logger.info(
-      `[MALSync] Extracted HiAnime ID "${identifier}" for "${response.title}" from URL: ${zoroSite.url}`
-    );
+    try {
+      const url = new URL(zoroSite.url);
+      const hianimeId = url.pathname.substring(1);
 
-    return identifier;
+      if (!hianimeId) {
+        logger.warn(`[MALSync] Could not extract HiAnime ID from URL: ${zoroSite.url}`);
+        return null;
+      }
+
+      logger.info(
+        `[MALSync] Extracted HiAnime ID "${hianimeId}" for "${response.title}" from URL: ${zoroSite.url}`
+      );
+
+      return hianimeId;
+    } catch (error) {
+      logger.error(`[MALSync] Failed to parse URL "${zoroSite.url}":`, error);
+      return null;
+    }
   }
 
   async getHianimeIdByAnilistId(anilistId: number): Promise<string | null> {
