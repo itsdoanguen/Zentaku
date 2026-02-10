@@ -10,6 +10,7 @@ declare namespace NodeJS {
     readonly CORS_ORIGIN?: string;
     readonly LOG_LEVEL?: 'error' | 'warn' | 'info' | 'debug';
     readonly ANILIST_API_URL?: string;
+    readonly ANIWATCH_API_URL?: string;
     readonly CACHE_TTL?: string;
   }
 }

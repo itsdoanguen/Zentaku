@@ -209,6 +209,10 @@ class Container {
         'animeRepository',
         'animeService',
         'animeController',
+        'malSyncClient',
+        'aniwatchClient',
+        'streamingService',
+        'streamingController',
       ];
 
       for (const dep of criticalDeps) {

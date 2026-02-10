@@ -16,13 +16,57 @@ const createStreamingRoutes = (container: unknown): Router => {
   const controller = (container as any).resolve('streamingController');
 
   /**
-   * @route   GET /streaming/:anilistId/episodes/:episodeNumber/sources
-   * @desc    Get streaming sources for a specific episode
-   * @access  Public
-   * @query   server - Streaming server
-   * @query   category - Audio category
-   *
-   * @example /streaming/21/episodes/1/sources?server=hd-1&category=sub
+   * @swagger
+   * /streaming/{anilistId}/episodes/{episodeNumber}/sources:
+   *   get:
+   *     tags:
+   *       - Streaming
+   *     summary: Get streaming sources for a specific episode
+   *     description: Retrieves streaming video sources, subtitles, and metadata for a specific anime episode
+   *     parameters:
+   *       - in: path
+   *         name: anilistId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: AniList anime ID
+   *         example: 21
+   *       - in: path
+   *         name: episodeNumber
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: Episode number
+   *         example: 1
+   *       - in: query
+   *         name: server
+   *         required: false
+   *         schema:
+   *           type: string
+   *           enum: [hd-1, hd-2, meg-1, meg-2]
+   *         description: Preferred streaming server
+   *         example: hd-1
+   *       - in: query
+   *         name: category
+   *         required: false
+   *         schema:
+   *           type: string
+   *           enum: [sub, dub, raw]
+   *         description: Audio category (subtitle/dubbed/raw)
+   *         example: sub
+   *     responses:
+   *       200:
+   *         description: Streaming sources retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/EpisodeSourcesResponse'
+   *       400:
+   *         $ref: '#/components/responses/ValidationError'
+   *       404:
+   *         $ref: '#/components/responses/NotFoundError'
+   *       500:
+   *         $ref: '#/components/responses/ServerError'
    */
   router.get(
     '/:anilistId/episodes/:episodeNumber/sources',
@@ -31,20 +75,66 @@ const createStreamingRoutes = (container: unknown): Router => {
   );
 
   /**
-   * @route   GET /streaming/:anilistId/episodes
-   * @desc    Get all available episodes for an anime
-   * @access  Public
-   *
-   * @example /streaming/21/episodes
+   * @swagger
+   * /streaming/{anilistId}/episodes:
+   *   get:
+   *     tags:
+   *       - Streaming
+   *     summary: Get all available episodes for an anime
+   *     description: Retrieves a complete list of available episodes with their metadata
+   *     parameters:
+   *       - in: path
+   *         name: anilistId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: AniList anime ID
+   *         example: 21
+   *     responses:
+   *       200:
+   *         description: Episodes list retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/AvailableEpisodesResponse'
+   *       400:
+   *         $ref: '#/components/responses/ValidationError'
+   *       404:
+   *         $ref: '#/components/responses/NotFoundError'
+   *       500:
+   *         $ref: '#/components/responses/ServerError'
    */
   router.get('/:anilistId/episodes', validateGetEpisodes, controller.getEpisodes);
 
   /**
-   * @route   POST /streaming/:anilistId/sync
-   * @desc    Manually trigger HiAnime ID sync
-   * @access  Public
-   *
-   * @example /streaming/21/sync
+   * @swagger
+   * /api/streaming/{anilistId}/sync:
+   *   post:
+   *     tags:
+   *       - Streaming
+   *     summary: Sync HiAnime ID for an anime
+   *     description: Manually trigger synchronization of HiAnime ID from MALSync for the specified anime
+   *     parameters:
+   *       - in: path
+   *         name: anilistId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: AniList anime ID
+   *         example: 21
+   *     responses:
+   *       200:
+   *         description: HiAnime ID synced successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/SyncHianimeIdResponse'
+   *       400:
+   *         $ref: '#/components/responses/ValidationError'
+   *       404:
+   *         $ref: '#/components/responses/NotFoundError'
+   *       500:
+   *         $ref: '#/components/responses/ServerError'
    */
   router.post('/:anilistId/sync', validateSyncHianimeId, controller.syncHianimeId);
 

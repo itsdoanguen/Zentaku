@@ -10,13 +10,14 @@ const initializeRoutes = (container: unknown): Router => {
   const router = express.Router();
 
   const animeRoutes = require('../modules/anime/anime.routes');
+  const streamingRoutes = require('../modules/streaming/streaming.routes');
 
   router.get('/status', (_req: Request, res: Response) => {
     res.status(200).json({ message: 'Server is running OK!' });
   });
 
   router.use('/anilist/anime', animeRoutes(container));
-
+  router.use('/streaming', streamingRoutes(container));
   return router;
 };
 
