@@ -1,6 +1,5 @@
 /**
  * AniList GraphQL Manga Query Definitions
- * Contains all GraphQL queries for manga-specific operations
  */
 
 export const MANGA_INFO_QS = `

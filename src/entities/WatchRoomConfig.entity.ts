@@ -1,14 +1,5 @@
 /**
  * Watch Room Config Entity
- *
- * Configuration for watch party channels.
- * One-to-one relationship with Channel (channel_id is primary key).
- *
- * Features:
- * - Real-time playback synchronization
- * - Playlist queue management
- * - Shared video source
- * - Host control
  */
 
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryColumn } from 'typeorm';

@@ -1,17 +1,6 @@
 /**
  * Media Item Entity
  *
- * Abstract base entity for all media types using Single Table Inheritance (STI).
- * The 'type' column acts as discriminator (ANIME, MANGA, NOVEL).
- *
- * This is an abstract class - use AnimeItem, MangaItem, or NovelItem instead.
- *
- * Features:
- * - External sync IDs (AniList, MAL, MangaDex)
- * - Multi-language titles (romaji, english, native)
- * - Rich metadata (cover, banner, description, scores, tags)
- * - Soft delete support
- *
  * Child entities:
  * - AnimeItem (type = ANIME)
  * - MangaItem (type = MANGA)
@@ -42,6 +31,10 @@ export abstract class MediaItem extends SoftDeletableEntity {
 
   @Column({ name: 'id_mangadex', type: 'varchar', length: 255, nullable: true, unique: true })
   idMangadex?: string | null;
+
+  @Column({ name: 'id_hianime', type: 'varchar', length: 100, nullable: true })
+  @Index()
+  idHianime?: string | null;
 
   @Column({ name: 'last_synced_at', type: 'datetime', nullable: true })
   lastSyncedAt?: Date | null;

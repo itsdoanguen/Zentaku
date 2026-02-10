@@ -3,9 +3,9 @@
  *
  * External Integration Interfaces
  * These interfaces define contracts for third-party API adapters
- * (AniList, MangaDex, Consumet, etc.)
+ * (AniList, MangaDex, etc.)
  */
 
 export * from './IMangaSource';
 export * from './IMetadataSource';
-export * from './IStreamingSource';
+export * from './IStreamingService';

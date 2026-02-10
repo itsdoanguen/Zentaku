@@ -1,6 +1,5 @@
 /**
  * AniList GraphQL Staff Query Definitions
- * Contains all GraphQL queries for staff-specific operations
  */
 
 export const STAFF_INFO_QS = `

@@ -1,13 +1,5 @@
 /**
  * List Item Entity
- *
- * Individual media items within a custom list.
- * Tracks who added each item and supports custom ordering.
- *
- * Features:
- * - Custom ordering (drag and drop)
- * - Optional notes per item
- * - Track who added each item (for shared lists)
  */
 
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';

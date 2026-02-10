@@ -5,13 +5,6 @@
  * This class serves as a foundation for specific repositories,
  * eliminating code duplication and ensuring consistent data access patterns.
  *
- * Features:
- * - Standard CRUD operations (Create, Read, Update, Delete)
- * - Pagination support
- * - Transaction support
- * - Existence checks
- * - Query builder support
- *
  * @abstract
  * @template T - Entity type
  */
@@ -24,9 +17,6 @@ import type {
   FindManyOptions as TypeORMFindManyOptions,
 } from 'typeorm';
 
-/**
- * Options for finding a single record
- */
 export interface FindOneOptions<T = any> {
   where?: FindOptionsWhere<T>;
   relations?: string[];
@@ -34,9 +24,6 @@ export interface FindOneOptions<T = any> {
   order?: TypeORMFindManyOptions<T>['order'];
 }
 
-/**
- * Options for finding multiple records
- */
 export interface FindManyOptions<T = any> {
   where?: FindOptionsWhere<T>;
   relations?: string[];
@@ -46,24 +33,15 @@ export interface FindManyOptions<T = any> {
   take?: number;
 }
 
-/**
- * Batch operation result
- */
 export interface BatchResult {
   count: number;
 }
 
-/**
- * Pagination options
- */
 export interface PaginationOptions<T = any> extends Omit<FindManyOptions<T>, 'skip' | 'take'> {
   page?: number;
   perPage?: number;
 }
 
-/**
- * Paginated result
- */
 export interface PaginatedResult<T> {
   data: T[];
   total: number;
@@ -101,9 +79,6 @@ export abstract class BaseRepository<T extends ObjectLiteral = ObjectLiteral> {
 
   // ==================== BASIC CRUD ====================
 
-  /**
-   * Find a single record by ID
-   */
   async findById(id: number | bigint, options?: FindOneOptions<T>): Promise<T | null> {
     return this.repository.findOne({
       where: { id } as unknown as FindOptionsWhere<T>,
@@ -114,9 +89,6 @@ export abstract class BaseRepository<T extends ObjectLiteral = ObjectLiteral> {
     });
   }
 
-  /**
-   * Find a single record matching criteria
-   */
   async findOne(options: FindOneOptions<T>): Promise<T | null> {
     return this.repository.findOne({
       where: options.where,
@@ -126,9 +98,6 @@ export abstract class BaseRepository<T extends ObjectLiteral = ObjectLiteral> {
     });
   }
 
-  /**
-   * Find multiple records
-   */
   async findMany(options?: FindManyOptions<T>): Promise<T[]> {
     return this.repository.find({
       where: options?.where,
@@ -140,72 +109,45 @@ export abstract class BaseRepository<T extends ObjectLiteral = ObjectLiteral> {
     });
   }
 
-  /**
-   * Find all records
-   */
   async findAll(options?: Omit<FindManyOptions<T>, 'skip' | 'take'>): Promise<T[]> {
     return this.findMany(options);
   }
 
-  /**
-   * Create a new record
-   */
   async create(data: DeepPartial<T>): Promise<T> {
     const entity = this.repository.create(data);
     return this.repository.save(entity);
   }
 
-  /**
-   * Create multiple records
-   */
   async createMany(dataArray: DeepPartial<T>[]): Promise<T[]> {
     const entities = this.repository.create(dataArray);
     return this.repository.save(entities);
   }
 
-  /**
-   * Update a record by ID
-   */
   async update(id: number | bigint, data: DeepPartial<T>): Promise<T | null> {
     await this.repository.update({ id } as unknown as FindOptionsWhere<T>, data as any);
     return this.findById(id);
   }
 
-  /**
-   * Update multiple records matching criteria
-   */
   async updateMany(where: FindOptionsWhere<T>, data: DeepPartial<T>): Promise<BatchResult> {
     const result = await this.repository.update(where, data as any);
     return { count: result.affected || 0 };
   }
 
-  /**
-   * Delete a record by ID (hard delete)
-   */
   async delete(id: number | bigint): Promise<boolean> {
     const result = await this.repository.delete({ id } as unknown as FindOptionsWhere<T>);
     return (result.affected || 0) > 0;
   }
 
-  /**
-   * Delete multiple records (hard delete)
-   */
   async deleteMany(where: FindOptionsWhere<T>): Promise<BatchResult> {
     const result = await this.repository.delete(where);
     return { count: result.affected || 0 };
   }
 
-  /**
-   * Soft delete a record by ID
-   */
   async softDelete(id: number | bigint): Promise<boolean> {
     const result = await this.repository.softDelete({ id } as unknown as FindOptionsWhere<T>);
     return (result.affected || 0) > 0;
   }
 
-  /**
-   * Restore a soft-deleted record
-   */
   async restore(id: number | bigint): Promise<boolean> {
     const result = await this.repository.restore({ id } as unknown as FindOptionsWhere<T>);
     return (result.affected || 0) > 0;
@@ -213,24 +155,15 @@ export abstract class BaseRepository<T extends ObjectLiteral = ObjectLiteral> {
 
   // ==================== QUERY OPERATIONS ====================
 
-  /**
-   * Count records matching criteria
-   */
   async count(where?: FindOptionsWhere<T>): Promise<number> {
     return this.repository.count({ where });
   }
 
-  /**
-   * Check if record exists
-   */
   async exists(where: FindOptionsWhere<T>): Promise<boolean> {
     const count = await this.count(where);
     return count > 0;
   }
 
-  /**
-   * Find records with pagination
-   */
   async paginate(options: PaginationOptions<T>): Promise<PaginatedResult<T>> {
     const page = Math.max(options.page || 1, 1);
     const perPage = Math.max(options.perPage || 10, 1);
@@ -260,9 +193,7 @@ export abstract class BaseRepository<T extends ObjectLiteral = ObjectLiteral> {
 
   // ==================== ADVANCED OPERATIONS ====================
 
-  /**
-   * Upsert (insert or update) a record
-   */
+  //insert or update
   async upsert(where: FindOptionsWhere<T>, data: DeepPartial<T>): Promise<T> {
     const existing = await this.findOne({ where });
 
@@ -273,16 +204,10 @@ export abstract class BaseRepository<T extends ObjectLiteral = ObjectLiteral> {
     return this.create(data);
   }
 
-  /**
-   * Get the underlying TypeORM repository
-   */
   getRepository(): Repository<T> {
     return this.repository;
   }
 
-  /**
-   * Execute raw SQL query
-   */
   async query<R = any>(query: string, parameters?: any[]): Promise<R> {
     return this.repository.query(query, parameters);
   }

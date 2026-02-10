@@ -5,17 +5,6 @@
  * This class serves as a foundation for specific media services,
  * implementing the Template Method Pattern for standardized media synchronization workflow.
  *
- * Features:
- * - Data synchronization from external APIs
- * - Cache/sync threshold management with configurable staleness detection
- * - Template methods for standardized media retrieval and batch operations
- * - Automatic fallback to cached data on sync failures
- * - Search and trending functionality
- *
- * Subclasses must implement:
- * - getMediaType() - Return media type string (ANIME, MANGA, NOVEL)
- * - getExternalIdField() - Return external ID field name for the media type
- *
  * @abstract
  * @extends BaseService
  */
@@ -23,27 +12,15 @@
 import { NotFoundError } from '../../shared/utils/error';
 import BaseService from './BaseService';
 
-/**
- * Media type enumeration
- */
 export type MediaType = 'ANIME' | 'MANGA' | 'NOVEL';
 
-/**
- * External ID field names
- */
 export type ExternalIdField = 'idAnilist' | 'idMal' | 'idAniDb';
 
-/**
- * Pagination options for queries
- */
 export interface PaginationOptions {
   skip: number;
   take: number;
 }
 
-/**
- * Search result with pagination
- */
 export interface SearchResult<T> {
   items: T[];
   pagination: {
@@ -58,9 +35,6 @@ export interface SearchResult<T> {
   };
 }
 
-/**
- * Media entity interface (basic structure)
- */
 export interface MediaEntity {
   id?: number | bigint;
   lastSyncedAt?: Date | null;
@@ -69,6 +43,8 @@ export interface MediaEntity {
 
 /**
  * Base Media Repository Interface
+ *
+ * These interface defines the contract for implementing in the media service.
  */
 export interface IMediaRepository {
   findByExternalId(externalId: number): Promise<MediaEntity | null>;
@@ -78,16 +54,10 @@ export interface IMediaRepository {
   countByQuery(filter: { query?: string }): Promise<number>;
 }
 
-/**
- * External API Client Interface
- */
 export interface IExternalClient {
   fetchById(externalId: number): Promise<unknown>;
 }
 
-/**
- * Character Client Interface
- */
 export interface ICharacterClient {
   fetchByMediaId(
     mediaId: number,
@@ -96,9 +66,6 @@ export interface ICharacterClient {
   ): Promise<unknown>;
 }
 
-/**
- * Staff Client Interface
- */
 export interface IStaffClient {
   fetchByMediaId(
     mediaId: number,
@@ -107,9 +74,6 @@ export interface IStaffClient {
   ): Promise<unknown>;
 }
 
-/**
- * Data Adapter Interface
- */
 export interface IMediaAdapter {
   fromExternal(externalData: unknown): Partial<MediaEntity>;
   toResponse(dbData: unknown): unknown;
@@ -167,32 +131,18 @@ export abstract class BaseMediaService extends BaseService {
   // ============================================
 
   /**
-   * Get media type identifier
-   *
-   * Must be implemented by subclasses to specify the media type.
+   * Get media type identifier. Must be implemented by subclasses to specify the media type.
    *
    * @returns Media type (ANIME, MANGA, NOVEL)
    * @abstract
-   *
-   * @example
-   * getMediaType() {
-   *   return 'ANIME';
-   * }
    */
   abstract getMediaType(): MediaType;
 
   /**
-   * Get external ID field name for the media type
-   *
-   * Must be implemented by subclasses to specify which external ID field to use.
+   * Get external ID field name for the media type. Must be implemented by subclasses to specify which external ID field to use.
    *
    * @returns Field name (e.g., 'idAnilist', 'idMal')
    * @abstract
-   *
-   * @example
-   * getExternalIdField() {
-   *   return 'idAnilist';
-   * }
    */
   abstract getExternalIdField(): ExternalIdField;
 
@@ -206,11 +156,6 @@ export abstract class BaseMediaService extends BaseService {
    *
    * @param externalId - External API ID (e.g., AniList ID)
    * @returns Media overview data
-   * @throws {NotFoundError} If media not found or client doesn't support overview
-   * @throws {ValidationError} If ID invalid
-   *
-   * @example
-   * const overview = await animeService.getOverview(1);
    */
   async getOverview(externalId: number): Promise<unknown> {
     const context = `getOverview(${externalId})`;
@@ -220,7 +165,6 @@ export abstract class BaseMediaService extends BaseService {
 
       this._logInfo(`Fetching ${this.getMediaType()} overview`, { externalId });
 
-      // Check if externalClient has fetchOverview method
       if (!('fetchOverview' in this.externalClient)) {
         throw new NotFoundError(`${this.getMediaType()} client does not support overview fetch`);
       }
@@ -235,16 +179,7 @@ export abstract class BaseMediaService extends BaseService {
 
   /**
    * Get characters for media with pagination
-   *
-   * @param externalId - External API ID
-   * @param page - Page number (default: 1)
-   * @param perPage - Items per page (default: 25)
    * @returns Characters data with pagination
-   * @throws {NotFoundError} If character client not available
-   * @throws {ValidationError} If parameters invalid
-   *
-   * @example
-   * const characters = await animeService.getCharacters(1, 1, 25);
    */
   async getCharacters(
     externalId: number,
@@ -285,16 +220,7 @@ export abstract class BaseMediaService extends BaseService {
 
   /**
    * Get staff for media with pagination
-   *
-   * @param externalId - External API ID
-   * @param page - Page number (default: 1)
-   * @param perPage - Items per page (default: 25)
    * @returns Staff data with pagination
-   * @throws {NotFoundError} If staff client not available
-   * @throws {ValidationError} If parameters invalid
-   *
-   * @example
-   * const staff = await animeService.getStaff(1, 1, 25);
    */
   async getStaff(externalId: number, page: number = 1, perPage: number = 25): Promise<unknown> {
     const context = `getStaff(${externalId})`;
@@ -332,14 +258,7 @@ export abstract class BaseMediaService extends BaseService {
   /**
    * Get statistics for media
    * Includes: rankings, score distribution, status distribution
-   *
-   * @param externalId - External API ID
    * @returns Media statistics
-   * @throws {NotFoundError} If media not found or client doesn't support statistics
-   * @throws {ValidationError} If ID invalid
-   *
-   * @example
-   * const stats = await animeService.getStatistics(1);
    */
   async getStatistics(externalId: number): Promise<unknown> {
     const context = `getStatistics(${externalId})`;
@@ -349,7 +268,6 @@ export abstract class BaseMediaService extends BaseService {
 
       this._logInfo(`Fetching ${this.getMediaType()} statistics`, { externalId });
 
-      // Check if externalClient has fetchStatistics method
       if (!('fetchStatistics' in this.externalClient)) {
         throw new NotFoundError(`${this.getMediaType()} client does not support statistics fetch`);
       }
@@ -375,12 +293,6 @@ export abstract class BaseMediaService extends BaseService {
    *
    * @param externalId - External API ID (e.g., AniList ID)
    * @returns Formatted media data
-   * @throws {NotFoundError} If media not found
-   * @throws {ValidationError} If ID invalid
-   *
-   * @example
-   * const anime = await animeService.getDetails(1);
-   * // Returns formatted anime details
    */
   async getDetails(externalId: number): Promise<unknown> {
     const context = `getDetails(${externalId})`;
@@ -418,18 +330,8 @@ export abstract class BaseMediaService extends BaseService {
   /**
    * Check if media data should be synced from external API
    *
-   * Sync is needed when:
-   * - Media doesn't exist in database
-   * - Media never synced before (lastSyncedAt is null)
-   * - Media data is stale (older than syncThresholdDays)
-   *
    * @param media - Media data from database
    * @returns True if sync is needed
-   *
-   * @example
-   * if (this._shouldSync(cachedMedia)) {
-   *   // Trigger sync
-   * }
    */
   protected _shouldSync(media: MediaEntity | null): boolean {
     if (!media) {
@@ -465,17 +367,10 @@ export abstract class BaseMediaService extends BaseService {
    * 4. Upsert to database
    * 5. Return updated media
    *
-   * Fallback Strategy:
-   * If sync fails and cached data exists, returns the cached data
-   * to ensure service availability even when external API is down.
-   *
    * @param externalId - External API ID
    * @param existingMedia - Existing media data (for fallback)
    * @returns Synced media data
    * @throws If sync fails and no cached data available
-   *
-   * @example
-   * const synced = await this._syncFromExternal(123, cachedData);
    */
   protected async _syncFromExternal(
     externalId: number,
@@ -527,31 +422,18 @@ export abstract class BaseMediaService extends BaseService {
 
   /**
    * Fetch data from external API
-   *
-   * Delegates to appropriate external client method based on media type.
-   * Can be overridden by subclasses for custom fetch logic.
-   *
    * @param externalId - External API ID
    * @returns External API response
-   *
-   * @example
-   * const rawData = await this._fetchFromExternalAPI(123);
    */
   protected async _fetchFromExternalAPI(externalId: number): Promise<unknown> {
     return this.externalClient.fetchById(externalId);
   }
 
   /**
-   * Get media from database by external ID
-   *
-   * Uses repository's findById method to retrieve media.
-   * Logs the result for debugging purposes.
+   * Get media from database by external ID. Uses repository's findById method to retrieve media.
    *
    * @param externalId - External API ID
    * @returns Media from database or null if not found
-   *
-   * @example
-   * const cached = await this._getFromDatabase(123);
    */
   protected async _getFromDatabase(externalId: number): Promise<MediaEntity | null> {
     try {
@@ -579,19 +461,7 @@ export abstract class BaseMediaService extends BaseService {
 
   /**
    * Search media by query string
-   *
-   * Template method for search operations.
-   * Searches in local database and returns paginated results.
-   *
-   * @param query - Search query string
-   * @param page - Page number (default: 1)
-   * @param perPage - Items per page (default: 20)
    * @returns Search results with pagination metadata
-   * @throws {ValidationError} If query is invalid
-   *
-   * @example
-   * const results = await service.search('naruto', 1, 20);
-   * // Returns: { items: [...], pagination: {...} }
    */
   async search(
     query: string,
@@ -628,20 +498,7 @@ export abstract class BaseMediaService extends BaseService {
 
   /**
    * Get multiple media items by IDs
-   *
-   * Efficiently fetches and syncs multiple media items.
-   * Process:
-   * 1. Fetch all from database
-   * 2. Identify items that need sync
-   * 3. Sync stale items in parallel
-   * 4. Re-fetch updated items
-   * 5. Format and return
-   *
-   * @param externalIds - Array of external IDs
    * @returns Array of formatted media items
-   *
-   * @example
-   * const media = await service.getMany([1, 2, 3, 4, 5]);
    */
   async getMany(externalIds: number[]): Promise<unknown[]> {
     const context = 'getMany()';
@@ -676,15 +533,7 @@ export abstract class BaseMediaService extends BaseService {
   // ============================================
 
   /**
-   * Set sync threshold in days
-   *
-   * Configures how long cached data is considered fresh before re-syncing.
-   *
-   * @param days - Number of days before re-sync is needed
-   * @throws {ValidationError} If days is not a positive integer
-   *
-   * @example
-   * service.setSyncThreshold(14); // Cache for 14 days
+   * Set sync threshold in days. Configures how long cached data is considered fresh before re-syncing.
    */
   setSyncThreshold(days: number): void {
     this._validateId(days, 'Sync threshold days');
@@ -692,33 +541,16 @@ export abstract class BaseMediaService extends BaseService {
     this._logInfo(`Sync threshold updated to ${days} days`);
   }
 
-  /**
-   * Enable or disable caching
-   *
-   * @param enabled - Cache enabled flag
-   *
-   * @example
-   * service.setCacheEnabled(false); // Disable caching
-   */
+  //Enable or disable caching
   setCacheEnabled(enabled: boolean): void {
     this.cacheEnabled = enabled;
     this._logInfo(`Cache ${enabled ? 'enabled' : 'disabled'}`);
   }
 
-  /**
-   * Get current sync threshold
-   *
-   * @returns Current sync threshold in days
-   */
   getSyncThreshold(): number {
     return this.syncThresholdDays;
   }
 
-  /**
-   * Check if caching is enabled
-   *
-   * @returns True if caching is enabled
-   */
   isCacheEnabled(): boolean {
     return this.cacheEnabled;
   }

@@ -4,20 +4,6 @@
  * Configured Axios instance for making HTTP requests to external APIs.
  * This client provides centralized HTTP communication with built-in logging,
  * error handling, and request/response interceptors.
- *
- * Features:
- * - 10-second request timeout
- * - Automatic JSON content-type headers
- * - Request/response logging via interceptors
- * - Comprehensive error logging for debugging
- *
- * Usage:
- * Import this client instead of using axios directly to ensure
- * consistent configuration and logging across the application.
- *
- * @example
- * import httpClient from './httpClient';
- * const response = await httpClient.get('https://api.example.com/data');
  */
 
 import axios, {

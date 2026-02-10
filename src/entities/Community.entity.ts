@@ -1,14 +1,5 @@
 /**
  * Community Entity
- *
- * User communities for group discussions and watch parties.
- * Can be public or private with invite codes.
- *
- * Features:
- * - Public/Private access control
- * - Invite code for private communities
- * - Icon and description
- * - Soft delete support
  */
 
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';

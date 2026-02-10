@@ -212,6 +212,298 @@ const options: swaggerJsdoc.Options = {
             },
           },
         },
+        SyncHianimeIdResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true,
+            },
+            data: {
+              type: 'object',
+              properties: {
+                anilistId: {
+                  type: 'integer',
+                  example: 21,
+                },
+                hianimeId: {
+                  type: 'string',
+                  example: 'one-piece-100',
+                },
+                wasSynced: {
+                  type: 'boolean',
+                  example: true,
+                },
+                source: {
+                  type: 'string',
+                  enum: ['database', 'malsync'],
+                  example: 'malsync',
+                },
+              },
+            },
+          },
+        },
+        EpisodeInfo: {
+          type: 'object',
+          properties: {
+            number: {
+              type: 'integer',
+              example: 1,
+            },
+            title: {
+              type: 'string',
+              example: "I'm Luffy! The Man Who's Gonna Be King of the Pirates!",
+            },
+            episodeId: {
+              type: 'string',
+              example: 'one-piece-100$episode$1',
+            },
+            isFiller: {
+              type: 'boolean',
+              example: false,
+            },
+          },
+        },
+        PaginationMeta: {
+          type: 'object',
+          properties: {
+            currentPage: {
+              type: 'integer',
+              example: 1,
+            },
+            totalPages: {
+              type: 'integer',
+              example: 10,
+            },
+            pageSize: {
+              type: 'integer',
+              example: 100,
+            },
+            totalItems: {
+              type: 'integer',
+              example: 1000,
+            },
+            hasNextPage: {
+              type: 'boolean',
+              example: true,
+            },
+            hasPreviousPage: {
+              type: 'boolean',
+              example: false,
+            },
+          },
+        },
+        AvailableEpisodesResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true,
+            },
+            data: {
+              type: 'object',
+              properties: {
+                anilistId: {
+                  type: 'integer',
+                  example: 21,
+                },
+                hianimeId: {
+                  type: 'string',
+                  example: 'one-piece-100',
+                },
+                totalEpisodes: {
+                  type: 'integer',
+                  example: 1000,
+                },
+                episodes: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/EpisodeInfo',
+                  },
+                },
+                pagination: {
+                  $ref: '#/components/schemas/PaginationMeta',
+                },
+              },
+            },
+          },
+        },
+        ServerInfo: {
+          type: 'object',
+          properties: {
+            serverId: {
+              type: 'integer',
+              example: 4,
+            },
+            serverName: {
+              type: 'string',
+              example: 'hd-1',
+            },
+          },
+        },
+        EpisodeServersResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true,
+            },
+            data: {
+              type: 'object',
+              properties: {
+                anilistId: {
+                  type: 'integer',
+                  example: 21,
+                },
+                episodeNumber: {
+                  type: 'integer',
+                  example: 1,
+                },
+                hianimeId: {
+                  type: 'string',
+                  example: 'one-piece-100',
+                },
+                episodeId: {
+                  type: 'string',
+                  example: 'one-piece-100?ep=2142',
+                },
+                episodeNo: {
+                  type: 'integer',
+                  example: 1,
+                },
+                sub: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/ServerInfo',
+                  },
+                },
+                dub: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/ServerInfo',
+                  },
+                },
+                raw: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/ServerInfo',
+                  },
+                },
+              },
+            },
+          },
+        },
+        VideoSource: {
+          type: 'object',
+          properties: {
+            url: {
+              type: 'string',
+              example: 'https://example.com/video.m3u8',
+            },
+            quality: {
+              type: 'string',
+              example: '1080p',
+            },
+            isM3U8: {
+              type: 'boolean',
+              example: true,
+            },
+          },
+        },
+        Subtitle: {
+          type: 'object',
+          properties: {
+            url: {
+              type: 'string',
+              example: 'https://example.com/subtitle.vtt',
+            },
+            lang: {
+              type: 'string',
+              example: 'English',
+            },
+          },
+        },
+        EpisodeSourcesResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true,
+            },
+            data: {
+              type: 'object',
+              properties: {
+                anilistId: {
+                  type: 'integer',
+                  example: 21,
+                },
+                episodeNumber: {
+                  type: 'integer',
+                  example: 1,
+                },
+                hianimeId: {
+                  type: 'string',
+                  example: 'one-piece-100',
+                },
+                headers: {
+                  type: 'object',
+                  properties: {
+                    Referer: {
+                      type: 'string',
+                      example: 'https://hianime.to',
+                    },
+                    'User-Agent': {
+                      type: 'string',
+                      example: 'Mozilla/5.0',
+                    },
+                  },
+                },
+                sources: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/VideoSource',
+                  },
+                },
+                subtitles: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/Subtitle',
+                  },
+                },
+                download: {
+                  type: 'string',
+                  example: 'https://example.com/download',
+                },
+                intro: {
+                  type: 'object',
+                  properties: {
+                    start: {
+                      type: 'number',
+                      example: 90,
+                    },
+                    end: {
+                      type: 'number',
+                      example: 120,
+                    },
+                  },
+                },
+                outro: {
+                  type: 'object',
+                  properties: {
+                    start: {
+                      type: 'number',
+                      example: 1320,
+                    },
+                    end: {
+                      type: 'number',
+                      example: 1410,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       responses: {
         ValidationError: {
@@ -264,6 +556,10 @@ const options: swaggerJsdoc.Options = {
       {
         name: 'Anime',
         description: 'Anime management and information endpoints',
+      },
+      {
+        name: 'Streaming',
+        description: 'Anime streaming sources and episode endpoints',
       },
       {
         name: 'Health',

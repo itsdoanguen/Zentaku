@@ -12,10 +12,7 @@ import { AppDataSource } from '../database';
  * @param {Container} container - DI Container instance
  */
 const loadInfrastructure = (container: any): void => {
-  /**
-   * TypeORM DataSource
-   * Singleton instance for database operations
-   */
+  //Load database data source
   container.register(
     'dataSource',
     () => {
@@ -26,10 +23,7 @@ const loadInfrastructure = (container: any): void => {
     }
   );
 
-  /**
-   * HTTP Client
-   * Singleton instance for external HTTP requests
-   */
+  //Load HTTP Client
   container.register(
     'httpClient',
     () => {
@@ -41,10 +35,7 @@ const loadInfrastructure = (container: any): void => {
     }
   );
 
-  /**
-   * Logger Utility
-   * Singleton logger instance
-   */
+  //Load logger utility
   container.register(
     'logger',
     () => {
@@ -55,10 +46,7 @@ const loadInfrastructure = (container: any): void => {
     }
   );
 
-  /**
-   * AniList Anime Client
-   * Handles all AniList API operations for anime
-   */
+  //Load AniList Anime Client
   container.register(
     'anilistAnimeClient',
     () => {
@@ -74,10 +62,7 @@ const loadInfrastructure = (container: any): void => {
     }
   );
 
-  /**
-   * AniList Character Client
-   * Handles all AniList API operations for characters
-   */
+  //Load AniList Character Client
   container.register(
     'anilistCharacterClient',
     () => {
@@ -93,10 +78,7 @@ const loadInfrastructure = (container: any): void => {
     }
   );
 
-  /**
-   * AniList Staff Client
-   * Handles all AniList API operations for staff
-   */
+  //Load AniList Staff Client
   container.register(
     'anilistStaffClient',
     () => {
@@ -112,10 +94,7 @@ const loadInfrastructure = (container: any): void => {
     }
   );
 
-  /**
-   * AniList Metadata Adapter
-   * Implements IMetadataSource interface using AniList
-   */
+  //Load AniList Metadata Adapter
   container.register(
     'anilistMetadataAdapter',
     () => {

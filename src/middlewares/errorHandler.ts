@@ -20,14 +20,12 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction
 ): void => {
-  // Log error
   logger.error('Error Handler:', {
     name: err.name,
     message: err.message,
     stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
   });
 
-  // Handle known operational errors
   if ('isOperational' in err && err.isOperational) {
     res.status((err as unknown as { statusCode?: number }).statusCode || 500).json({
       success: false,
@@ -40,7 +38,6 @@ export const errorHandler = (
     return;
   }
 
-  // Handle specific error types
   if (err instanceof NotFoundError) {
     res.status(404).json({
       success: false,
@@ -63,7 +60,6 @@ export const errorHandler = (
     return;
   }
 
-  // Unknown errors (programming errors)
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   res.status(statusCode).json({
     success: false,

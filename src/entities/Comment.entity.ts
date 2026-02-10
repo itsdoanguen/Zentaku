@@ -1,14 +1,5 @@
 /**
  * Comment Entity
- *
- * Comments on activities with polymorphic target support.
- * Can comment on media, lists, episodes, or activities.
- *
- * Features:
- * - Spoiler warnings
- * - Like count tracking
- * - Polymorphic targets (media, list, episode, activity)
- * - Optional activity association
  */
 
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';

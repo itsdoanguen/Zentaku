@@ -42,9 +42,6 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
 
   // ==================== PRIVATE METHODS ===================
 
-  /**
-   * Convert generic SearchMedia type to AniList specific type
-   */
   private mapSearchMediaToAnimeType(criteria: SearchCriteria): AnimeSearchCriteria {
     const anilistCriteria: AnimeSearchCriteria = {};
     if (criteria.genres) {
@@ -72,9 +69,6 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
     return anilistCriteria;
   }
 
-  /**
-   * Convert generic SearchMedia type to Manga specific type
-   */
   private mapSearchMediaToMangaType(criteria: SearchCriteria): MangaSearchCriteria {
     const mangaCriteria: MangaSearchCriteria = {};
     if (criteria.genres) {
@@ -100,9 +94,6 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
     return mangaCriteria;
   }
 
-  /**
-   * Convert search options to AniList specific format
-   */
   private mapSearchOptionsToAnilistType(options: SearchOptions): {
     page?: number;
     perPage?: number;
@@ -122,14 +113,7 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
   }
   // ==================== IMETADATASOURCE IMPLEMENTATION ====================
 
-  /**
-   * Get detailed media information
-   *
-   * @param mediaId - Media ID
-   * @param mediaType - Media type
-   * @returns Media information
-   * @throws {Error} If unsupported media type
-   */
+  // Get detailed media information. Throws error if unsupported media type.
   async getMediaInfo(mediaId: number, mediaType: MediaType = 'ANIME'): Promise<MediaInfo> {
     if (mediaType === 'ANIME') {
       return this.animeClient.fetchById(mediaId) as unknown as MediaInfo;
@@ -142,14 +126,7 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
     );
   }
 
-  /**
-   * Get lightweight media information (for lists/cards)
-   *
-   * @param mediaId - Media ID
-   * @param mediaType - Media type
-   * @returns Basic media information
-   * @throws {Error} If unsupported media type
-   */
+  // Get lightweight media information (for lists/cards). Throws error if unsupported media type.
   async getMediaBasicInfo(
     mediaId: number,
     mediaType: MediaType = 'ANIME'
@@ -167,11 +144,9 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
 
   /**
    * Get multiple media items in batch
-   *
-   * @param mediaIds - Array of media IDs
-   * @param mediaType - Media type
+   * @param mediaIds Array of media IDs
+   * @param mediaType Media type
    * @returns Map of mediaId => media data
-   * @throws {Error} If unsupported media type
    */
   async getMediaBatch(
     mediaIds: number[],
@@ -190,11 +165,9 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
 
   /**
    * Search media by keyword
-   *
-   * @param query - Search query
-   * @param options - Search options
+   * @param query Search query
+   * @param options Search options
    * @returns Search results with pageInfo and media
-   * @throws {Error} If unsupported media type
    */
   async searchMedia(query: string, options: SearchOptions = {}): Promise<PaginatedMedia> {
     const { mediaType = 'ANIME', ...searchOptions } = options;
@@ -212,11 +185,9 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
 
   /**
    * Advanced search by multiple criteria
-   *
-   * @param criteria - Search criteria
-   * @param options - Pagination and sorting options
+   * @param criteria Search criteria
+   * @param options Pagination and sorting options
    * @returns Search results with pageInfo and media
-   * @throws {Error} If unsupported media type
    */
   async searchByCriteria(
     criteria: SearchCriteria = {},
@@ -263,12 +234,6 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
     ) as unknown as PaginatedMedia;
   }
 
-  /**
-   * Get trending media
-   *
-   * @param options - Pagination options
-   * @returns Trending media list
-   */
   async getTrending(
     options: TrendingOptions & { mediaType?: MediaType } = {}
   ): Promise<PaginatedMedia> {
@@ -279,12 +244,6 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
     );
   }
 
-  /**
-   * Get popular media
-   *
-   * @param options - Pagination options
-   * @returns Popular media list
-   */
   async getPopular(
     options: TrendingOptions & { mediaType?: MediaType } = {}
   ): Promise<PaginatedMedia> {
@@ -334,14 +293,6 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
     return this.staffClient.fetchByMediaId(mediaId, mediaType, options);
   }
 
-  /**
-   * Get statistics for a media
-   *
-   * @param mediaId - Media ID
-   * @param mediaType - Media type (defaults to ANIME)
-   * @returns Media statistics
-   * @throws {Error} If unsupported media type
-   */
   async getStatistics(mediaId: number, mediaType: MediaType = 'ANIME'): Promise<MediaStatistics> {
     if (mediaType === 'ANIME') {
       return this.animeClient.fetchStatistics(mediaId);
@@ -354,34 +305,14 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
     );
   }
 
-  /**
-   * Get detailed character information
-   *
-   * @param characterId - Character ID
-   * @returns Character information
-   */
   async getCharacterInfoById(characterId: number): Promise<CharacterInfo> {
     return this.characterClient.fetchById(characterId) as unknown as CharacterInfo;
   }
 
-  /**
-   * Get detailed staff information
-   *
-   * @param staffId - Staff ID
-   * @returns Staff information
-   */
   async getStaffInfoById(staffId: number): Promise<StaffInfo> {
     return this.staffClient.fetchById(staffId) as unknown as StaffInfo;
   }
 
-  /**
-   * Get cover images in batch
-   *
-   * @param mediaIds - Array of media ID
-   * @param mediaType - Media type (defaults to ANIME)
-   * @returns Map of mediaId => cover URL
-   * @throws {Error} If unsupported media type
-   */
   async getCoversBatch(
     mediaIds: number[],
     mediaType: MediaType = 'ANIME'
@@ -397,30 +328,14 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
     );
   }
 
-  /**
-   * Get source name
-   *
-   * @returns 'AniList'
-   */
   getSourceName(): string {
     return this.sourceName;
   }
 
-  /**
-   * Check if media type is supported
-   *
-   * @param mediaType - Media type to check
-   * @returns True if supported
-   */
   supportsMediaType(mediaType: MediaType): boolean {
     return mediaType === 'ANIME' || mediaType === 'MANGA';
   }
 
-  /**
-   * Get rate limit information
-   *
-   * @returns Rate limit info
-   */
   getRateLimitInfo(): { limit: number; window: number } | null {
     return {
       limit: 60,

@@ -6,7 +6,6 @@ import type { MediaStaffResponse, StaffInfo, StaffInfoResponse } from './anilist
 
 /**
  * AniList Staff Client
- * Handles all staff-specific operations
  *
  * @extends {AnilistClient}
  */

@@ -12,10 +12,7 @@ import logger from '../../shared/utils/logger';
  * @param {Container} container - DI Container instance
  */
 const loadAnime = (container: any): void => {
-  /**
-   * Anime Adapter
-   * Transforms data between AniList API, Database, and API Response formats
-   */
+  //Load anime adapter
   container.register(
     'animeAdapter',
     () => {
@@ -31,11 +28,7 @@ const loadAnime = (container: any): void => {
       singleton: true,
     }
   );
-
-  /**
-   * Anime Repository
-   * Data access layer for anime entities
-   */
+  //Load anime repository
   container.register(
     'animeRepository',
     (c: any) => {
@@ -55,10 +48,7 @@ const loadAnime = (container: any): void => {
     }
   );
 
-  /**
-   * Anime Service
-   * Business logic layer for anime operations
-   */
+  //Load anime service
   container.register(
     'animeService',
     (c: any) => {
@@ -85,10 +75,7 @@ const loadAnime = (container: any): void => {
     }
   );
 
-  /**
-   * Anime Controller
-   * HTTP request handler layer for anime endpoints
-   */
+  //Load anime controller
   container.register(
     'animeController',
     (c: any) => {

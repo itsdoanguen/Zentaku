@@ -1,10 +1,6 @@
 /**
  * Custom Error classes for handling application-specific errors.
  */
-
-/**
- * Base interface for operational errors
- */
 interface OperationalError extends Error {
   statusCode: number;
   isOperational: boolean;
@@ -39,9 +35,6 @@ export class NotFoundError extends Error implements OperationalError {
   public readonly statusCode: number = 404;
   public readonly isOperational: boolean = true;
 
-  /**
-   * @param message - Error message (default: 'Resource Not Found')
-   */
   constructor(message: string = 'Resource Not Found') {
     super(message);
     this.name = 'NotFoundError';
@@ -57,10 +50,6 @@ export class ValidationError extends Error implements OperationalError {
   public readonly isOperational: boolean = true;
   public readonly errors: Record<string, unknown>;
 
-  /**
-   * @param message - Error message (default: 'Validation Error')
-   * @param errors - Details about validation errors
-   */
   constructor(message: string = 'Validation Error', errors: Record<string, unknown> = {}) {
     super(message);
     this.name = 'ValidationError';

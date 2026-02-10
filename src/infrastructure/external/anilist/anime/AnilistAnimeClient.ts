@@ -34,7 +34,6 @@ import type {
 
 /**
  * AniList Anime Client
- * Handles all anime-specific operations
  *
  * @extends {AnilistClient}
  */
@@ -81,14 +80,6 @@ class AnilistAnimeClient extends AnilistClient {
     return data.Media;
   }
 
-  /**
-   * Fetch anime overview data
-   * Includes: relations, characters/staff preview, stats, rankings, recommendations
-   *
-   * @param {number} animeId - Anime ID
-   * @returns {Promise<AnimeOverview>} - Anime overview data
-   * @throws {NotFoundError} - If anime not found
-   */
   async fetchOverview(animeId: number): Promise<AnimeOverview> {
     const data = await this.executeQuery<AnimeOverviewResponse>(
       MEDIA_OVERVIEW_QS,
@@ -140,12 +131,6 @@ class AnilistAnimeClient extends AnilistClient {
     return result;
   }
 
-  /**
-   * Fetch cover images in batch
-   *
-   * @param {number[]} animeIds - Array of anime IDs
-   * @returns {Promise<Record<number, string | null>>} - Map of animeId => cover URL
-   */
   async fetchCoversBatch(animeIds: number[]): Promise<Record<number, string | null>> {
     if (!animeIds || animeIds.length === 0) {
       return {};
@@ -228,10 +213,9 @@ class AnilistAnimeClient extends AnilistClient {
 
   /**
    * Search anime by multiple criteria
-   *
-   * @param {object} criteria - Search criteria
-   * @param {object} options - Pagination and sorting options
-   * @returns {Promise<{ pageInfo: PageInfo; media: AnimeSeasonalResult[] }>} - Search results with pageInfo and media
+   * @param criteria Search criteria
+   * @param options Pagination and sorting options
+   * @returns Search results with pageInfo and media
    */
   async searchByCriteria(
     criteria: {
@@ -258,12 +242,7 @@ class AnilistAnimeClient extends AnilistClient {
     };
   }
 
-  /**
-   * Fetch statistics for an anime
-   *
-   * @param {number} animeId - Anime ID
-   * @returns {Promise<MediaStatistics>} - Anime statistics
-   */
+  // Fetch statistics for an anime
   async fetchStatistics(animeId: number): Promise<MediaStatistics> {
     const data = await this.executeQuery<AnimeStatisticsResponse>(
       MEDIA_STATISTICS_QS,
@@ -274,12 +253,7 @@ class AnilistAnimeClient extends AnilistClient {
     return data.Media;
   }
 
-  /**
-   * Fetch streaming platforms information
-   *
-   * @param {number} animeId - Anime ID
-   * @returns {Promise<StreamingEpisode[]>} - Streaming platform information
-   */
+  // Fetch streaming platforms information
   async fetchWhereToWatch(animeId: number): Promise<StreamingEpisode[]> {
     const data = await this.executeQuery<StreamingEpisodesResponse>(
       ANIME_WHERE_TO_WATCH_QS,

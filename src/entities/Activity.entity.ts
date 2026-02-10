@@ -3,19 +3,6 @@
  *
  * User activity feed events.
  * Polymorphic relations to media, lists, and communities.
- *
- * Activity types:
- * - WATCHED: User watched an episode
- * - RATED: User rated media
- * - JOINED: User joined a community
- * - CREATED_LIST: User created a list
- * - etc.
- *
- * Features:
- * - Type-based activity classification
- * - JSON metadata for flexible data storage
- * - Polymorphic relations (media, list, community)
- * - Comments support
  */
 
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';

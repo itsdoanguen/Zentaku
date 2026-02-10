@@ -1,13 +1,5 @@
 /**
  * Novel Item Entity
- *
- * Extends MediaItem for light novel-specific fields.
- * Uses Single Table Inheritance with type discriminator = 'NOVEL'.
- *
- * Novel-specific fields:
- * - Chapter and volume counts
- * - Author information (JSON array)
- * - Serialization info
  */
 
 import { ChildEntity, Column } from 'typeorm';

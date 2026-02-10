@@ -1,6 +1,5 @@
 /**
  * AniList GraphQL Shared Query Definitions
- * Contains common/shared GraphQL queries used across multiple media types
  */
 
 export const MEDIA_OVERVIEW_QS = `

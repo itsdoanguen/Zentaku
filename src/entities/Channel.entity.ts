@@ -1,15 +1,5 @@
 /**
  * Channel Entity
- *
- * Communication channels within communities or as DM channels.
- * Supports multiple channel types (TEXT, VOICE, WATCH_PARTY).
- *
- * Features:
- * - Multiple channel types
- * - Public/Private access
- * - Custom ordering (position)
- * - Optional community (null for DM channels)
- * - One-to-one relation with WatchRoomConfig for watch parties
  */
 
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';

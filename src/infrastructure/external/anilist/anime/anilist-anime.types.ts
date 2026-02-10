@@ -108,9 +108,6 @@ export type StatusDistribution = MediaStatusDistribution;
 
 // ========== Overview Types ==========
 
-/**
- * Relation edge - represents a single relation to another media
- */
 export interface AnimeRelationEdge {
   id: number;
   relationType: string;
@@ -127,10 +124,6 @@ export interface AnimeRelationEdge {
     averageScore?: number;
   };
 }
-
-/**
- * Recommendation node
- */
 export interface AnimeRecommendationNode {
   id: number;
   rating: number;
@@ -148,41 +141,30 @@ export interface AnimeRecommendationNode {
   };
 }
 
-/**
- * Anime Overview Data
- * Complete data structure returned by ANIME_OVERVIEW_QS
- * Includes: relations, characters/staff preview, stats, rankings, recommendations
- */
 export interface AnimeOverview {
   id: number;
 
-  // Relations
   relations?: {
     edges: AnimeRelationEdge[];
   };
 
-  // Characters preview (first 6)
   characters?: {
     edges: CharacterEdge[];
     pageInfo: PageInfo;
   };
 
-  // Staff preview (first 6)
   staff?: {
     edges: StaffEdge[];
     pageInfo: PageInfo;
   };
 
-  // Statistics
   stats?: {
     scoreDistribution?: MediaScoreDistribution[];
     statusDistribution?: MediaStatusDistribution[];
   };
 
-  // Rankings
   rankings?: MediaRanking[];
 
-  // Recommendations preview (first 6)
   recommendations?: {
     edges: {
       node: AnimeRecommendationNode;

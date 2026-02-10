@@ -7,3 +7,4 @@
 export * from './common';
 export * from './controller';
 export * from './repository';
+export * from './streaming.types';

@@ -19,7 +19,6 @@ interface HttpResponse<T = unknown> {
 
 /**
  * Base AniList GraphQL Client
- * Provides shared GraphQL execution functionality for all AniList clients
  *
  * @class AnilistClient
  */

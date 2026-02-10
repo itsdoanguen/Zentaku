@@ -1,6 +1,5 @@
 /**
  * AniList API Manga Type Definitions
- * TypeScript interfaces for manga-specific GraphQL query responses
  */
 
 import type {

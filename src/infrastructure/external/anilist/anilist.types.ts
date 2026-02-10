@@ -1,6 +1,5 @@
 /**
  * AniList API Shared Type Definitions
- * Common TypeScript interfaces used across all AniList modules
  */
 
 // ========== Common Types ==========
