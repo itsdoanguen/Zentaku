@@ -48,9 +48,19 @@ export interface EpisodeServers {
   raw: ServerInfo[];
 }
 
+export interface PaginationMeta {
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+  totalItems: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 export interface AnimeEpisodes {
   totalEpisodes: number;
   episodes: Episode[];
+  pagination?: PaginationMeta;
 }
 
 export interface Episode {

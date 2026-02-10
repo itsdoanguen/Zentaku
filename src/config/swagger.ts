@@ -264,6 +264,35 @@ const options: swaggerJsdoc.Options = {
             },
           },
         },
+        PaginationMeta: {
+          type: 'object',
+          properties: {
+            currentPage: {
+              type: 'integer',
+              example: 1,
+            },
+            totalPages: {
+              type: 'integer',
+              example: 10,
+            },
+            pageSize: {
+              type: 'integer',
+              example: 100,
+            },
+            totalItems: {
+              type: 'integer',
+              example: 1000,
+            },
+            hasNextPage: {
+              type: 'boolean',
+              example: true,
+            },
+            hasPreviousPage: {
+              type: 'boolean',
+              example: false,
+            },
+          },
+        },
         AvailableEpisodesResponse: {
           type: 'object',
           properties: {
@@ -291,6 +320,9 @@ const options: swaggerJsdoc.Options = {
                   items: {
                     $ref: '#/components/schemas/EpisodeInfo',
                   },
+                },
+                pagination: {
+                  $ref: '#/components/schemas/PaginationMeta',
                 },
               },
             },

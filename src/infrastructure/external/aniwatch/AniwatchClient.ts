@@ -138,25 +138,32 @@ class AniwatchClient {
    * Get all episodes for an anime
    *
    * @param animeId - HiAnime anime identifier (e.g., "100")
-   * @returns Anime episodes list with metadata
+   * @param page - Page number (default: 1)
+   * @param limit - Items per page (default: 100, max: 500)
+   * @returns Anime episodes list with metadata and pagination
    * @throws Error if API request fails or anime not found
    *
    * @example
-   * const episodes = await client.getAnimeEpisodes("100");
-   * // Returns: { totalEpisodes: 1000, episodes: [...] }
+   * const episodes = await client.getAnimeEpisodes("100", 1, 50);
+   * // Returns: { totalEpisodes: 1000, episodes: [...], pagination: {...} }
    */
-  async getAnimeEpisodes(animeId: string): Promise<AnimeEpisodes> {
+  async getAnimeEpisodes(
+    animeId: string,
+    page: number = 1,
+    limit: number = 100
+  ): Promise<AnimeEpisodes> {
     try {
-      logger.info(`[Aniwatch] Fetching episodes list for anime: ${animeId}`);
-
-      const response = await httpClient.get<AniwatchWrappedResponse<AnimeEpisodes>>(
-        `${this.baseUrl}/api/anime/${animeId}/episodes`
+      logger.info(
+        `[Aniwatch] Fetching episodes list for anime: ${animeId} (page: ${page}, limit: ${limit})`
       );
+
+      const url = `${this.baseUrl}/api/anime/${animeId}/episodes?page=${page}&limit=${limit}`;
+      const response = await httpClient.get<AniwatchWrappedResponse<AnimeEpisodes>>(url);
 
       const data = 'success' in response.data ? response.data.data : response.data;
 
       logger.info(
-        `[Aniwatch] Successfully fetched ${data.totalEpisodes} episodes for anime: ${animeId}`
+        `[Aniwatch] Successfully fetched ${data.episodes.length} episodes (page ${data.pagination?.currentPage}/${data.pagination?.totalPages}) for anime: ${animeId}`
       );
 
       return data;

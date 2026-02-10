@@ -28,11 +28,21 @@ export interface SyncHianimeIdResponse {
   source: 'database' | 'malsync';
 }
 
+export interface PaginationMeta {
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+  totalItems: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 export interface AvailableEpisodesResponse {
   anilistId: number;
   hianimeId: string;
   totalEpisodes: number;
   episodes: EpisodeInfo[];
+  pagination?: PaginationMeta;
 }
 
 export interface EpisodeInfo {

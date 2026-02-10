@@ -57,10 +57,12 @@ class StreamingController extends BaseController<StreamingService> {
    */
   getEpisodes = this.asyncHandler(async (req: Request, res: Response) => {
     const anilistId = this.getIntParam(req, 'anilistId');
+    const page = req.query.page ? parseInt(req.query.page as string) : 1;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
 
-    this.logInfo('Fetching available episodes', { anilistId });
+    this.logInfo('Fetching available episodes', { anilistId, page, limit });
 
-    const episodes = await this.service.getAvailableEpisodes(anilistId);
+    const episodes = await this.service.getAvailableEpisodes(anilistId, page, limit);
 
     return this.success(res, episodes);
   });

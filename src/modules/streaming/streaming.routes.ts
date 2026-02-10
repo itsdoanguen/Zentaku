@@ -157,7 +157,7 @@ const createStreamingRoutes = (container: unknown): Router => {
    *     tags:
    *       - Streaming
    *     summary: Get all available episodes for an anime
-   *     description: Retrieves a complete list of available episodes with their metadata
+   *     description: Retrieves a complete list of available episodes with their metadata (with pagination support)
    *     parameters:
    *       - in: path
    *         name: anilistId
@@ -166,6 +166,25 @@ const createStreamingRoutes = (container: unknown): Router => {
    *           type: integer
    *         description: AniList anime ID
    *         example: 21
+   *       - in: query
+   *         name: page
+   *         required: false
+   *         schema:
+   *           type: integer
+   *           default: 1
+   *           minimum: 1
+   *         description: Page number for pagination
+   *         example: 1
+   *       - in: query
+   *         name: limit
+   *         required: false
+   *         schema:
+   *           type: integer
+   *           default: 100
+   *           minimum: 1
+   *           maximum: 500
+   *         description: Number of episodes per page
+   *         example: 100
    *     responses:
    *       200:
    *         description: Episodes list retrieved successfully

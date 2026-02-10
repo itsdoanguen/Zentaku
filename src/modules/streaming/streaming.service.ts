@@ -118,7 +118,8 @@ class StreamingService extends BaseService implements IStreamingService {
 
     const hianimeId = await this._getOrSyncHianimeId(validAnilistId);
 
-    const episodesData = await this.aniwatchClient.getAnimeEpisodes(hianimeId);
+    // Fetch all episodes (use high limit to get everything for finding specific episode)
+    const episodesData = await this.aniwatchClient.getAnimeEpisodes(hianimeId, 1, 10000);
     const episode = episodesData.episodes.find((ep) => ep.number === validEpisodeNumber);
 
     if (!episode) {
@@ -149,24 +150,35 @@ class StreamingService extends BaseService implements IStreamingService {
    * Get available episodes for an anime
    *
    * @param anilistId - AniList anime ID
-   * @returns List of available episodes
+   * @param page - Page number (default: 1)
+   * @param limit - Items per page (default: 100)
+   * @returns List of available episodes with pagination
    */
-  async getAvailableEpisodes(anilistId: number): Promise<AvailableEpisodesResponse> {
+  async getAvailableEpisodes(
+    anilistId: number,
+    page: number = 1,
+    limit: number = 100
+  ): Promise<AvailableEpisodesResponse> {
     const validId = this._validateId(anilistId, 'AniList ID');
 
-    this.logger.info(`[StreamingService] Getting available episodes for AniList ID: ${validId}`);
+    this.logger.info(
+      `[StreamingService] Getting available episodes for AniList ID: ${validId} (page: ${page}, limit: ${limit})`
+    );
 
     const hianimeId = await this._getOrSyncHianimeId(validId);
 
-    const episodesData = await this.aniwatchClient.getAnimeEpisodes(hianimeId);
+    const episodesData = await this.aniwatchClient.getAnimeEpisodes(hianimeId, page, limit);
 
-    this.logger.debug(`[StreamingService] Found ${episodesData.totalEpisodes} episodes`);
+    this.logger.debug(
+      `[StreamingService] Found ${episodesData.episodes.length} episodes (page ${episodesData.pagination?.currentPage}/${episodesData.pagination?.totalPages})`
+    );
 
     return {
       anilistId: validId,
       hianimeId,
       totalEpisodes: episodesData.totalEpisodes,
       episodes: episodesData.episodes,
+      pagination: episodesData.pagination,
     };
   }
 
@@ -191,8 +203,8 @@ class StreamingService extends BaseService implements IStreamingService {
 
     const hianimeId = await this._getOrSyncHianimeId(validAnilistId);
 
-    // Get episodes list to find the real episodeId
-    const episodesData = await this.aniwatchClient.getAnimeEpisodes(hianimeId);
+    // Get episodes list to find the real episodeId (use high limit to get all)
+    const episodesData = await this.aniwatchClient.getAnimeEpisodes(hianimeId, 1, 10000);
     const episode = episodesData.episodes.find((ep) => ep.number === validEpisodeNumber);
 
     if (!episode) {
