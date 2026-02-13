@@ -105,6 +105,10 @@ class MangaRepository extends BaseMediaRepository<MangaItem> {
 
     return updated;
   }
+
+  async upsertAnime(data: Partial<MangaItem>): Promise<MangaItem> {
+    return this.upsertManga(data as MangaCreateData);
+  }
 }
 
-export { MangaRepository };
+export default MangaRepository;
