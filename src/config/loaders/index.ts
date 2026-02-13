@@ -6,6 +6,7 @@
 
 import infrastructureLoader = require('./infrastructure.loader');
 import animeLoader = require('./anime.loader');
+import mangaLoader = require('./manga.loader');
 import streamingLoader = require('./streaming.loader');
 import logger from '../../shared/utils/logger';
 
@@ -20,6 +21,8 @@ const loadModules = (container: any): void => {
   infrastructureLoader(container);
 
   animeLoader(container);
+
+  mangaLoader(container);
 
   streamingLoader(container);
 

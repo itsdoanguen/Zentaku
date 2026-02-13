@@ -10,6 +10,7 @@ const initializeRoutes = (container: unknown): Router => {
   const router = express.Router();
 
   const animeRoutes = require('../modules/anime/anime.routes');
+  const mangaRoutes = require('../modules/manga/manga.routes');
   const streamingRoutes = require('../modules/streaming/streaming.routes');
 
   router.get('/status', (_req: Request, res: Response) => {
@@ -17,6 +18,7 @@ const initializeRoutes = (container: unknown): Router => {
   });
 
   router.use('/anilist/anime', animeRoutes(container));
+  router.use('/anilist/manga', mangaRoutes(container));
   router.use('/streaming', streamingRoutes(container));
   return router;
 };

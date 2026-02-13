@@ -62,6 +62,22 @@ const loadInfrastructure = (container: any): void => {
     }
   );
 
+  //Load AniList Manga Client
+  container.register(
+    'anilistMangaClient',
+    () => {
+      const AnilistMangaClient =
+        require('../../infrastructure/external/anilist/manga/AnilistMangaClient').default ||
+        require('../../infrastructure/external/anilist/manga/AnilistMangaClient');
+      const client = new AnilistMangaClient();
+      return client;
+    },
+    {
+      singleton: true,
+      dependencies: ['httpClient'],
+    }
+  );
+
   //Load AniList Character Client
   container.register(
     'anilistCharacterClient',
