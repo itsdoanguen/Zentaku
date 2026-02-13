@@ -15,9 +15,9 @@ export { UserRelationship } from './UserRelationship.entity';
 
 // Media
 export { AnimeItem } from './AnimeItem.entity';
-export { MangaItem } from './MangaItem.entity';
 export { MediaItem } from './MediaItem.entity';
 export { NovelItem } from './NovelItem.entity';
+export { ReadingMediaItem } from './ReadingMediaItem.entity';
 
 // Library & Tracking
 export { LibraryEntry } from './LibraryEntry.entity';

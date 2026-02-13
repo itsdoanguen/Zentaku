@@ -13,6 +13,7 @@ interface TypeORMMangaCreateData {
   titleEnglish?: string | null;
   titleNative?: string | null;
   status: 'RELEASING' | 'FINISHED' | 'NOT_YET_RELEASED' | 'CANCELLED';
+  format?: string | null;
   coverImage?: string | null;
   bannerImage?: string | null;
   isAdult?: boolean;
@@ -41,6 +42,7 @@ interface MangaResponse {
   coverImage: string | null;
   bannerImage: string | null;
   type: string;
+  format: string | null;
   status: string;
   isAdult: boolean;
   score: number | null;
@@ -86,6 +88,7 @@ class MangaAdapter {
       titleNative: externalData.title?.native || null,
 
       status: this._mapAnilistStatus(externalData.status),
+      format: externalData.format || null,
 
       coverImage: this._extractCoverImage(externalData.coverImage),
       bannerImage: externalData.bannerImage || null,
@@ -147,6 +150,7 @@ class MangaAdapter {
       bannerImage: mangaModel.bannerImage ?? null,
 
       type: 'MANGA',
+      format: mangaModel.format ?? null,
       status: mangaModel.status,
       isAdult: mangaModel.isAdult,
 
