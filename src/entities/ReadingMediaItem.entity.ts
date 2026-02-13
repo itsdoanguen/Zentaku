@@ -1,12 +1,19 @@
 /**
- * Manga Item Entity
+ * Reading Media Item Entity
+ *
+ * Handles both Manga and Novel reading media.
+ * Differentiation is done via the 'format' field.
+ *
  */
 
 import { ChildEntity, Column } from 'typeorm';
 import { MediaItem } from './MediaItem.entity';
 
 @ChildEntity('MANGA')
-export class MangaItem extends MediaItem {
+export class ReadingMediaItem extends MediaItem {
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  format?: string | null;
+
   @Column({ type: 'int', nullable: true })
   chapters?: number | null;
 
