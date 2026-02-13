@@ -1,11 +1,9 @@
 /**
  * Reading Media Item Entity
- * 
+ *
  * Handles both Manga and Novel reading media.
  * Differentiation is done via the 'format' field.
- * 
- * Manga formats: MANGA, ONE_SHOT, MANHWA, MANHUA
- * Novel formats: NOVEL, LIGHT_NOVEL
+ *
  */
 
 import { ChildEntity, Column } from 'typeorm';

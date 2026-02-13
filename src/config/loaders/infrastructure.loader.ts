@@ -62,14 +62,15 @@ const loadInfrastructure = (container: any): void => {
     }
   );
 
-  //Load AniList Manga Client
+  //Load AniList Reading Media Client (Manga & Novel)
   container.register(
-    'anilistMangaClient',
+    'anilistReadingMediaClient',
     () => {
-      const AnilistMangaClient =
-        require('../../infrastructure/external/anilist/manga/AnilistMangaClient').default ||
-        require('../../infrastructure/external/anilist/manga/AnilistMangaClient');
-      const client = new AnilistMangaClient();
+      const AnilistReadingMediaClient =
+        require('../../infrastructure/external/anilist/reading-media/AnilistReadingMediaClient')
+          .default ||
+        require('../../infrastructure/external/anilist/reading-media/AnilistReadingMediaClient');
+      const client = new AnilistReadingMediaClient();
       return client;
     },
     {

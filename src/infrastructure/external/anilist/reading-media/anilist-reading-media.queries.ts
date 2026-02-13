@@ -118,13 +118,3 @@ query ($ids: [Int]) {
   }
 }
 `;
-
-// ========== Backward Compatibility Aliases ==========
-// These maintain compatibility with existing code
-
-export const MANGA_INFO_QS = READING_MEDIA_INFO_QS;
-export const MANGA_INFO_LIGHTWEIGHT_QS = READING_MEDIA_INFO_LIGHTWEIGHT_QS;
-export const MANGA_COVERS_BATCH_QS = READING_MEDIA_COVERS_BATCH_QS;
-export const MANGA_ID_SEARCH_QS = READING_MEDIA_ID_SEARCH_QS;
-export const MANGA_SEARCH_CRITERIA_QS = READING_MEDIA_SEARCH_CRITERIA_QS;
-export const MANGA_BATCH_INFO_QS = READING_MEDIA_BATCH_INFO_QS;

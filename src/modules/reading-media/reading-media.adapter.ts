@@ -269,7 +269,7 @@ class ReadingMediaAdapter {
    * @returns 'manga' | 'novel'
    */
   getMediaCategory(format: string | null | undefined): 'manga' | 'novel' {
-    const novelFormats = ['NOVEL', 'LIGHT_NOVEL'];
+    const novelFormats = ['NOVEL'];
     return novelFormats.includes(format || '') ? 'novel' : 'manga';
   }
 

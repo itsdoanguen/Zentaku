@@ -4,7 +4,7 @@ import { AppDataSource } from '../../config/database';
 import { BaseMediaRepository } from '../../core/base/BaseMediaRepository';
 import { ReadingMediaItem } from '../../entities';
 
-export type MediaFormat = 'MANGA' | 'ONE_SHOT' | 'MANHWA' | 'MANHUA' | 'NOVEL' | 'LIGHT_NOVEL';
+export type MediaFormat = 'MANGA' | 'ONE_SHOT' | 'NOVEL';
 
 interface ReadingMediaCreateData {
   idAnilist: number;
@@ -26,7 +26,7 @@ interface ReadingMediaCreateData {
   tags?: unknown[] | null;
   popularity?: number | null;
   favorites?: number | null;
-  format?: string | null; // NEW: Format field (MANGA, NOVEL, LIGHT_NOVEL, etc.)
+  format?: string | null; // Format field (MANGA, NOVEL, ONE_SHOT, etc.)
   chapters?: number | null;
   volumes?: number | null;
   author?: Array<{ name: string; role: string }> | null;
@@ -41,9 +41,8 @@ interface ReadingMediaCreateData {
  * @extends BaseMediaRepository
  */
 class ReadingMediaRepository extends BaseMediaRepository<ReadingMediaItem> {
-  // Format constants
-  static readonly MANGA_FORMATS: MediaFormat[] = ['MANGA', 'ONE_SHOT', 'MANHWA', 'MANHUA'];
-  static readonly NOVEL_FORMATS: MediaFormat[] = ['NOVEL', 'LIGHT_NOVEL'];
+  static readonly MANGA_FORMATS: MediaFormat[] = ['MANGA', 'ONE_SHOT'];
+  static readonly NOVEL_FORMATS: MediaFormat[] = ['NOVEL'];
 
   /**
    * Create reading media repository instance

@@ -2,11 +2,11 @@
  * AniList API Reading Media Type Definitions
  *
  * Handles both Manga and Novel reading media types.
- * Format differentiation: MANGA, ONE_SHOT, MANHWA, MANHUA, NOVEL, LIGHT_NOVEL
  */
 
 import type {
   AnimeTitle,
+  CharacterEdge,
   CoverImage,
   MediaDate,
   MediaRanking,
@@ -14,12 +14,13 @@ import type {
   MediaStatistics,
   MediaStatusDistribution,
   PageInfo,
+  StaffEdge,
   Tag,
 } from '../anilist.types';
 
 // ========== Media Format Types ==========
 
-export type MediaFormat = 'MANGA' | 'ONE_SHOT' | 'MANHWA' | 'MANHUA' | 'NOVEL' | 'LIGHT_NOVEL';
+export type MediaFormat = 'MANGA' | 'ONE_SHOT' | 'NOVEL';
 
 export type FormatGroup = 'manga' | 'novel';
 
@@ -105,6 +106,70 @@ export interface ReadingMediaSearchByGenreResult {
   countryOfOrigin?: string;
 }
 
+export interface ReadingMediaOverview {
+  id: number;
+
+  relations?: {
+    edges: ReadingMediaRelationEdge[];
+  };
+
+  characters?: {
+    edges: CharacterEdge[];
+    pageInfo: PageInfo;
+  };
+
+  staff?: {
+    edges: StaffEdge[];
+    pageInfo: PageInfo;
+  };
+
+  stats?: {
+    scoreDistribution?: MediaScoreDistribution[];
+    statusDistribution?: MediaStatusDistribution[];
+  };
+
+  rankings?: MediaRanking[];
+
+  recommendations?: {
+    edges: {
+      node: ReadingMediaRecommendationNode;
+    }[];
+    pageInfo: PageInfo;
+  };
+}
+
+export interface ReadingMediaRelationEdge {
+  id: number;
+  relationType?: string;
+  node: {
+    id: number;
+    type?: string;
+    format?: string;
+    title: AnimeTitle;
+    coverImage: CoverImage;
+    status?: string;
+    episodes?: number;
+    chapters?: number;
+    volumes?: number;
+    averageScore?: number;
+  };
+}
+
+export interface ReadingMediaRecommendationNode {
+  id: number;
+  rating?: number;
+  mediaRecommendation: {
+    id: number;
+    title: AnimeTitle;
+    coverImage: CoverImage;
+    format?: string;
+    chapters?: number;
+    volumes?: number;
+    averageScore?: number;
+    popularity?: number;
+  };
+}
+
 // ========== Statistics Types ==========
 export type ReadingMediaStatistics = MediaStatistics;
 export type ReadingMediaRanking = MediaRanking;
@@ -151,6 +216,10 @@ export interface ReadingMediaStatisticsResponse {
   Media: MediaStatistics;
 }
 
+export interface ReadingMediaOverviewResponse {
+  Media: ReadingMediaOverview;
+}
+
 // ========== Search Criteria ==========
 
 export interface ReadingMediaSearchCriteria {
@@ -159,25 +228,3 @@ export interface ReadingMediaSearchCriteria {
   status?: string;
   countryOfOrigin?: string;
 }
-
-// ========== Backward Compatibility Types (Aliases) ==========
-// These maintain compatibility with existing code
-
-export type MangaInfo = ReadingMediaInfo;
-export type MangaLightweight = ReadingMediaLightweight;
-export type MangaBatchInfo = ReadingMediaBatchInfo;
-export type MangaCover = ReadingMediaCover;
-export type MangaSearchResult = ReadingMediaSearchResult;
-export type MangaSearchByGenreResult = ReadingMediaSearchByGenreResult;
-export type MangaStatistics = ReadingMediaStatistics;
-export type MangaRanking = ReadingMediaRanking;
-export type MangaScoreDistribution = ReadingMediaScoreDistribution;
-export type MangaStatusDistribution = ReadingMediaStatusDistribution;
-export type MangaInfoResponse = ReadingMediaInfoResponse;
-export type MangaLightweightResponse = ReadingMediaLightweightResponse;
-export type MangaBatchResponse = ReadingMediaBatchResponse;
-export type MangaCoversBatchResponse = ReadingMediaCoversBatchResponse;
-export type MangaSearchResponse = ReadingMediaSearchResponse;
-export type MangaSearchByGenreResponse = ReadingMediaSearchByGenreResponse;
-export type MangaStatisticsResponse = ReadingMediaStatisticsResponse;
-export type MangaSearchCriteria = ReadingMediaSearchCriteria;

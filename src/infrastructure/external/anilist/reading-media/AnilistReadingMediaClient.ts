@@ -1,6 +1,6 @@
 import { NotFoundError } from '../../../../shared/utils/error';
 import logger from '../../../../shared/utils/logger';
-import { MEDIA_STATISTICS_QS } from '../anilist.queries';
+import { MEDIA_OVERVIEW_QS, MEDIA_STATISTICS_QS } from '../anilist.queries';
 import type { MediaStatistics, PageInfo } from '../anilist.types';
 import AnilistClient from '../AnilistClient';
 import {
@@ -21,6 +21,8 @@ import type {
   ReadingMediaInfoResponse,
   ReadingMediaLightweight,
   ReadingMediaLightweightResponse,
+  ReadingMediaOverview,
+  ReadingMediaOverviewResponse,
   ReadingMediaSearchByGenreResponse,
   ReadingMediaSearchByGenreResult,
   ReadingMediaSearchResponse,
@@ -37,9 +39,9 @@ import type {
  * @extends {AnilistClient}
  */
 class AnilistReadingMediaClient extends AnilistClient {
-  // Format constants for filtering
-  private static readonly MANGA_FORMATS: MediaFormat[] = ['MANGA', 'ONE_SHOT', 'MANHWA', 'MANHUA'];
-  private static readonly NOVEL_FORMATS: MediaFormat[] = ['NOVEL', 'LIGHT_NOVEL'];
+  // Format constants for filtering  // Note: Manhwa (KR) and Manhua (CN/TW) use MANGA format with different countryOfOrigin
+  private static readonly MANGA_FORMATS: MediaFormat[] = ['MANGA', 'ONE_SHOT'];
+  private static readonly NOVEL_FORMATS: MediaFormat[] = ['NOVEL'];
 
   /**
    * Get formats array based on format group
@@ -86,6 +88,27 @@ class AnilistReadingMediaClient extends AnilistClient {
       READING_MEDIA_INFO_LIGHTWEIGHT_QS,
       { id: mediaId },
       `fetchReadingMediaLightweight(${mediaId})`
+    );
+
+    if (!data?.Media) {
+      throw new NotFoundError(`Reading media with ID ${mediaId} not found`);
+    }
+
+    return data.Media;
+  }
+
+  /**
+   * Fetch overview of reading media (relations, characters, staff, stats)
+   *
+   * @param {number} mediaId - Media ID
+   * @returns {Promise<ReadingMediaOverview>} - Overview data
+   * @throws {NotFoundError} - If not found
+   */
+  async fetchOverview(mediaId: number): Promise<ReadingMediaOverview> {
+    const data = await this.executeQuery<ReadingMediaOverviewResponse>(
+      MEDIA_OVERVIEW_QS,
+      { id: mediaId, type: 'MANGA' },
+      `fetchReadingMediaOverview(${mediaId})`
     );
 
     if (!data?.Media) {

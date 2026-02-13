@@ -15,8 +15,8 @@ import type ReadingMediaAdapter from './reading-media.adapter';
 import type ReadingMediaRepository from './reading-media.repository';
 
 // Format constants for differentiation
-const MANGA_FORMATS = ['MANGA', 'ONE_SHOT', 'MANHWA', 'MANHUA'] as const;
-const NOVEL_FORMATS = ['NOVEL', 'LIGHT_NOVEL'] as const;
+const MANGA_FORMATS = ['MANGA', 'ONE_SHOT'] as const;
+const NOVEL_FORMATS = ['NOVEL'] as const;
 
 type MangaFormat = (typeof MANGA_FORMATS)[number];
 type NovelFormat = (typeof NOVEL_FORMATS)[number];

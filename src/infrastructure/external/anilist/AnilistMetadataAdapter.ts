@@ -16,8 +16,8 @@ import type { CharacterEdge, MediaStatistics, StaffEdge } from './anilist.types'
 import type { AnimeSearchCriteria } from './anime/anilist-anime.types';
 import AnilistAnimeClient from './anime/AnilistAnimeClient';
 import AnilistCharacterClient from './character/AnilistCharacterClient';
-import type { MangaSearchCriteria } from './manga/anilist-manga.types';
-import AnilistMangaClient from './manga/AnilistMangaClient';
+import type { ReadingMediaSearchCriteria } from './reading-media/anilist-reading-media.types';
+import AnilistReadingMediaClient from './reading-media/AnilistReadingMediaClient';
 import AnilistStaffClient from './staff/AnilistStaffClient';
 
 /**
@@ -29,13 +29,13 @@ import AnilistStaffClient from './staff/AnilistStaffClient';
 class AnilistMetadataAdapter implements BaseMetadataSource {
   readonly sourceName = 'AniList';
   private readonly animeClient: AnilistAnimeClient;
-  private readonly mangaClient: AnilistMangaClient;
+  private readonly readingMediaClient: AnilistReadingMediaClient;
   private readonly characterClient: AnilistCharacterClient;
   private readonly staffClient: AnilistStaffClient;
 
   constructor() {
     this.animeClient = new AnilistAnimeClient();
-    this.mangaClient = new AnilistMangaClient();
+    this.readingMediaClient = new AnilistReadingMediaClient();
     this.characterClient = new AnilistCharacterClient();
     this.staffClient = new AnilistStaffClient();
   }
@@ -69,16 +69,15 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
     return anilistCriteria;
   }
 
-  private mapSearchMediaToMangaType(criteria: SearchCriteria): MangaSearchCriteria {
-    const mangaCriteria: MangaSearchCriteria = {};
+  private mapSearchMediaToMangaType(criteria: SearchCriteria): ReadingMediaSearchCriteria {
+    const mangaCriteria: ReadingMediaSearchCriteria = {};
     if (criteria.genres) {
       mangaCriteria.genres = criteria.genres;
     }
 
     if (criteria.format) {
-      mangaCriteria.format = Array.isArray(criteria.format)
-        ? criteria.format.join(',')
-        : criteria.format;
+      const formats = Array.isArray(criteria.format) ? criteria.format : [criteria.format];
+      mangaCriteria.formats = formats as any;
     }
 
     if (criteria.status) {
@@ -119,7 +118,7 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
       return this.animeClient.fetchById(mediaId) as unknown as MediaInfo;
     }
     if (mediaType === 'MANGA') {
-      return this.mangaClient.fetchById(mediaId) as unknown as MediaInfo;
+      return this.readingMediaClient.fetchById(mediaId) as unknown as MediaInfo;
     }
     throw new Error(
       `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
@@ -135,7 +134,7 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
       return this.animeClient.fetchLightweight(mediaId) as unknown as MediaBasicInfo;
     }
     if (mediaType === 'MANGA') {
-      return this.mangaClient.fetchLightweight(mediaId) as unknown as MediaBasicInfo;
+      return this.readingMediaClient.fetchLightweight(mediaId) as unknown as MediaBasicInfo;
     }
     throw new Error(
       `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
@@ -156,7 +155,7 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
       return this.animeClient.fetchBatch(mediaIds) as unknown as Record<number, MediaInfo>;
     }
     if (mediaType === 'MANGA') {
-      return this.mangaClient.fetchBatch(mediaIds) as unknown as Record<number, MediaInfo>;
+      return this.readingMediaClient.fetchBatch(mediaIds) as unknown as Record<number, MediaInfo>;
     }
     throw new Error(
       `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
@@ -176,7 +175,7 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
       return this.animeClient.search(query, searchOptions) as unknown as PaginatedMedia;
     }
     if (mediaType === 'MANGA') {
-      return this.mangaClient.search(query, searchOptions) as unknown as PaginatedMedia;
+      return this.readingMediaClient.search(query, searchOptions) as unknown as PaginatedMedia;
     }
     throw new Error(
       `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
@@ -204,7 +203,7 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
       ) as unknown as PaginatedMedia;
     }
     if (mediaType === 'MANGA') {
-      return this.mangaClient.searchByCriteria(
+      return this.readingMediaClient.searchByCriteria(
         this.mapSearchMediaToMangaType(otherCriteria),
         this.mapSearchOptionsToAnilistType(options)
       ) as unknown as PaginatedMedia;
@@ -298,7 +297,7 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
       return this.animeClient.fetchStatistics(mediaId);
     }
     if (mediaType === 'MANGA') {
-      return this.mangaClient.fetchStatistics(mediaId);
+      return this.readingMediaClient.fetchStatistics(mediaId);
     }
     throw new Error(
       `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
@@ -321,7 +320,7 @@ class AnilistMetadataAdapter implements BaseMetadataSource {
       return this.animeClient.fetchCoversBatch(mediaIds);
     }
     if (mediaType === 'MANGA') {
-      return this.mangaClient.fetchCoversBatch(mediaIds);
+      return this.readingMediaClient.fetchCoversBatch(mediaIds);
     }
     throw new Error(
       `AniList adapter currently only supports ANIME and MANGA media types, got: ${mediaType}`
