@@ -183,6 +183,14 @@ class ReadingMediaRepository extends BaseMediaRepository<ReadingMediaItem> {
     return this.upsertMedia(transformedData);
   }
 
+  /**
+   * IMediaRepository interface compatibility alias
+   * Required by BaseMediaService
+   */
+  async upsertAnime(transformedData: ReadingMediaCreateData): Promise<ReadingMediaItem> {
+    return this.upsertMedia(transformedData);
+  }
+
   // ==================== SPECIALIZED QUERIES ====================
 
   async findByGenre(genre: string): Promise<ReadingMediaItem[]> {
