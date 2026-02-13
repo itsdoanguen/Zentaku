@@ -59,6 +59,7 @@ export interface ReadingMediaLightweight {
   coverImage: CoverImage;
   chapters?: number;
   volumes?: number;
+  format?: string;
 }
 
 export interface ReadingMediaBatchInfo {
@@ -67,11 +68,13 @@ export interface ReadingMediaBatchInfo {
   coverImage: CoverImage;
   chapters?: number;
   volumes?: number;
+  format?: string;
 }
 
 export interface ReadingMediaCover {
   id: number;
   coverImage: CoverImage;
+  format?: string;
 }
 
 export interface ReadingMediaSearchResult {

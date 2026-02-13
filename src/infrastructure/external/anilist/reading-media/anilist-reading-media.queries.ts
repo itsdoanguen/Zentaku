@@ -56,6 +56,7 @@ query ($ids: [Int]) {
     media(id_in: $ids, type: MANGA) {
       id
       coverImage { large }
+      format
     }
   }
 }
