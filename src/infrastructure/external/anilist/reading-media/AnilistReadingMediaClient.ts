@@ -1,3 +1,5 @@
+import type ReadingMediaAdapter from '../../../../modules/reading-media/reading-media.adapter';
+import type ReadingMediaRepository from '../../../../modules/reading-media/reading-media.repository';
 import { NotFoundError } from '../../../../shared/utils/error';
 import logger from '../../../../shared/utils/logger';
 import { MEDIA_OVERVIEW_QS, MEDIA_STATISTICS_QS } from '../anilist.queries';
@@ -39,9 +41,17 @@ import type {
  * @extends {AnilistClient}
  */
 class AnilistReadingMediaClient extends AnilistClient {
-  // Format constants for filtering  // Note: Manhwa (KR) and Manhua (CN/TW) use MANGA format with different countryOfOrigin
+  // Note: Manhwa (KR) and Manhua (CN/TW) use MANGA format with different countryOfOrigin
   private static readonly MANGA_FORMATS: MediaFormat[] = ['MANGA', 'ONE_SHOT'];
   private static readonly NOVEL_FORMATS: MediaFormat[] = ['NOVEL'];
+
+  private readingMediaRepository?: ReadingMediaRepository;
+  private readingMediaAdapter?: ReadingMediaAdapter;
+
+  setRepositoryAndAdapter(repository: ReadingMediaRepository, adapter: ReadingMediaAdapter): void {
+    this.readingMediaRepository = repository;
+    this.readingMediaAdapter = adapter;
+  }
 
   /**
    * Get formats array based on format group
@@ -241,6 +251,122 @@ class AnilistReadingMediaClient extends AnilistClient {
   ): Promise<{ pageInfo: PageInfo; media: ReadingMediaSearchResult[] }> {
     const formats = this.getFormatsForGroup(formatGroup);
     return this.search(query, { ...options, formats });
+  }
+
+  /**
+   * Search reading media with automatic caching
+   *
+   * @param {string} query - Search query
+   * @param {object} options - Search options + cache options
+   * @returns {Promise<{ pageInfo: PageInfo; media: ReadingMediaSearchResult[]; cached?: number }>} - Search results with cache metadata
+   */
+  async searchWithCache(
+    query: string,
+    options: {
+      formats?: MediaFormat[];
+      page?: number;
+      perPage?: number;
+      cacheTopResults?: number;
+      skipCache?: boolean;
+    } = {}
+  ): Promise<{
+    pageInfo: PageInfo;
+    media: ReadingMediaSearchResult[];
+    cached?: number;
+  }> {
+    const { formats, page = 1, perPage = 20, cacheTopResults = 5, skipCache = false } = options;
+
+    const results = await this.search(query, { formats, page, perPage });
+
+    let cachedCount = 0;
+    if (
+      !skipCache &&
+      this.readingMediaRepository &&
+      this.readingMediaAdapter &&
+      results.media.length > 0
+    ) {
+      cachedCount = await this._cacheSearchResults(
+        results.media,
+        Math.min(cacheTopResults, results.media.length)
+      );
+    }
+
+    return {
+      ...results,
+      cached: cachedCount,
+    };
+  }
+
+  /**
+   * Search by format group with caching
+   *
+   * @param {string} query - Search query
+   * @param {FormatGroup} formatGroup - 'manga' or 'novel'
+   * @param {object} options - Pagination and cache options
+   * @returns {Promise<{ pageInfo: PageInfo; media: ReadingMediaSearchResult[]; cached?: number }>} - Search results with cache metadata
+   */
+  async searchByFormatGroupWithCache(
+    query: string,
+    formatGroup: FormatGroup,
+    options: {
+      page?: number;
+      perPage?: number;
+      cacheTopResults?: number;
+      skipCache?: boolean;
+    } = {}
+  ): Promise<{
+    pageInfo: PageInfo;
+    media: ReadingMediaSearchResult[];
+    cached?: number;
+  }> {
+    const formats = this.getFormatsForGroup(formatGroup);
+    return this.searchWithCache(query, { ...options, formats });
+  }
+
+  /**
+   * Cache search results to database
+   *
+   * @private
+   * @param {ReadingMediaSearchResult[]} results - Search results from AniList
+   * @param {number} limit - Number of results to cache
+   * @returns {Promise<number>} - Number of successfully cached items
+   */
+  private async _cacheSearchResults(
+    results: ReadingMediaSearchResult[],
+    limit: number
+  ): Promise<number> {
+    if (!this.readingMediaRepository || !this.readingMediaAdapter) {
+      logger.warn('Cannot cache search results: repository or adapter not set');
+      return 0;
+    }
+
+    const resultsToCache = results.slice(0, limit);
+    let successCount = 0;
+
+    for (const result of resultsToCache) {
+      try {
+        const entityData = this.readingMediaAdapter.fromExternal(result as ReadingMediaInfo);
+
+        entityData.lastSyncedAt = new Date();
+
+        await this.readingMediaRepository.upsertAnime(entityData);
+
+        successCount++;
+      } catch (error) {
+        logger.warn('Failed to cache search result', {
+          mediaId: result.id,
+          error: (error as Error).message,
+        });
+      }
+    }
+
+    logger.info('Cached reading media search results', {
+      total: resultsToCache.length,
+      successful: successCount,
+      failed: resultsToCache.length - successCount,
+    });
+
+    return successCount;
   }
 
   /**

@@ -1,3 +1,5 @@
+import type AnimeAdapter from '../../../../modules/anime/anime.adapter';
+import type AnimeRepository from '../../../../modules/anime/anime.repository';
 import { NotFoundError } from '../../../../shared/utils/error';
 import logger from '../../../../shared/utils/logger';
 import { MEDIA_OVERVIEW_QS, MEDIA_STATISTICS_QS } from '../anilist.queries';
@@ -38,6 +40,13 @@ import type {
  * @extends {AnilistClient}
  */
 class AnilistAnimeClient extends AnilistClient {
+  private animeRepository?: AnimeRepository;
+  private animeAdapter?: AnimeAdapter;
+
+  setRepositoryAndAdapter(repository: AnimeRepository, adapter: AnimeAdapter): void {
+    this.animeRepository = repository;
+    this.animeAdapter = adapter;
+  }
   /**
    * Fetch detailed anime information by ID
    *
@@ -182,6 +191,87 @@ class AnilistAnimeClient extends AnilistClient {
       pageInfo: data.Page?.pageInfo || ({} as PageInfo),
       media: data.Page?.media || [],
     };
+  }
+
+  /**
+   * Search anime with automatic caching
+   *
+   * @param {string} query - Search query
+   * @param {object} options - Search options + cache options
+   * @returns {Promise<{ pageInfo: PageInfo; media: AnimeSearchResult[]; cached?: number }>} - Search results with cache metadata
+   */
+  async searchWithCache(
+    query: string,
+    options: {
+      page?: number;
+      perPage?: number;
+      cacheTopResults?: number;
+      skipCache?: boolean;
+    } = {}
+  ): Promise<{
+    pageInfo: PageInfo;
+    media: AnimeSearchResult[];
+    cached?: number;
+  }> {
+    const { page = 1, perPage = 20, cacheTopResults = 5, skipCache = false } = options;
+
+    const results = await this.search(query, { page, perPage });
+
+    let cachedCount = 0;
+    if (!skipCache && this.animeRepository && this.animeAdapter && results.media.length > 0) {
+      cachedCount = await this._cacheSearchResults(
+        results.media,
+        Math.min(cacheTopResults, results.media.length)
+      );
+    }
+
+    return {
+      ...results,
+      cached: cachedCount,
+    };
+  }
+
+  /**
+   * Cache search results to database
+   *
+   * @private
+   * @param {AnimeSearchResult[]} results - Search results from AniList
+   * @param {number} limit - Number of results to cache
+   * @returns {Promise<number>} - Number of successfully cached items
+   */
+  private async _cacheSearchResults(results: AnimeSearchResult[], limit: number): Promise<number> {
+    if (!this.animeRepository || !this.animeAdapter) {
+      logger.warn('Cannot cache search results: repository or adapter not set');
+      return 0;
+    }
+
+    const resultsToCache = results.slice(0, limit);
+    let successCount = 0;
+
+    for (const result of resultsToCache) {
+      try {
+        const entityData = this.animeAdapter.fromExternal(result as AnimeInfo);
+
+        entityData.lastSyncedAt = new Date();
+
+        await this.animeRepository.upsertAnime(entityData);
+
+        successCount++;
+      } catch (error) {
+        logger.warn('Failed to cache search result', {
+          animeId: result.id,
+          error: (error as Error).message,
+        });
+      }
+    }
+
+    logger.info('Cached search results', {
+      total: resultsToCache.length,
+      successful: successCount,
+      failed: resultsToCache.length - successCount,
+    });
+
+    return successCount;
   }
 
   /**
