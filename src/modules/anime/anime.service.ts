@@ -162,6 +162,138 @@ class AnimeService extends BaseMediaService {
       return streamingData;
     }, context);
   }
+
+  /**
+   * Search anime from external API
+   *
+   * @internal
+   * @param query - Search query string
+   * @param options - Search options with cache settings
+   * @returns Search results with cache metadata
+   */
+  async searchExternal(
+    query: string,
+    options: {
+      page?: number;
+      perPage?: number;
+      skipCache?: boolean;
+      cacheTopResults?: number;
+    } = {}
+  ): Promise<{
+    items: unknown[];
+    pageInfo: unknown;
+    cached?: number;
+  }> {
+    const context = 'searchExternal()';
+    const { page = 1, perPage = 20, skipCache = false, cacheTopResults = 5 } = options;
+
+    return this._executeWithErrorHandling(async () => {
+      this._logInfo('Searching anime on external API', { query, page, perPage, skipCache });
+
+      const results = await this.externalClient.search(query, {
+        page,
+        perPage,
+        skipCache,
+        cacheTopResults,
+      });
+
+      this._logInfo('External search completed', {
+        resultsCount: results.media.length,
+        cached: results.cached || 0,
+      });
+
+      return {
+        items: results.media,
+        pageInfo: results.pageInfo,
+        cached: results.cached,
+      };
+    }, context);
+  }
+
+  /**
+   * Search anime by criteria
+   *
+   * @internal
+   * @param criteria - Search criteria (genres, season, format, status)
+   * @param options - Pagination, sorting, and cache options
+   * @returns Search results with cache metadata
+   */
+  async searchByCriteria(
+    criteria: {
+      genres?: string[];
+      season?: string;
+      seasonYear?: number;
+      format?: string;
+      status?: string;
+    },
+    options: {
+      page?: number;
+      perPage?: number;
+      sort?: string[];
+      skipCache?: boolean;
+      cacheTopResults?: number;
+    } = {}
+  ): Promise<{ items: unknown[]; pageInfo: unknown; cached?: number }> {
+    const context = 'searchByCriteria()';
+    const {
+      page = 1,
+      perPage = 20,
+      sort = ['POPULARITY_DESC'],
+      skipCache = false,
+      cacheTopResults = 5,
+    } = options;
+
+    return this._executeWithErrorHandling(async () => {
+      this._logInfo('Searching anime by criteria', { criteria, page, perPage });
+
+      const results = await this.externalClient.searchByCriteria(criteria, {
+        page,
+        perPage,
+        sort,
+        skipCache,
+        cacheTopResults,
+      });
+
+      return {
+        items: results.media,
+        pageInfo: results.pageInfo,
+        cached: results.cached,
+      };
+    }, context);
+  }
+
+  /**
+   * Get seasonal anime (for Search Module use)
+   *
+   * @internal
+   * @param season - Season (WINTER, SPRING, SUMMER, FALL)
+   * @param seasonYear - Year
+   * @param options - Pagination and sorting options
+   * @returns Seasonal anime results
+   */
+  async getSeasonal(
+    season: string,
+    seasonYear: number,
+    options: { page?: number; perPage?: number; sort?: string[] } = {}
+  ): Promise<{ items: unknown[]; pageInfo: unknown }> {
+    const context = 'getSeasonal()';
+    const { page = 1, perPage = 20, sort = ['POPULARITY_DESC'] } = options;
+
+    return this._executeWithErrorHandling(async () => {
+      this._logInfo('Fetching seasonal anime', { season, seasonYear, page, perPage });
+
+      const results = await this.externalClient.fetchSeasonal(season, seasonYear, {
+        page,
+        perPage,
+        sort,
+      });
+
+      return {
+        items: results.media,
+        pageInfo: results.pageInfo,
+      };
+    }, context);
+  }
 }
 
 export default AnimeService;

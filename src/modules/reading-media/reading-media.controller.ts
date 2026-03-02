@@ -26,7 +26,6 @@ class ReadingMediaController extends BaseMediaController<ReadingMediaService> {
     this.getMangaCharacters = this.getMangaCharacters.bind(this);
     this.getMangaStaff = this.getMangaStaff.bind(this);
     this.getMangaStatistics = this.getMangaStatistics.bind(this);
-    this.searchManga = this.searchManga.bind(this);
 
     // Bind novel-specific methods
     this.getNovelBasicInfo = this.getNovelBasicInfo.bind(this);
@@ -34,7 +33,6 @@ class ReadingMediaController extends BaseMediaController<ReadingMediaService> {
     this.getNovelCharacters = this.getNovelCharacters.bind(this);
     this.getNovelStaff = this.getNovelStaff.bind(this);
     this.getNovelStatistics = this.getNovelStatistics.bind(this);
-    this.searchNovels = this.searchNovels.bind(this);
   }
 
   // ==================== MANGA ENDPOINTS ====================
@@ -96,21 +94,6 @@ class ReadingMediaController extends BaseMediaController<ReadingMediaService> {
     return this.success(res, statistics);
   }
 
-  async searchManga(req: Request, res: Response): Promise<Response> {
-    const query = this.getStringQuery(req, 'q') || this.getStringQuery(req, 'query', '');
-    const { page, perPage } = this.getPaginationParams(req, {
-      page: 1,
-      perPage: 20,
-      maxPerPage: 50,
-    });
-
-    this.logInfo('Searching manga', { query, page, perPage });
-
-    const results = await this.service.searchManga(query, page, perPage);
-
-    return this.success(res, results);
-  }
-
   // ==================== NOVEL ENDPOINTS ====================
 
   async getNovelBasicInfo(req: Request, res: Response): Promise<Response> {
@@ -168,21 +151,6 @@ class ReadingMediaController extends BaseMediaController<ReadingMediaService> {
     const statistics = await this.service.getNovelStatistics(anilistId);
 
     return this.success(res, statistics);
-  }
-
-  async searchNovels(req: Request, res: Response): Promise<Response> {
-    const query = this.getStringQuery(req, 'q') || this.getStringQuery(req, 'query', '');
-    const { page, perPage } = this.getPaginationParams(req, {
-      page: 1,
-      perPage: 20,
-      maxPerPage: 50,
-    });
-
-    this.logInfo('Searching novels', { query, page, perPage });
-
-    const results = await this.service.searchNovels(query, page, perPage);
-
-    return this.success(res, results);
   }
 }
 
