@@ -286,54 +286,6 @@ class ReadingMediaService extends BaseMediaService {
       return statistics;
     }, context);
   }
-
-  // ==================== SEARCH METHODS ====================
-
-  /**
-   * Search reading media by format group
-   */
-  async searchByFormatGroup(
-    query: string,
-    formatGroup: 'manga' | 'novel',
-    page: number = 1,
-    perPage: number = 25
-  ): Promise<unknown> {
-    const context = `searchByFormatGroup(${formatGroup})`;
-
-    return this._executeWithErrorHandling(async () => {
-      this._logInfo('Searching reading media by format group', {
-        query,
-        formatGroup,
-        page,
-        perPage,
-      });
-
-      const formats = formatGroup === 'manga' ? [...MANGA_FORMATS] : [...NOVEL_FORMATS];
-
-      const results = await this.externalClient.search(query, { formats, page, perPage });
-
-      this._logInfo('Successfully searched reading media', {
-        formatGroup,
-        resultCount: results?.media?.length || 0,
-      });
-
-      return results;
-    }, context);
-  }
-
-  /**
-   * Search manga only
-   */
-  async searchManga(query: string, page: number = 1, perPage: number = 25): Promise<unknown> {
-    return this.searchByFormatGroup(query, 'manga', page, perPage);
-  }
-
-  /**
-   * Search novels only
-   */
-  async searchNovels(query: string, page: number = 1, perPage: number = 25): Promise<unknown> {
-    return this.searchByFormatGroup(query, 'novel', page, perPage);
-  }
 }
 
 export default ReadingMediaService;

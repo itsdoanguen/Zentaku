@@ -200,67 +200,18 @@ class AnilistReadingMediaClient extends AnilistClient {
   }
 
   /**
-   * Search reading media by query string with optional format filtering
-   *
-   * @param {string} query - Search query
-   * @param {object} options - Search options
-   * @param {MediaFormat[]} [options.formats] - Optional format filter
-   * @param {number} [options.page] - Page number
-   * @param {number} [options.perPage] - Results per page
-   * @returns {Promise<{ pageInfo: PageInfo; media: ReadingMediaSearchResult[] }>} - Search results
-   */
-  async search(
-    query: string,
-    options: {
-      formats?: MediaFormat[];
-      page?: number;
-      perPage?: number;
-    } = {}
-  ): Promise<{ pageInfo: PageInfo; media: ReadingMediaSearchResult[] }> {
-    const { formats, page = 1, perPage = 20 } = options;
-
-    const data = await this.executeQuery<ReadingMediaSearchResponse>(
-      READING_MEDIA_ID_SEARCH_QS,
-      {
-        query,
-        page,
-        perpage: perPage,
-        format_in: formats || undefined,
-      },
-      `searchReadingMedia("${query}", formats: ${formats ? formats.join(',') : 'all'})`
-    );
-
-    return {
-      pageInfo: data.Page?.pageInfo || ({} as PageInfo),
-      media: data.Page?.media || [],
-    };
-  }
-
-  /**
-   * Search reading media by format group (convenience method)
-   *
-   * @param {string} query - Search query
-   * @param {FormatGroup} formatGroup - 'manga' or 'novel'
-   * @param {object} options - Pagination options
-   * @returns {Promise<{ pageInfo: PageInfo; media: ReadingMediaSearchResult[] }>} - Search results
-   */
-  async searchByFormatGroup(
-    query: string,
-    formatGroup: FormatGroup,
-    options: { page?: number; perPage?: number } = {}
-  ): Promise<{ pageInfo: PageInfo; media: ReadingMediaSearchResult[] }> {
-    const formats = this.getFormatsForGroup(formatGroup);
-    return this.search(query, { ...options, formats });
-  }
-
-  /**
-   * Search reading media with automatic caching
+   * Search reading media by query string with automatic caching
    *
    * @param {string} query - Search query
    * @param {object} options - Search options + cache options
+   * @param {MediaFormat[]} [options.formats] - Optional format filter
+   * @param {number} [options.page] - Page number
+   * @param {number} [options.perPage] - Results per page
+   * @param {number} [options.cacheTopResults] - Cache top N results (default: 5)
+   * @param {boolean} [options.skipCache] - Skip caching step (default: false)
    * @returns {Promise<{ pageInfo: PageInfo; media: ReadingMediaSearchResult[]; cached?: number }>} - Search results with cache metadata
    */
-  async searchWithCache(
+  async search(
     query: string,
     options: {
       formats?: MediaFormat[];
@@ -276,7 +227,21 @@ class AnilistReadingMediaClient extends AnilistClient {
   }> {
     const { formats, page = 1, perPage = 20, cacheTopResults = 5, skipCache = false } = options;
 
-    const results = await this.search(query, { formats, page, perPage });
+    const data = await this.executeQuery<ReadingMediaSearchResponse>(
+      READING_MEDIA_ID_SEARCH_QS,
+      {
+        query,
+        page,
+        perpage: perPage,
+        format_in: formats || undefined,
+      },
+      `searchReadingMedia("${query}", formats: ${formats ? formats.join(',') : 'all'})`
+    );
+
+    const results = {
+      pageInfo: data.Page?.pageInfo || ({} as PageInfo),
+      media: data.Page?.media || [],
+    };
 
     let cachedCount = 0;
     if (
@@ -298,14 +263,14 @@ class AnilistReadingMediaClient extends AnilistClient {
   }
 
   /**
-   * Search by format group with caching
+   * Search reading media by format group
    *
    * @param {string} query - Search query
    * @param {FormatGroup} formatGroup - 'manga' or 'novel'
    * @param {object} options - Pagination and cache options
    * @returns {Promise<{ pageInfo: PageInfo; media: ReadingMediaSearchResult[]; cached?: number }>} - Search results with cache metadata
    */
-  async searchByFormatGroupWithCache(
+  async searchByFormatGroup(
     query: string,
     formatGroup: FormatGroup,
     options: {
@@ -320,7 +285,7 @@ class AnilistReadingMediaClient extends AnilistClient {
     cached?: number;
   }> {
     const formats = this.getFormatsForGroup(formatGroup);
-    return this.searchWithCache(query, { ...options, formats });
+    return this.search(query, { ...options, formats });
   }
 
   /**
@@ -370,15 +335,15 @@ class AnilistReadingMediaClient extends AnilistClient {
   }
 
   /**
-   * Search reading media by multiple criteria
+   * Search reading media by multiple criteria with automatic caching
    *
    * @param {object} criteria - Search criteria
    * @param {string[]} [criteria.genres] - Genre filters
    * @param {MediaFormat[]} [criteria.formats] - Format filters
    * @param {string} [criteria.status] - Status filter
    * @param {string} [criteria.countryOfOrigin] - Country filter
-   * @param {object} options - Pagination and sorting options
-   * @returns {Promise<{ pageInfo: PageInfo; media: ReadingMediaSearchByGenreResult[] }>} - Search results
+   * @param {object} options - Pagination, sorting, and cache options
+   * @returns {Promise<{ pageInfo: PageInfo; media: ReadingMediaSearchByGenreResult[]; cached?: number }>} - Search results with cache metadata
    */
   async searchByCriteria(
     criteria: {
@@ -387,10 +352,26 @@ class AnilistReadingMediaClient extends AnilistClient {
       status?: string;
       countryOfOrigin?: string;
     } = {},
-    options: { page?: number; perPage?: number; sort?: string[] } = {}
-  ): Promise<{ pageInfo: PageInfo; media: ReadingMediaSearchByGenreResult[] }> {
+    options: {
+      page?: number;
+      perPage?: number;
+      sort?: string[];
+      cacheTopResults?: number;
+      skipCache?: boolean;
+    } = {}
+  ): Promise<{
+    pageInfo: PageInfo;
+    media: ReadingMediaSearchByGenreResult[];
+    cached?: number;
+  }> {
     const { genres, formats, status, countryOfOrigin } = criteria;
-    const { page = 1, perPage = 20, sort = ['POPULARITY_DESC'] } = options;
+    const {
+      page = 1,
+      perPage = 20,
+      sort = ['POPULARITY_DESC'],
+      cacheTopResults = 5,
+      skipCache = false,
+    } = options;
 
     const data = await this.executeQuery<ReadingMediaSearchByGenreResponse>(
       READING_MEDIA_SEARCH_CRITERIA_QS,
@@ -406,9 +387,27 @@ class AnilistReadingMediaClient extends AnilistClient {
       `searchReadingMediaByCriteria(formats: ${formats ? formats.join(',') : 'all'})`
     );
 
-    return {
+    const results = {
       pageInfo: data.Page?.pageInfo || ({} as PageInfo),
       media: data.Page?.media || [],
+    };
+
+    let cachedCount = 0;
+    if (
+      !skipCache &&
+      this.readingMediaRepository &&
+      this.readingMediaAdapter &&
+      results.media.length > 0
+    ) {
+      cachedCount = await this._cacheSearchResults(
+        results.media as unknown as ReadingMediaSearchResult[],
+        Math.min(cacheTopResults, results.media.length)
+      );
+    }
+
+    return {
+      ...results,
+      cached: cachedCount,
     };
   }
 

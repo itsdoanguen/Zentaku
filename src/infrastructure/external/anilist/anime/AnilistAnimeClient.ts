@@ -169,38 +169,13 @@ class AnilistAnimeClient extends AnilistClient {
   }
 
   /**
-   * Search anime by query string
-   *
-   * @param {string} query - Search query
-   * @param {object} options - Pagination options
-   * @returns {Promise<{ pageInfo: PageInfo; media: AnimeSearchResult[] }>} - Search results with pageInfo and media
-   */
-  async search(
-    query: string,
-    options: { page?: number; perPage?: number } = {}
-  ): Promise<{ pageInfo: PageInfo; media: AnimeSearchResult[] }> {
-    const { page = 1, perPage = 20 } = options;
-
-    const data = await this.executeQuery<AnimeSearchResponse>(
-      ANIME_ID_SEARCH_QS,
-      { query, page, perpage: perPage },
-      `searchAnime("${query}")`
-    );
-
-    return {
-      pageInfo: data.Page?.pageInfo || ({} as PageInfo),
-      media: data.Page?.media || [],
-    };
-  }
-
-  /**
-   * Search anime with automatic caching
+   * Search anime by query string with automatic caching
    *
    * @param {string} query - Search query
    * @param {object} options - Search options + cache options
    * @returns {Promise<{ pageInfo: PageInfo; media: AnimeSearchResult[]; cached?: number }>} - Search results with cache metadata
    */
-  async searchWithCache(
+  async search(
     query: string,
     options: {
       page?: number;
@@ -215,7 +190,16 @@ class AnilistAnimeClient extends AnilistClient {
   }> {
     const { page = 1, perPage = 20, cacheTopResults = 5, skipCache = false } = options;
 
-    const results = await this.search(query, { page, perPage });
+    const data = await this.executeQuery<AnimeSearchResponse>(
+      ANIME_ID_SEARCH_QS,
+      { query, page, perpage: perPage },
+      `searchAnime("${query}")`
+    );
+
+    const results = {
+      pageInfo: data.Page?.pageInfo || ({} as PageInfo),
+      media: data.Page?.media || [],
+    };
 
     let cachedCount = 0;
     if (!skipCache && this.animeRepository && this.animeAdapter && results.media.length > 0) {
@@ -302,10 +286,10 @@ class AnilistAnimeClient extends AnilistClient {
   }
 
   /**
-   * Search anime by multiple criteria
+   * Search anime by multiple criteria with automatic caching
    * @param criteria Search criteria
-   * @param options Pagination and sorting options
-   * @returns Search results with pageInfo and media
+   * @param options Pagination, sorting, and cache options
+   * @returns Search results with pageInfo, media, and cache metadata
    */
   async searchByCriteria(
     criteria: {
@@ -315,10 +299,26 @@ class AnilistAnimeClient extends AnilistClient {
       format?: string;
       status?: string;
     } = {},
-    options: { page?: number; perPage?: number; sort?: string[] } = {}
-  ): Promise<{ pageInfo: PageInfo; media: AnimeSeasonalResult[] }> {
+    options: {
+      page?: number;
+      perPage?: number;
+      sort?: string[];
+      cacheTopResults?: number;
+      skipCache?: boolean;
+    } = {}
+  ): Promise<{
+    pageInfo: PageInfo;
+    media: AnimeSeasonalResult[];
+    cached?: number;
+  }> {
     const { genres, season, seasonYear, format, status } = criteria;
-    const { page = 1, perPage = 20, sort = ['POPULARITY_DESC'] } = options;
+    const {
+      page = 1,
+      perPage = 20,
+      sort = ['POPULARITY_DESC'],
+      cacheTopResults = 5,
+      skipCache = false,
+    } = options;
 
     const data = await this.executeQuery<AnimeSeasonalResponse>(
       ANIME_SEARCH_CRITERIA_QS,
@@ -326,9 +326,22 @@ class AnilistAnimeClient extends AnilistClient {
       `searchAnimeByCriteria()`
     );
 
-    return {
+    const results = {
       pageInfo: data.Page?.pageInfo || ({} as PageInfo),
       media: data.Page?.media || [],
+    };
+
+    let cachedCount = 0;
+    if (!skipCache && this.animeRepository && this.animeAdapter && results.media.length > 0) {
+      cachedCount = await this._cacheSearchResults(
+        results.media as unknown as AnimeSearchResult[],
+        Math.min(cacheTopResults, results.media.length)
+      );
+    }
+
+    return {
+      ...results,
+      cached: cachedCount,
     };
   }
 
