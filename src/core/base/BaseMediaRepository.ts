@@ -275,11 +275,17 @@ export abstract class BaseMediaRepository<
 
     const queryBuilder = repository.createQueryBuilder('media');
 
+    const searchPattern = `%${query}%`;
+
     queryBuilder
-      .where('LOWER(media.titleRomaji) LIKE LOWER(:query)', { query: `%${query}%` })
-      .orWhere('LOWER(media.titleEnglish) LIKE LOWER(:query)', { query: `%${query}%` })
-      .orWhere('LOWER(media.titleNative) LIKE LOWER(:query)', { query: `%${query}%` })
-      .orderBy('media.averageScore', 'DESC')
+      .where('LOWER(media.titleRomaji) LIKE LOWER(:query)', { query: searchPattern })
+      .orWhere('LOWER(media.titleEnglish) LIKE LOWER(:query)', { query: searchPattern })
+      .orWhere('LOWER(media.titleNative) LIKE LOWER(:query)', { query: searchPattern })
+      .orWhere('LOWER(CAST(media.synonyms AS CHAR)) LIKE LOWER(:query)', {
+        query: searchPattern,
+      })
+      .orderBy('media.popularity', 'DESC')
+      .addOrderBy('media.averageScore', 'DESC')
       .take(limit);
 
     const relations = this._mergeWithDefaultRelations(restOptions).relations;

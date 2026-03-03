@@ -1,59 +1,35 @@
-import type { SearchResult as CoreSearchResult } from '../../../core/base/BaseMediaService';
-import type AnimeService from '../../anime/anime.service';
+import type AnilistAnimeClient from '../../../infrastructure/external/anilist/anime/AnilistAnimeClient';
 import type { AnimeSearchCriteria } from '../types/criteria.types';
 import type { MediaSearchParams, SearchResult } from '../types/search.types';
 
 /**
  * Anime Search Service
- * Implements hybrid search strategy: DB cache → External API fallback
+ * Orchestrates anime search by calling external API client directly
  */
 class AnimeSearchService {
-  private animeService: AnimeService;
+  private animeClient: AnilistAnimeClient;
 
-  constructor(animeService: AnimeService) {
-    this.animeService = animeService;
+  constructor(animeClient: AnilistAnimeClient) {
+    this.animeClient = animeClient;
   }
 
   async searchByText(params: MediaSearchParams): Promise<SearchResult<unknown>> {
     const { q, page = 1, perPage = 20 } = params;
 
-    let dbResults: CoreSearchResult<unknown> | null = null;
-    try {
-      dbResults = await this.animeService.search(q, page, perPage);
-
-      if (dbResults.items.length >= 3) {
-        return {
-          success: true,
-          data: {
-            items: dbResults.items,
-            pageInfo: {
-              total: dbResults.pagination.total,
-              currentPage: dbResults.pagination.currentPage,
-              lastPage: dbResults.pagination.totalPages,
-              hasNextPage: dbResults.pagination.hasNextPage,
-              perPage: dbResults.pagination.perPage,
-            },
-            source: 'database',
-          },
-        };
-      }
-    } catch (error) {
-      console.warn('DB search failed, falling back to external API', error);
-    }
-
-    const externalResults = await this.animeService.searchExternal(q, {
-      page,
-      perPage,
-      cacheTopResults: 5,
-    });
+    const results = await this.animeClient.search(q, { page, perPage });
 
     return {
       success: true,
       data: {
-        items: externalResults.items,
-        pageInfo: externalResults.pageInfo as SearchResult<unknown>['data']['pageInfo'],
+        items: results.media,
+        pageInfo: {
+          total: results.pageInfo.total || 0,
+          currentPage: results.pageInfo.currentPage || page,
+          lastPage: results.pageInfo.lastPage || 1,
+          hasNextPage: results.pageInfo.hasNextPage || false,
+          perPage: results.pageInfo.perPage || perPage,
+        },
         source: 'external',
-        cached: externalResults.cached,
       },
     };
   }
@@ -63,11 +39,13 @@ class AnimeSearchService {
     options: { page?: number; perPage?: number } = {}
   ): Promise<SearchResult<unknown>> {
     const { page = 1, perPage = 20 } = options;
-    const { query: _query, sort, format, status, ...otherFilters } = criteria;
+    const { sort, format, status, genres, season, seasonYear } = criteria;
 
-    const results = await this.animeService.searchByCriteria(
+    const results = await this.animeClient.searchByCriteria(
       {
-        ...otherFilters,
+        genres,
+        season,
+        seasonYear,
         format: format ? format[0] : undefined,
         status: status ? status[0] : undefined,
       },
@@ -75,17 +53,21 @@ class AnimeSearchService {
         page,
         perPage,
         sort: sort || ['POPULARITY_DESC'],
-        cacheTopResults: 5,
       }
     );
 
     return {
       success: true,
       data: {
-        items: results.items,
-        pageInfo: results.pageInfo as SearchResult<unknown>['data']['pageInfo'],
+        items: results.media,
+        pageInfo: {
+          total: results.pageInfo.total || 0,
+          currentPage: results.pageInfo.currentPage || page,
+          lastPage: results.pageInfo.lastPage || 1,
+          hasNextPage: results.pageInfo.hasNextPage || false,
+          perPage: results.pageInfo.perPage || perPage,
+        },
         source: 'external',
-        cached: results.cached,
       },
     };
   }
@@ -107,7 +89,7 @@ class AnimeSearchService {
   ): Promise<SearchResult<unknown>> {
     const { page = 1, perPage = 20, sort = ['POPULARITY_DESC'] } = options;
 
-    const results = await this.animeService.getSeasonal(season, year, {
+    const results = await this.animeClient.fetchSeasonal(season, year, {
       page,
       perPage,
       sort,
@@ -116,8 +98,14 @@ class AnimeSearchService {
     return {
       success: true,
       data: {
-        items: results.items,
-        pageInfo: results.pageInfo as SearchResult<unknown>['data']['pageInfo'],
+        items: results.media,
+        pageInfo: {
+          total: results.pageInfo.total || 0,
+          currentPage: results.pageInfo.currentPage || page,
+          lastPage: results.pageInfo.lastPage || 1,
+          hasNextPage: results.pageInfo.hasNextPage || false,
+          perPage: results.pageInfo.perPage || perPage,
+        },
         source: 'external',
       },
     };

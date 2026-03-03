@@ -286,61 +286,6 @@ class ReadingMediaService extends BaseMediaService {
       return statistics;
     }, context);
   }
-
-  /**
-   * Search reading media from external API
-   * @internal
-   * @param query - Search query string
-   * @param formatGroup - Format group ('manga' | 'novel')
-   * @param options - Search options with cache settings
-   * @returns Search results with cache metadata
-   */
-  async searchExternal(
-    query: string,
-    formatGroup: 'manga' | 'novel',
-    options: {
-      page?: number;
-      perPage?: number;
-      skipCache?: boolean;
-      cacheTopResults?: number;
-    } = {}
-  ): Promise<{
-    items: unknown[];
-    pageInfo: unknown;
-    cached?: number;
-  }> {
-    const context = 'searchExternal()';
-    const { page = 1, perPage = 20, skipCache = false, cacheTopResults = 5 } = options;
-
-    return this._executeWithErrorHandling(async () => {
-      this._logInfo('Searching reading media on external API', {
-        query,
-        formatGroup,
-        page,
-        perPage,
-        skipCache,
-      });
-
-      const results = await this.externalClient.searchByFormatGroup(query, formatGroup, {
-        page,
-        perPage,
-        skipCache,
-        cacheTopResults,
-      });
-
-      this._logInfo('External search completed', {
-        formatGroup,
-        resultsCount: results.media.length,
-        cached: results.cached || 0,
-      });
-
-      return {
-        items: results.media,
-        pageInfo: results.pageInfo,
-        cached: results.cached,
-      };
-    }, context);
-  }
 }
 
 export default ReadingMediaService;

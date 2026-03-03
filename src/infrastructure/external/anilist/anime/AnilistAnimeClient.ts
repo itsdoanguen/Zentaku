@@ -1,5 +1,3 @@
-import type AnimeAdapter from '../../../../modules/anime/anime.adapter';
-import type AnimeRepository from '../../../../modules/anime/anime.repository';
 import { NotFoundError } from '../../../../shared/utils/error';
 import logger from '../../../../shared/utils/logger';
 import { MEDIA_OVERVIEW_QS, MEDIA_STATISTICS_QS } from '../anilist.queries';
@@ -40,13 +38,6 @@ import type {
  * @extends {AnilistClient}
  */
 class AnilistAnimeClient extends AnilistClient {
-  private animeRepository?: AnimeRepository;
-  private animeAdapter?: AnimeAdapter;
-
-  setRepositoryAndAdapter(repository: AnimeRepository, adapter: AnimeAdapter): void {
-    this.animeRepository = repository;
-    this.animeAdapter = adapter;
-  }
   /**
    * Fetch detailed anime information by ID
    *
@@ -169,26 +160,23 @@ class AnilistAnimeClient extends AnilistClient {
   }
 
   /**
-   * Search anime by query string with automatic caching
+   * Search anime by query string
    *
    * @param {string} query - Search query
-   * @param {object} options - Search options + cache options
-   * @returns {Promise<{ pageInfo: PageInfo; media: AnimeSearchResult[]; cached?: number }>} - Search results with cache metadata
+   * @param {object} options - Search options
+   * @returns {Promise<{ pageInfo: PageInfo; media: AnimeSearchResult[] }>} - Search results
    */
   async search(
     query: string,
     options: {
       page?: number;
       perPage?: number;
-      cacheTopResults?: number;
-      skipCache?: boolean;
     } = {}
   ): Promise<{
     pageInfo: PageInfo;
     media: AnimeSearchResult[];
-    cached?: number;
   }> {
-    const { page = 1, perPage = 20, cacheTopResults = 5, skipCache = false } = options;
+    const { page = 1, perPage = 20 } = options;
 
     const data = await this.executeQuery<AnimeSearchResponse>(
       ANIME_ID_SEARCH_QS,
@@ -196,66 +184,10 @@ class AnilistAnimeClient extends AnilistClient {
       `searchAnime("${query}")`
     );
 
-    const results = {
+    return {
       pageInfo: data.Page?.pageInfo || ({} as PageInfo),
       media: data.Page?.media || [],
     };
-
-    let cachedCount = 0;
-    if (!skipCache && this.animeRepository && this.animeAdapter && results.media.length > 0) {
-      cachedCount = await this._cacheSearchResults(
-        results.media,
-        Math.min(cacheTopResults, results.media.length)
-      );
-    }
-
-    return {
-      ...results,
-      cached: cachedCount,
-    };
-  }
-
-  /**
-   * Cache search results to database
-   *
-   * @private
-   * @param {AnimeSearchResult[]} results - Search results from AniList
-   * @param {number} limit - Number of results to cache
-   * @returns {Promise<number>} - Number of successfully cached items
-   */
-  private async _cacheSearchResults(results: AnimeSearchResult[], limit: number): Promise<number> {
-    if (!this.animeRepository || !this.animeAdapter) {
-      logger.warn('Cannot cache search results: repository or adapter not set');
-      return 0;
-    }
-
-    const resultsToCache = results.slice(0, limit);
-    let successCount = 0;
-
-    for (const result of resultsToCache) {
-      try {
-        const entityData = this.animeAdapter.fromExternal(result as AnimeInfo);
-
-        entityData.lastSyncedAt = new Date();
-
-        await this.animeRepository.upsertAnime(entityData);
-
-        successCount++;
-      } catch (error) {
-        logger.warn('Failed to cache search result', {
-          animeId: result.id,
-          error: (error as Error).message,
-        });
-      }
-    }
-
-    logger.info('Cached search results', {
-      total: resultsToCache.length,
-      successful: successCount,
-      failed: resultsToCache.length - successCount,
-    });
-
-    return successCount;
   }
 
   /**
@@ -286,10 +218,10 @@ class AnilistAnimeClient extends AnilistClient {
   }
 
   /**
-   * Search anime by multiple criteria with automatic caching
+   * Search anime by multiple criteria
    * @param criteria Search criteria
-   * @param options Pagination, sorting, and cache options
-   * @returns Search results with pageInfo, media, and cache metadata
+   * @param options Pagination and sorting options
+   * @returns Search results with pageInfo and media
    */
   async searchByCriteria(
     criteria: {
@@ -303,22 +235,13 @@ class AnilistAnimeClient extends AnilistClient {
       page?: number;
       perPage?: number;
       sort?: string[];
-      cacheTopResults?: number;
-      skipCache?: boolean;
     } = {}
   ): Promise<{
     pageInfo: PageInfo;
     media: AnimeSeasonalResult[];
-    cached?: number;
   }> {
     const { genres, season, seasonYear, format, status } = criteria;
-    const {
-      page = 1,
-      perPage = 20,
-      sort = ['POPULARITY_DESC'],
-      cacheTopResults = 5,
-      skipCache = false,
-    } = options;
+    const { page = 1, perPage = 20, sort = ['POPULARITY_DESC'] } = options;
 
     const data = await this.executeQuery<AnimeSeasonalResponse>(
       ANIME_SEARCH_CRITERIA_QS,
@@ -326,22 +249,9 @@ class AnilistAnimeClient extends AnilistClient {
       `searchAnimeByCriteria()`
     );
 
-    const results = {
+    return {
       pageInfo: data.Page?.pageInfo || ({} as PageInfo),
       media: data.Page?.media || [],
-    };
-
-    let cachedCount = 0;
-    if (!skipCache && this.animeRepository && this.animeAdapter && results.media.length > 0) {
-      cachedCount = await this._cacheSearchResults(
-        results.media as unknown as AnimeSearchResult[],
-        Math.min(cacheTopResults, results.media.length)
-      );
-    }
-
-    return {
-      ...results,
-      cached: cachedCount,
     };
   }
 

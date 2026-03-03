@@ -55,18 +55,6 @@ const loadInfrastructure = (container: any): void => {
         require('../../infrastructure/external/anilist/anime/AnilistAnimeClient');
       const client = new AnilistAnimeClient();
 
-      try {
-        const animeRepository = container.resolve('animeRepository');
-        const animeAdapter = container.resolve('animeAdapter');
-        client.setRepositoryAndAdapter(animeRepository, animeAdapter);
-        logger.debug('[Loader] Injected repository and adapter into AnilistAnimeClient');
-      } catch (error) {
-        logger.warn(
-          '[Loader] Could not inject repository/adapter into AnilistAnimeClient (may not be registered yet)'
-        );
-        logger.debug(`[Loader] Error details: ${error}`);
-      }
-
       return client;
     },
     {
@@ -84,18 +72,6 @@ const loadInfrastructure = (container: any): void => {
           .default ||
         require('../../infrastructure/external/anilist/reading-media/AnilistReadingMediaClient');
       const client = new AnilistReadingMediaClient();
-
-      try {
-        const readingMediaRepository = container.resolve('readingMediaRepository');
-        const readingMediaAdapter = container.resolve('readingMediaAdapter');
-        client.setRepositoryAndAdapter(readingMediaRepository, readingMediaAdapter);
-        logger.debug('[Loader] Injected repository and adapter into AnilistReadingMediaClient');
-      } catch (error) {
-        logger.warn(
-          '[Loader] Could not inject repository/adapter into AnilistReadingMediaClient (may not be registered yet)'
-        );
-        logger.debug(`[Loader] Error details: ${error}`);
-      }
 
       return client;
     },
