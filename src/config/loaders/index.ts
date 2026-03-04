@@ -4,18 +4,20 @@
  * @module Loaders
  */
 
+import logger from '../../shared/utils/logger';
+import type { Container } from '../container';
 import infrastructureLoader = require('./infrastructure.loader');
 import animeLoader = require('./anime.loader');
 import readingMediaLoader = require('./reading-media.loader');
 import streamingLoader = require('./streaming.loader');
-import logger from '../../shared/utils/logger';
+import searchLoader = require('./search.loader');
 
 /**
  * Load all modules into the container
 
  * @param {Container} container - DI Container instance
  */
-const loadModules = (container: any): void => {
+const loadModules = (container: Container): void => {
   logger.debug('[Loaders] Starting module registration...');
 
   infrastructureLoader(container);
@@ -25,6 +27,8 @@ const loadModules = (container: any): void => {
   readingMediaLoader(container);
 
   streamingLoader(container);
+
+  searchLoader(container);
 
   logger.debug('[Loaders] All modules registered successfully');
   logger.debug(`[Loaders] Total registered: ${container.getRegistered().length} dependencies`);

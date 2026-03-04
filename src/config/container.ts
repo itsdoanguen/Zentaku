@@ -260,3 +260,4 @@ const loadModules = require('./loaders');
 loadModules(container);
 
 export default container;
+export type { Container };

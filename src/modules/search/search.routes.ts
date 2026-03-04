@@ -1,16 +1,18 @@
 import express, { type Router } from 'express';
+import type { Container } from '../../config/container';
+import type SearchController from './search.controller';
 import SearchValidator from './search.validator';
 
 /**
  * Initialize search routes with dependency injection
  *
- * @param {Object} container - DI container instance
+ * @param {Container} container - DI container instance
  * @returns {Router} Express router with configured routes
  */
-const initializeSearchRoutes = (container: any): Router => {
+const initializeSearchRoutes = (container: Container): Router => {
   const router = express.Router();
 
-  const searchController = container.resolve('searchController');
+  const searchController = container.resolve<SearchController>('searchController');
 
   // ============================================
   // GLOBAL SEARCH
@@ -18,7 +20,7 @@ const initializeSearchRoutes = (container: any): Router => {
 
   /**
    * @swagger
-   * /search:
+   * /api/search:
    *   get:
    *     summary: Global search across multiple media types
    *     description: Search across anime, manga, and novel simultaneously. Returns aggregated results from specified types.
@@ -39,7 +41,7 @@ const initializeSearchRoutes = (container: any): Router => {
    *         required: false
    *         schema:
    *           type: string
-   *         description: Comma-separated list of types to search (anime, manga, novel, all)
+   *         description: Types to search (comma-separated - anime, manga, novel, all)
    *         example: anime,manga
    *       - in: query
    *         name: page
@@ -64,19 +66,7 @@ const initializeSearchRoutes = (container: any): Router => {
    *         content:
    *           application/json:
    *             schema:
-   *               type: object
-   *               properties:
-   *                 success:
-   *                   type: boolean
-   *                 data:
-   *                   type: object
-   *                   properties:
-   *                     anime:
-   *                       type: object
-   *                     manga:
-   *                       type: object
-   *                     novel:
-   *                       type: object
+   *               $ref: '#/components/schemas/GlobalSearchResult'
    *       400:
    *         description: Invalid request parameters
    *       500:
@@ -95,7 +85,7 @@ const initializeSearchRoutes = (container: any): Router => {
 
   /**
    * @swagger
-   * /search/anime:
+   * /api/search/anime:
    *   get:
    *     summary: Search anime
    *     description: Search for anime with optional filters (genre, year, season, etc.)
@@ -142,21 +132,25 @@ const initializeSearchRoutes = (container: any): Router => {
    *           type: string
    *           enum: [WINTER, SPRING, SUMMER, FALL]
    *         description: Release season
+   *         example: SPRING
    *       - in: query
    *         name: status
    *         schema:
    *           type: string
+   *           enum: [FINISHED, RELEASING, NOT_YET_RELEASED, CANCELLED]
    *         description: Airing status
    *       - in: query
    *         name: format
    *         schema:
    *           type: string
-   *         description: Comma-separated format list (TV, MOVIE, OVA, etc.)
+   *         description: Anime format - comma-separated (TV, MOVIE, OVA, ONA, SPECIAL, MUSIC)
+   *         example: TV,MOVIE
    *       - in: query
    *         name: sort
    *         schema:
    *           type: string
-   *         description: Comma-separated sort fields
+   *         description: Sort fields - comma-separated (POPULARITY_DESC, SCORE_DESC, TRENDING_DESC, UPDATED_AT_DESC, START_DATE_DESC)
+   *         example: POPULARITY_DESC
    *       - in: query
    *         name: isAdult
    *         schema:
@@ -165,6 +159,10 @@ const initializeSearchRoutes = (container: any): Router => {
    *     responses:
    *       200:
    *         description: Anime search results
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/SearchResult'
    *       400:
    *         description: Invalid parameters
    *       500:
@@ -179,7 +177,7 @@ const initializeSearchRoutes = (container: any): Router => {
 
   /**
    * @swagger
-   * /search/manga:
+   * /api/search/manga:
    *   get:
    *     summary: Search manga
    *     description: Search for manga (excluding novels)
@@ -197,16 +195,49 @@ const initializeSearchRoutes = (container: any): Router => {
    *         name: page
    *         schema:
    *           type: integer
+   *           minimum: 1
    *           default: 1
    *       - in: query
    *         name: perPage
    *         schema:
    *           type: integer
+   *           minimum: 1
    *           maximum: 50
    *           default: 20
+   *       - in: query
+   *         name: genres
+   *         schema:
+   *           type: string
+   *         description: Comma-separated genre list
+   *         example: Action,Adventure
+   *       - in: query
+   *         name: format
+   *         schema:
+   *           type: string
+   *         description: Manga format - comma-separated (MANGA, ONE_SHOT, MANHWA, MANHUA)
+   *         example: MANGA,MANHWA
+   *       - in: query
+   *         name: status
+   *         schema:
+   *           type: string
+   *         description: Publication status (FINISHED, RELEASING, NOT_YET_RELEASED, CANCELLED)
+   *       - in: query
+   *         name: sort
+   *         schema:
+   *           type: string
+   *         description: Sort fields - comma-separated (POPULARITY_DESC, SCORE_DESC, TRENDING_DESC, UPDATED_AT_DESC, START_DATE_DESC)
+   *       - in: query
+   *         name: isAdult
+   *         schema:
+   *           type: boolean
+   *         description: Include adult content
    *     responses:
    *       200:
    *         description: Manga search results
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/SearchResult'
    *       400:
    *         description: Invalid parameters
    *       500:
@@ -221,7 +252,7 @@ const initializeSearchRoutes = (container: any): Router => {
 
   /**
    * @swagger
-   * /search/novel:
+   * /api/search/novel:
    *   get:
    *     summary: Search novels
    *     description: Search for light novels and novels
@@ -239,16 +270,49 @@ const initializeSearchRoutes = (container: any): Router => {
    *         name: page
    *         schema:
    *           type: integer
+   *           minimum: 1
    *           default: 1
    *       - in: query
    *         name: perPage
    *         schema:
    *           type: integer
+   *           minimum: 1
    *           maximum: 50
    *           default: 20
+   *       - in: query
+   *         name: genres
+   *         schema:
+   *           type: string
+   *         description: Comma-separated genre list
+   *         example: Fantasy,Romance
+   *       - in: query
+   *         name: format
+   *         schema:
+   *           type: string
+   *         description: Novel format - comma-separated (NOVEL, LIGHT_NOVEL)
+   *         example: LIGHT_NOVEL
+   *       - in: query
+   *         name: status
+   *         schema:
+   *           type: string
+   *         description: Publication status (FINISHED, RELEASING, NOT_YET_RELEASED, CANCELLED)
+   *       - in: query
+   *         name: sort
+   *         schema:
+   *           type: string
+   *         description: Sort fields - comma-separated (POPULARITY_DESC, SCORE_DESC, TRENDING_DESC)
+   *       - in: query
+   *         name: isAdult
+   *         schema:
+   *           type: boolean
+   *         description: Include adult content
    *     responses:
    *       200:
    *         description: Novel search results
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/SearchResult'
    *       400:
    *         description: Invalid parameters
    *       500:
@@ -267,7 +331,7 @@ const initializeSearchRoutes = (container: any): Router => {
 
   /**
    * @swagger
-   * /search/trending:
+   * /api/search/trending:
    *   get:
    *     summary: Get trending media
    *     description: Retrieve currently trending anime, manga, or novels. Results are cached for 30 minutes.
@@ -300,17 +364,7 @@ const initializeSearchRoutes = (container: any): Router => {
    *         content:
    *           application/json:
    *             schema:
-   *               type: object
-   *               properties:
-   *                 success:
-   *                   type: boolean
-   *                 data:
-   *                   type: object
-   *                   properties:
-   *                     trending:
-   *                       type: array
-   *                     pageInfo:
-   *                       type: object
+   *               $ref: '#/components/schemas/SearchResult'
    *       400:
    *         description: Invalid parameters
    *       500:
@@ -325,7 +379,7 @@ const initializeSearchRoutes = (container: any): Router => {
 
   /**
    * @swagger
-   * /search/popular:
+   * /api/search/popular:
    *   get:
    *     summary: Get popular media
    *     description: Retrieve popular media by type and time range
@@ -360,6 +414,10 @@ const initializeSearchRoutes = (container: any): Router => {
    *     responses:
    *       200:
    *         description: Popular media list
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/SearchResult'
    *       400:
    *         description: Invalid parameters
    *       500:
@@ -374,7 +432,7 @@ const initializeSearchRoutes = (container: any): Router => {
 
   /**
    * @swagger
-   * /search/seasonal:
+   * /api/search/seasonal:
    *   get:
    *     summary: Get seasonal anime
    *     description: Retrieve anime for a specific season and year. Results are cached for 1 hour.
@@ -411,10 +469,15 @@ const initializeSearchRoutes = (container: any): Router => {
    *         name: sort
    *         schema:
    *           type: string
-   *         description: Comma-separated sort fields
+   *         description: Sort fields - comma-separated (POPULARITY_DESC, SCORE_DESC, TRENDING_DESC, UPDATED_AT_DESC, START_DATE_DESC)
+   *         example: POPULARITY_DESC
    *     responses:
    *       200:
    *         description: Seasonal anime list
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/SearchResult'
    *       400:
    *         description: Invalid parameters
    *       500:
@@ -429,7 +492,7 @@ const initializeSearchRoutes = (container: any): Router => {
 
   /**
    * @swagger
-   * /search/seasonal/current:
+   * /api/search/seasonal/current:
    *   get:
    *     summary: Get current season anime
    *     description: Automatically detect current season and return anime for it
@@ -438,6 +501,10 @@ const initializeSearchRoutes = (container: any): Router => {
    *     responses:
    *       200:
    *         description: Current season anime list
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/SearchResult'
    *       500:
    *         description: Server error
    */
@@ -445,7 +512,7 @@ const initializeSearchRoutes = (container: any): Router => {
 
   /**
    * @swagger
-   * /search/seasonal/next:
+   * /api/search/seasonal/next:
    *   get:
    *     summary: Get next season anime
    *     description: Automatically detect next season and return anime for it
@@ -454,6 +521,10 @@ const initializeSearchRoutes = (container: any): Router => {
    *     responses:
    *       200:
    *         description: Next season anime list
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/SearchResult'
    *       500:
    *         description: Server error
    */

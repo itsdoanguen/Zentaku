@@ -60,7 +60,7 @@ const loadStreaming = (container: any): void => {
     }
   );
 
-  logger.info('[Loader] Streaming module registered ✅');
+  logger.info('[Loader] Streaming module registered');
 };
 
 export = loadStreaming;
