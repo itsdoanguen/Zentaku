@@ -504,6 +504,218 @@ const options: swaggerJsdoc.Options = {
             },
           },
         },
+        MediaSummary: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'integer',
+              example: 1,
+            },
+            type: {
+              type: 'string',
+              enum: ['ANIME', 'MANGA'],
+              example: 'ANIME',
+            },
+            idAnilist: {
+              type: 'integer',
+              example: 1,
+            },
+            titleRomaji: {
+              type: 'string',
+              example: 'Cowboy Bebop',
+            },
+            titleEnglish: {
+              type: 'string',
+              nullable: true,
+              example: 'Cowboy Bebop',
+            },
+            titleNative: {
+              type: 'string',
+              nullable: true,
+              example: 'カウボーイビバップ',
+            },
+            coverImage: {
+              type: 'string',
+              nullable: true,
+              example:
+                'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1-CXtrrkMpJ8Zq.png',
+            },
+            bannerImage: {
+              type: 'string',
+              nullable: true,
+            },
+            format: {
+              type: 'string',
+              nullable: true,
+              example: 'TV',
+            },
+            status: {
+              type: 'string',
+              example: 'FINISHED',
+            },
+            averageScore: {
+              type: 'number',
+              nullable: true,
+              example: 86,
+            },
+            popularity: {
+              type: 'number',
+              nullable: true,
+              example: 250000,
+            },
+            genres: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+              nullable: true,
+              example: ['Action', 'Sci-Fi'],
+            },
+            isAdult: {
+              type: 'boolean',
+              example: false,
+            },
+            episodeCount: {
+              type: 'integer',
+              nullable: true,
+              example: 26,
+            },
+            chapters: {
+              type: 'integer',
+              nullable: true,
+            },
+            volumes: {
+              type: 'integer',
+              nullable: true,
+            },
+            season: {
+              type: 'string',
+              nullable: true,
+              example: 'SPRING',
+            },
+            seasonYear: {
+              type: 'integer',
+              nullable: true,
+              example: 1998,
+            },
+          },
+        },
+        SearchPageInfo: {
+          type: 'object',
+          properties: {
+            total: {
+              type: 'integer',
+              example: 100,
+            },
+            currentPage: {
+              type: 'integer',
+              example: 1,
+            },
+            lastPage: {
+              type: 'integer',
+              example: 5,
+            },
+            hasNextPage: {
+              type: 'boolean',
+              example: true,
+            },
+            perPage: {
+              type: 'integer',
+              example: 20,
+            },
+          },
+        },
+        SearchResult: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true,
+            },
+            data: {
+              type: 'object',
+              properties: {
+                items: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/MediaSummary',
+                  },
+                },
+                pageInfo: {
+                  $ref: '#/components/schemas/SearchPageInfo',
+                },
+                source: {
+                  type: 'string',
+                  enum: ['database', 'external'],
+                  example: 'external',
+                },
+                cached: {
+                  type: 'number',
+                  example: 1800,
+                },
+              },
+            },
+          },
+        },
+        GlobalSearchResult: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true,
+            },
+            data: {
+              type: 'object',
+              properties: {
+                anime: {
+                  type: 'object',
+                  nullable: true,
+                  properties: {
+                    items: {
+                      type: 'array',
+                      items: {
+                        $ref: '#/components/schemas/MediaSummary',
+                      },
+                    },
+                    pageInfo: {
+                      $ref: '#/components/schemas/SearchPageInfo',
+                    },
+                  },
+                },
+                manga: {
+                  type: 'object',
+                  nullable: true,
+                  properties: {
+                    items: {
+                      type: 'array',
+                      items: {
+                        $ref: '#/components/schemas/MediaSummary',
+                      },
+                    },
+                    pageInfo: {
+                      $ref: '#/components/schemas/SearchPageInfo',
+                    },
+                  },
+                },
+                novel: {
+                  type: 'object',
+                  nullable: true,
+                  properties: {
+                    items: {
+                      type: 'array',
+                      items: {
+                        $ref: '#/components/schemas/MediaSummary',
+                      },
+                    },
+                    pageInfo: {
+                      $ref: '#/components/schemas/SearchPageInfo',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       responses: {
         ValidationError: {
@@ -560,6 +772,14 @@ const options: swaggerJsdoc.Options = {
       {
         name: 'Streaming',
         description: 'Anime streaming sources and episode endpoints',
+      },
+      {
+        name: 'Search',
+        description: 'Search endpoints for anime, manga, and novels',
+      },
+      {
+        name: 'Discovery',
+        description: 'Discover trending, popular, and seasonal media',
       },
     ],
   },

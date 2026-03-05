@@ -54,6 +54,7 @@ const loadInfrastructure = (container: any): void => {
         require('../../infrastructure/external/anilist/anime/AnilistAnimeClient').default ||
         require('../../infrastructure/external/anilist/anime/AnilistAnimeClient');
       const client = new AnilistAnimeClient();
+
       return client;
     },
     {
@@ -71,6 +72,7 @@ const loadInfrastructure = (container: any): void => {
           .default ||
         require('../../infrastructure/external/anilist/reading-media/AnilistReadingMediaClient');
       const client = new AnilistReadingMediaClient();
+
       return client;
     },
     {

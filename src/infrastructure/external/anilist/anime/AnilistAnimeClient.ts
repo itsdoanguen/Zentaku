@@ -163,13 +163,19 @@ class AnilistAnimeClient extends AnilistClient {
    * Search anime by query string
    *
    * @param {string} query - Search query
-   * @param {object} options - Pagination options
-   * @returns {Promise<{ pageInfo: PageInfo; media: AnimeSearchResult[] }>} - Search results with pageInfo and media
+   * @param {object} options - Search options
+   * @returns {Promise<{ pageInfo: PageInfo; media: AnimeSearchResult[] }>} - Search results
    */
   async search(
     query: string,
-    options: { page?: number; perPage?: number } = {}
-  ): Promise<{ pageInfo: PageInfo; media: AnimeSearchResult[] }> {
+    options: {
+      page?: number;
+      perPage?: number;
+    } = {}
+  ): Promise<{
+    pageInfo: PageInfo;
+    media: AnimeSearchResult[];
+  }> {
     const { page = 1, perPage = 20 } = options;
 
     const data = await this.executeQuery<AnimeSearchResponse>(
@@ -225,8 +231,15 @@ class AnilistAnimeClient extends AnilistClient {
       format?: string;
       status?: string;
     } = {},
-    options: { page?: number; perPage?: number; sort?: string[] } = {}
-  ): Promise<{ pageInfo: PageInfo; media: AnimeSeasonalResult[] }> {
+    options: {
+      page?: number;
+      perPage?: number;
+      sort?: string[];
+    } = {}
+  ): Promise<{
+    pageInfo: PageInfo;
+    media: AnimeSeasonalResult[];
+  }> {
     const { genres, season, seasonYear, format, status } = criteria;
     const { page = 1, perPage = 20, sort = ['POPULARITY_DESC'] } = options;
 

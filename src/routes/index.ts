@@ -12,10 +12,12 @@ const initializeRoutes = (container: unknown): Router => {
   const animeRoutes = require('../modules/anime/anime.routes');
   const readingMediaRoutes = require('../modules/reading-media/reading-media.routes');
   const streamingRoutes = require('../modules/streaming/streaming.routes');
+  const searchRoutes = require('../modules/search/search.routes');
 
   router.use('/anilist/anime', animeRoutes(container));
   router.use('/anilist', readingMediaRoutes(container));
   router.use('/streaming', streamingRoutes(container));
+  router.use('/search', searchRoutes(container));
   return router;
 };
 

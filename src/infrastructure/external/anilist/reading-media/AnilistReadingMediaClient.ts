@@ -39,7 +39,7 @@ import type {
  * @extends {AnilistClient}
  */
 class AnilistReadingMediaClient extends AnilistClient {
-  // Format constants for filtering  // Note: Manhwa (KR) and Manhua (CN/TW) use MANGA format with different countryOfOrigin
+  // Note: Manhwa (KR) and Manhua (CN/TW) use MANGA format with different countryOfOrigin
   private static readonly MANGA_FORMATS: MediaFormat[] = ['MANGA', 'ONE_SHOT'];
   private static readonly NOVEL_FORMATS: MediaFormat[] = ['NOVEL'];
 
@@ -190,7 +190,7 @@ class AnilistReadingMediaClient extends AnilistClient {
   }
 
   /**
-   * Search reading media by query string with optional format filtering
+   * Search reading media by query string
    *
    * @param {string} query - Search query
    * @param {object} options - Search options
@@ -206,7 +206,10 @@ class AnilistReadingMediaClient extends AnilistClient {
       page?: number;
       perPage?: number;
     } = {}
-  ): Promise<{ pageInfo: PageInfo; media: ReadingMediaSearchResult[] }> {
+  ): Promise<{
+    pageInfo: PageInfo;
+    media: ReadingMediaSearchResult[];
+  }> {
     const { formats, page = 1, perPage = 20 } = options;
 
     const data = await this.executeQuery<ReadingMediaSearchResponse>(
@@ -227,7 +230,7 @@ class AnilistReadingMediaClient extends AnilistClient {
   }
 
   /**
-   * Search reading media by format group (convenience method)
+   * Search reading media by format group
    *
    * @param {string} query - Search query
    * @param {FormatGroup} formatGroup - 'manga' or 'novel'
@@ -237,8 +240,14 @@ class AnilistReadingMediaClient extends AnilistClient {
   async searchByFormatGroup(
     query: string,
     formatGroup: FormatGroup,
-    options: { page?: number; perPage?: number } = {}
-  ): Promise<{ pageInfo: PageInfo; media: ReadingMediaSearchResult[] }> {
+    options: {
+      page?: number;
+      perPage?: number;
+    } = {}
+  ): Promise<{
+    pageInfo: PageInfo;
+    media: ReadingMediaSearchResult[];
+  }> {
     const formats = this.getFormatsForGroup(formatGroup);
     return this.search(query, { ...options, formats });
   }
@@ -261,8 +270,15 @@ class AnilistReadingMediaClient extends AnilistClient {
       status?: string;
       countryOfOrigin?: string;
     } = {},
-    options: { page?: number; perPage?: number; sort?: string[] } = {}
-  ): Promise<{ pageInfo: PageInfo; media: ReadingMediaSearchByGenreResult[] }> {
+    options: {
+      page?: number;
+      perPage?: number;
+      sort?: string[];
+    } = {}
+  ): Promise<{
+    pageInfo: PageInfo;
+    media: ReadingMediaSearchByGenreResult[];
+  }> {
     const { genres, formats, status, countryOfOrigin } = criteria;
     const { page = 1, perPage = 20, sort = ['POPULARITY_DESC'] } = options;
 
