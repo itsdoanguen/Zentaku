@@ -1,11 +1,13 @@
 import type { User } from '../../../entities/User.entity';
 import type { UserAuthentication } from '../../../entities/UserAuthentication.entity';
+import { UnauthorizedError } from '../../../shared/utils/error';
 import logger from '../../../shared/utils/logger';
 import type { IUserRepository } from '../../user/repositories/user.repository';
 import type { LoginDto, RegisterDto } from '../dto/auth.dto';
 import type { IRefreshTokenRepository } from '../repositories/refresh-token.repository';
 import type { IUserAuthenticationRepository } from '../repositories/user-authentication.repository';
 import type { IAuthTokens, IAuthUser } from '../types/auth.types';
+import { revokeAccessToken } from '../utils/access-token-revocation.util';
 import { PasswordUtil } from '../utils/password.util';
 import { TokenUtil } from '../utils/token.util';
 import type { IEmailService } from './email.service';
@@ -18,10 +20,11 @@ export interface IAuthService {
     userAgent?: string
   ): Promise<IAuthTokens & { user: IAuthUser }>;
   verifyEmail(token: string): Promise<{ message: string }>;
+  resendVerificationEmail(email: string): Promise<{ message: string }>;
   forgotPassword(email: string): Promise<{ message: string }>;
   resetPassword(token: string, newPassword: string): Promise<{ message: string }>;
   refreshToken(refreshToken: string, ipAddress?: string, userAgent?: string): Promise<IAuthTokens>;
-  logout(refreshToken: string): Promise<void>;
+  logout(refreshToken?: string, accessToken?: string, userId?: number): Promise<void>;
   getCurrentUser(userId: number): Promise<IAuthUser | null>;
 }
 
@@ -83,28 +86,29 @@ export class AuthService implements IAuthService {
     userAgent?: string
   ): Promise<IAuthTokens & { user: IAuthUser }> {
     const auth = await this.userAuthRepository.findWithUserByEmail(dto.email);
+
     if (!auth || !auth.user) {
-      throw new Error('Invalid credentials');
+      throw new UnauthorizedError('Invalid credentials. Please check your email and password.');
     }
 
     const user = auth.user;
 
     if (auth.accountLocked && auth.lockedUntil && auth.lockedUntil > new Date()) {
-      throw new Error('Account is locked due to multiple failed login attempts');
+      throw new UnauthorizedError('Account is locked due to multiple failed login attempts');
     }
 
     const isPasswordValid = await PasswordUtil.compare(dto.password, auth.passwordHash);
     if (!isPasswordValid) {
       await this.handleFailedLogin(auth);
-      throw new Error('Invalid credentials');
+      throw new UnauthorizedError('Invalid credentials');
     }
 
     if (!auth.emailVerified) {
-      throw new Error('Please verify your email before logging in');
+      throw new UnauthorizedError('Please verify your email before logging in');
     }
 
     if (!auth.isActive) {
-      throw new Error('Account is inactive');
+      throw new UnauthorizedError('Account is inactive');
     }
 
     await this.userAuthRepository.update(auth.id, {
@@ -144,6 +148,41 @@ export class AuthService implements IAuthService {
     logger.info(`Email verified: ${auth.user.email}`);
 
     return { message: 'Email verified successfully' };
+  }
+
+  async resendVerificationEmail(email: string): Promise<{ message: string }> {
+    const genericResponse = {
+      message:
+        'If an account with that email exists and is not verified, a verification email has been sent.',
+    };
+
+    const user = await this.userRepository.findByEmail(email);
+    if (!user) {
+      return genericResponse;
+    }
+
+    const auth = await this.userAuthRepository.findByUserId(this.toNumberId(user.id));
+    if (!auth || auth.emailVerified || !auth.isActive) {
+      return genericResponse;
+    }
+
+    const emailVerificationToken = TokenUtil.generateRandomToken();
+    const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await this.userAuthRepository.update(auth.id, {
+      emailVerificationToken,
+      emailVerificationExpires,
+    });
+
+    await this.emailService.sendVerificationEmail(
+      user.email,
+      user.displayName ?? user.username,
+      emailVerificationToken
+    );
+
+    logger.info(`Verification email resent: ${user.email}`);
+
+    return genericResponse;
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {
@@ -220,21 +259,21 @@ export class AuthService implements IAuthService {
     try {
       payload = TokenUtil.verifyRefreshToken(refreshToken);
     } catch {
-      throw new Error('Invalid refresh token');
+      throw new UnauthorizedError('Invalid refresh token');
     }
 
     const tokenRecord = await this.refreshTokenRepository.findByToken(refreshToken);
     if (!tokenRecord || tokenRecord.isRevoked) {
-      throw new Error('Invalid refresh token');
+      throw new UnauthorizedError('Invalid refresh token');
     }
 
     if (tokenRecord.expiresAt < new Date()) {
-      throw new Error('Refresh token expired');
+      throw new UnauthorizedError('Refresh token expired');
     }
 
     const auth = await this.userAuthRepository.findWithUserById(payload.userId);
     if (!auth || !auth.user || !auth.isActive) {
-      throw new Error('User not found or inactive');
+      throw new UnauthorizedError('User not found or inactive');
     }
 
     await this.refreshTokenRepository.revokeToken(refreshToken);
@@ -246,8 +285,19 @@ export class AuthService implements IAuthService {
     return tokens;
   }
 
-  async logout(refreshToken: string): Promise<void> {
-    await this.refreshTokenRepository.revokeToken(refreshToken);
+  async logout(refreshToken?: string, accessToken?: string, userId?: number): Promise<void> {
+    if (userId) {
+      await this.refreshTokenRepository.revokeAllUserTokens(userId);
+    }
+
+    if (refreshToken) {
+      await this.refreshTokenRepository.revokeToken(refreshToken);
+    }
+
+    if (accessToken) {
+      revokeAccessToken(accessToken);
+    }
+
     logger.info('User logged out');
   }
 

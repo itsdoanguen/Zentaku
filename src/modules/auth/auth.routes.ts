@@ -6,6 +6,7 @@ import {
   forgotPasswordValidation,
   loginValidation,
   registerValidation,
+  resendVerificationEmailValidation,
   resetPasswordValidation,
 } from './validators/auth.validators';
 
@@ -143,6 +144,28 @@ const initializeAuthRoutes = (container: Container): Router => {
   /**
    * @swagger
    * /api/auth/verify-email:
+   *   get:
+   *     summary: Verify email address via link
+   *     description: Verify user email from clickable backend link in email.
+   *     tags: [Auth]
+   *     parameters:
+   *       - in: query
+   *         name: token
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Email verification token.
+   *     responses:
+   *       200:
+   *         description: Email verified page
+   *       400:
+   *         description: Invalid or expired verification token
+   */
+  router.get('/verify-email', authController.verifyEmailByLink);
+
+  /**
+   * @swagger
+   * /api/auth/verify-email:
    *   post:
    *     summary: Verify email address
    *     description: Verify user email using the verification token sent by email during registration.
@@ -174,6 +197,44 @@ const initializeAuthRoutes = (container: Container): Router => {
    *         description: Invalid or expired verification token
    */
   router.post('/verify-email', authController.verifyEmail);
+
+  /**
+   * @swagger
+   * /api/auth/resend-verification-email:
+   *   post:
+   *     summary: Resend verification email
+   *     description: Resend email verification link for an unverified account.
+   *     tags: [Auth]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [email]
+   *             properties:
+   *               email:
+   *                 type: string
+   *                 format: email
+   *                 example: test@example.com
+   *     responses:
+   *       200:
+   *         description: Generic resend response
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *       400:
+   *         description: Validation error
+   */
+  router.post(
+    '/resend-verification-email',
+    resendVerificationEmailValidation,
+    authController.resendVerificationEmail
+  );
 
   /**
    * @swagger

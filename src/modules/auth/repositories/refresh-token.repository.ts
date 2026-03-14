@@ -33,11 +33,22 @@ export class RefreshTokenRepository
   }
 
   async revokeToken(token: string): Promise<void> {
-    await this.repository.update({ token }, { isRevoked: true });
+    const normalizedToken = token.trim();
+    await this.repository
+      .createQueryBuilder()
+      .update()
+      .set({ isRevoked: true })
+      .where('token = :token', { token: normalizedToken })
+      .execute();
   }
 
   async revokeAllUserTokens(userId: number): Promise<void> {
-    await this.repository.update({ userId }, { isRevoked: true });
+    await this.repository
+      .createQueryBuilder()
+      .update()
+      .set({ isRevoked: true })
+      .where('user_id = :userId', { userId })
+      .execute();
   }
 
   async deleteExpiredTokens(): Promise<void> {

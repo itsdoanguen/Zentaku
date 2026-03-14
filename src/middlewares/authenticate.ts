@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import { isAccessTokenRevoked } from '../modules/auth/utils/access-token-revocation.util';
 import { TokenUtil } from '../modules/auth/utils/token.util';
 
 export const authenticate = (req: Request, res: Response, next: NextFunction): void => {
@@ -11,6 +12,11 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
     }
 
     const token = authHeader.substring(7);
+
+    if (isAccessTokenRevoked(token)) {
+      res.status(401).json({ message: 'Token has been revoked. Please login again.' });
+      return;
+    }
 
     try {
       const payload = TokenUtil.verifyAccessToken(token);

@@ -22,12 +22,16 @@ export const registerValidation: ValidationChain[] = [
 ];
 
 export const loginValidation: ValidationChain[] = [
-  body('email').trim().isEmail().withMessage('Must be a valid email'),
+  body('email').trim().isEmail().withMessage('Must be a valid email').normalizeEmail(),
   body('password').notEmpty().withMessage('Password is required'),
 ];
 
 export const forgotPasswordValidation: ValidationChain[] = [
-  body('email').trim().isEmail().withMessage('Must be a valid email'),
+  body('email').trim().isEmail().withMessage('Must be a valid email').normalizeEmail(),
+];
+
+export const resendVerificationEmailValidation: ValidationChain[] = [
+  body('email').trim().isEmail().withMessage('Must be a valid email').normalizeEmail(),
 ];
 
 export const resetPasswordValidation: ValidationChain[] = [

@@ -64,6 +64,74 @@ class AuthController {
     }
   };
 
+  resendVerificationEmail = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({ errors: errors.array() });
+        return;
+      }
+
+      const { email } = req.body as { email?: string };
+      if (!email) {
+        res.status(400).json({ message: 'Email is required' });
+        return;
+      }
+
+      const result = await this.authService.resendVerificationEmail(email);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  verifyEmailByLink = async (req: Request, res: Response): Promise<void> => {
+    const token =
+      typeof req.query.token === 'string' && req.query.token.trim() ? req.query.token : null;
+
+    if (!token) {
+      res.status(400).send(`
+        <html>
+          <head><title>Email Verification Failed</title></head>
+          <body style="font-family: Arial, sans-serif; padding: 24px; color: #1f2937;">
+            <h2>Email verification failed</h2>
+            <p>Verification token is missing.</p>
+          </body>
+        </html>
+      `);
+      return;
+    }
+
+    try {
+      const result = await this.authService.verifyEmail(token);
+      res.status(200).send(`
+        <html>
+          <head><title>Email Verified</title></head>
+          <body style="font-family: Arial, sans-serif; padding: 24px; color: #1f2937;">
+            <h2>Email verified successfully</h2>
+            <p>${result.message}</p>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Invalid or expired verification token';
+      res.status(400).send(`
+        <html>
+          <head><title>Email Verification Failed</title></head>
+          <body style="font-family: Arial, sans-serif; padding: 24px; color: #1f2937;">
+            <h2>Email verification failed</h2>
+            <p>${message}</p>
+          </body>
+        </html>
+      `);
+    }
+  };
+
   forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const errors = validationResult(req);
@@ -144,9 +212,15 @@ class AuthController {
         ?.refreshToken;
       const bodyRefreshToken = (req.body as { refreshToken?: string }).refreshToken;
       const refreshToken = cookieRefreshToken ?? bodyRefreshToken;
+      const authHeader = req.headers.authorization;
+      const accessToken =
+        typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
+          ? authHeader.substring(7)
+          : undefined;
+      const userId = req.user?.userId;
 
-      if (refreshToken) {
-        await this.authService.logout(refreshToken);
+      if (refreshToken || accessToken) {
+        await this.authService.logout(refreshToken, accessToken, userId);
       }
 
       res.clearCookie('refreshToken');

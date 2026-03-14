@@ -12,6 +12,7 @@ import type {
   Response,
 } from 'express';
 import type { Buffer } from 'node:buffer';
+import type { ITokenPayload } from '../../modules/auth/types/auth.types';
 import type { PaginatedResult } from './common';
 
 /**
@@ -29,10 +30,7 @@ export interface TypedRequest<
 /**
  * Authenticated user info attached to request
  */
-export interface AuthenticatedUser {
-  id: number;
-  email: string;
-  role?: string;
+export interface AuthenticatedUser extends ITokenPayload {
   permissions?: string[];
 }
 

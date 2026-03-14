@@ -25,14 +25,18 @@ export class EmailService implements IEmailService {
   }
 
   async sendVerificationEmail(email: string, userName: string, token: string): Promise<void> {
-    const verificationUrl = `${process.env.EMAIL_VERIFICATION_URL}?token=${token}`;
+    const baseUrl = process.env.APP_URL ?? 'http://localhost:3000';
+    const verificationEndpoint =
+      process.env.BACKEND_EMAIL_VERIFICATION_URL ?? `${baseUrl}/api/auth/verify-email`;
+    const verificationUrl = new URL(verificationEndpoint);
+    verificationUrl.searchParams.set('token', token);
 
     try {
       await this.transporter.sendMail({
         from: process.env.EMAIL_FROM,
         to: email,
         subject: 'Verify Your Email - MyAniList',
-        html: emailVerificationTemplate(userName, verificationUrl),
+        html: emailVerificationTemplate(userName, verificationUrl.toString()),
       });
       logger.info(`Verification email sent to ${email}`);
     } catch (error) {
