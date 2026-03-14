@@ -1,5 +1,6 @@
 import express, { type Router } from 'express';
 import type { Container } from '../../config/container';
+import { authenticate } from '../../middlewares/authenticate';
 import type AuthController from './controllers/auth.controller';
 import {
   forgotPasswordValidation,
@@ -292,6 +293,8 @@ const initializeAuthRoutes = (container: Container): Router => {
    *     summary: Logout user
    *     description: Revoke refresh token and clear authentication cookie for the current session.
    *     tags: [Auth]
+   *     security:
+   *       - bearerAuth: []
    *     requestBody:
    *       required: false
    *       content:
@@ -312,8 +315,10 @@ const initializeAuthRoutes = (container: Container): Router => {
    *               properties:
    *                 message:
    *                   type: string
+   *       401:
+   *         description: Not authenticated or token is invalid
    */
-  router.post('/logout', authController.logout);
+  router.post('/logout', authenticate, authController.logout);
 
   /**
    * @swagger
@@ -322,6 +327,8 @@ const initializeAuthRoutes = (container: Container): Router => {
    *     summary: Get current user
    *     description: Return the currently authenticated user's profile and authorization context.
    *     tags: [Auth]
+   *     security:
+   *       - bearerAuth: []
    *     responses:
    *       200:
    *         description: Current user profile
@@ -346,7 +353,7 @@ const initializeAuthRoutes = (container: Container): Router => {
    *       401:
    *         description: Not authenticated
    */
-  router.get('/me', authController.getCurrentUser);
+  router.get('/me', authenticate, authController.getCurrentUser);
 
   return router;
 };
