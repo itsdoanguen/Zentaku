@@ -9,6 +9,7 @@
  */
 
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
+import type { ITokenPayload } from '../../modules/auth/types/auth.types';
 import { ValidationError } from '../../shared/utils/error';
 import logger from '../../shared/utils/logger';
 
@@ -53,10 +54,7 @@ export interface ErrorResponse {
   };
 }
 
-export interface AuthenticatedUser {
-  id: number;
-  email: string;
-  role?: string;
+export interface AuthenticatedUser extends ITokenPayload {
   [key: string]: unknown;
 }
 
@@ -222,7 +220,7 @@ export abstract class BaseController<TService extends IBaseService = IBaseServic
   }
 
   protected getUserId(req: AuthenticatedRequest): number | null {
-    return req.user?.id || null;
+    return req.user?.userId || null;
   }
 
   // ============================================

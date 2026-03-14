@@ -58,6 +58,17 @@ export class ValidationError extends Error implements OperationalError {
   }
 }
 
+export class UnauthorizedError extends Error implements OperationalError {
+  public readonly statusCode: number = 401;
+  public readonly isOperational: boolean = true;
+
+  constructor(message: string = 'Unauthorized') {
+    super(message);
+    this.name = 'UnauthorizedError';
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
 /**
  * Type guard to check if error is operational
  */
