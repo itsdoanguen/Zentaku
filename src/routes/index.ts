@@ -14,6 +14,8 @@ const initializeRoutes = (container: unknown): Router => {
   const readingMediaRoutes = require('../modules/reading-media/reading-media.routes');
   const streamingRoutes = require('../modules/streaming/streaming.routes');
   const searchRoutes = require('../modules/search/search.routes');
+
+  const listRoutes = require('../modules/list/list.routes');
   const userRoutes = require('../modules/user/user.routes');
   const activityRoutes = require('../modules/activity/activity.routes');
   const followRoutes = require('../modules/follow/follow.routes');
@@ -62,6 +64,7 @@ const initializeRoutes = (container: unknown): Router => {
   router.use('/', followRoutes(container));
 
   router.use('/search', searchRoutes(container));
+  router.use('/list', listRoutes(container));
   return router;
 };
 

@@ -218,6 +218,9 @@ class Container {
         'aniProviderClient',
         'streamingService',
         'streamingController',
+        'listRepository',
+        'listService',
+        'listController',
       ];
 
       for (const dep of criticalDeps) {
