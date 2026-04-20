@@ -52,7 +52,6 @@ class ListController extends BaseController<IListService & IBaseService> {
       return;
     }
 
-    // TODO: Implement in Phase 1
     const createData = this.getBody<CreateListDto>(req);
     const newList = await this.service.createList(userId, createData);
     this.success(res, newList, 201);
@@ -74,7 +73,6 @@ class ListController extends BaseController<IListService & IBaseService> {
 
     const username = this.getStringQuery(req, 'username');
 
-    // TODO: Implement in Phase 1
     const lists = await this.service.getUserLists(username, userId ?? undefined);
     this.success(res, lists);
   });
@@ -95,7 +93,6 @@ class ListController extends BaseController<IListService & IBaseService> {
 
     const listId = this.getIntParam(req, 'listId');
 
-    // TODO: Implement in Phase 1
     const listDetail = await this.service.getListDetail(listId, userId ?? undefined);
     this.success(res, listDetail);
   });
@@ -113,7 +110,6 @@ class ListController extends BaseController<IListService & IBaseService> {
 
     const listId = this.getIntParam(req, 'listId');
 
-    // TODO: Implement in Phase 1
     const animes = await this.service.getListAnimes(listId);
     this.success(res, animes);
   });
@@ -141,7 +137,6 @@ class ListController extends BaseController<IListService & IBaseService> {
     const listId = this.getIntParam(req, 'listId');
     const updateData = this.getBody<UpdateListDto>(req);
 
-    // TODO: Implement in Phase 1
     const updatedList = await this.service.updateList(listId, userId, updateData);
     this.success(res, updatedList);
   });
@@ -168,7 +163,6 @@ class ListController extends BaseController<IListService & IBaseService> {
 
     const listId = this.getIntParam(req, 'listId');
 
-    // TODO: Implement in Phase 1
     await this.service.deleteList(listId, userId);
     this.success(res, { message: 'List deleted successfully' });
   });

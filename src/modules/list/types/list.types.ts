@@ -76,4 +76,6 @@ export interface IListRepository {
   getUserLists(userId: number): Promise<CustomList[]>;
   getListBySlug(slug: string): Promise<CustomList | null>;
   getListsByUsername(username: string): Promise<CustomList[]>;
+  generateUniqueSlug(name: string): Promise<string>;
+  isValidColor(color: string): boolean;
 }

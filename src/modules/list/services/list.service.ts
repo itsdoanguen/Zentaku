@@ -5,7 +5,8 @@
  */
 
 import { BaseService } from '../../../core/base/BaseService';
-import type { CustomList } from '../../../entities';
+import { type CustomList, type ListItem, PrivacyMode } from '../../../entities';
+import { AnilistAPIError, NotFoundError } from '../../../shared/utils/error';
 import type {
   AddMemberDto,
   CreateListDto,
@@ -47,6 +48,115 @@ export class ListService extends BaseService implements IListService {
     }
   }
 
+  private mapPrivacyMode(privacy?: 'PUBLIC' | 'PRIVATE' | 'SHARED'): PrivacyMode {
+    const resolved = privacy || 'PUBLIC';
+    const privacyMap: Record<'PUBLIC' | 'PRIVATE' | 'SHARED', PrivacyMode> = {
+      PUBLIC: PrivacyMode.PUBLIC,
+      PRIVATE: PrivacyMode.PRIVATE,
+      SHARED: PrivacyMode.SHARED,
+    };
+
+    return privacyMap[resolved];
+  }
+
+  private toNumberId(value: unknown): number {
+    if (typeof value === 'number') {
+      return value;
+    }
+
+    if (typeof value === 'bigint') {
+      return Number(value);
+    }
+
+    return Number(String(value));
+  }
+
+  private toISODate(value: Date | string | null | undefined): string {
+    if (!value) {
+      return new Date(0).toISOString();
+    }
+
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return new Date(0).toISOString();
+    }
+
+    return date.toISOString();
+  }
+
+  private isOwner(list: CustomList, userId?: number): boolean {
+    if (!userId) {
+      return false;
+    }
+
+    return String(list.ownerId) === String(userId);
+  }
+
+  private assertCanViewList(list: CustomList, userId?: number): void {
+    if (list.privacy === PrivacyMode.PUBLIC || this.isOwner(list, userId)) {
+      return;
+    }
+
+    throw new AnilistAPIError('You do not have permission to view this list', 403, {
+      listId: this.toNumberId(list.id),
+      privacy: list.privacy,
+    });
+  }
+
+  private mapListSummary(list: CustomList): ListSummaryDto {
+    return {
+      id: this.toNumberId(list.id),
+      name: list.name,
+      slug: list.slug,
+      description: list.description || undefined,
+      ownerUsername: list.owner?.username || '',
+      privacy: list.privacy,
+      bannerImage: list.bannerImage || undefined,
+      likeCount: 0,
+      itemCount: list.items?.length || 0,
+    };
+  }
+
+  private mapAnimeItems(items: ListItem[] = []): ListDetailDto['animeItems'] {
+    return items.map((item) => {
+      const media = item.media;
+      const mediaId = media ? this.toNumberId(media.id) : this.toNumberId(item.mediaId);
+      const title =
+        media?.titleEnglish || media?.titleRomaji || media?.titleNative || `Media #${mediaId}`;
+
+      return {
+        id: this.toNumberId(item.id),
+        mediaId,
+        title,
+        poster: media?.coverImage || undefined,
+        note: item.note || undefined,
+        position: item.orderIndex,
+        addedAt: this.toISODate(item.createdAt),
+      };
+    });
+  }
+
+  private mapListDetail(list: CustomList, userId?: number): ListDetailDto {
+    const animeItems = this.mapAnimeItems(list.items || []);
+
+    return {
+      id: this.toNumberId(list.id),
+      name: list.name,
+      slug: list.slug,
+      description: list.description || undefined,
+      privacy: list.privacy,
+      isOwner: this.isOwner(list, userId),
+      ownerId: this.toNumberId(list.ownerId),
+      ownerUsername: list.owner?.username || '',
+      bannerImage: list.bannerImage || undefined,
+      createdAt: this.toISODate(list.createdAt),
+      updatedAt: this.toISODate(list.updatedAt),
+      likeCount: 0,
+      likedByMe: false,
+      animeItems,
+    };
+  }
+
   // ==================== PHASE 1: CRUD ====================
 
   async createList(userId: number, data: CreateListDto) {
@@ -61,12 +171,29 @@ export class ListService extends BaseService implements IListService {
     if (data.bannerImage) {
       this._validateString(data.bannerImage, 'Banner image URL', { minLength: 1 });
     }
-    return this._notImplemented('createList', {
-      userId,
-      hasDescription: !!data.description,
-      privacy: data.privacy || 'PUBLIC',
-      hasBannerImage: !!data.bannerImage,
-    });
+
+    return this._executeWithErrorHandling(async () => {
+      const slug = await this.listRepository.generateUniqueSlug(data.name);
+
+      const created = await this.listRepository.createList({
+        ownerId: BigInt(userId),
+        name: data.name.trim(),
+        slug,
+        description: data.description?.trim() || null,
+        privacy: this.mapPrivacyMode(data.privacy),
+        bannerImage: data.bannerImage?.trim() || null,
+      });
+
+      const hydrated = await this.listRepository.findListById(this.toNumberId(created.id));
+
+      this._logInfo('List created', {
+        listId: this.toNumberId(created.id),
+        userId,
+        slug,
+      });
+
+      return hydrated || created;
+    }, 'createList');
   }
 
   async updateList(listId: number, userId: number, data: UpdateListDto) {
@@ -84,28 +211,119 @@ export class ListService extends BaseService implements IListService {
     if (data.bannerImage) {
       this._validateString(data.bannerImage, 'Banner image URL', { minLength: 1 });
     }
-    return this._notImplemented('updateList', { listId, userId, fields: Object.keys(data || {}) });
+
+    return this._executeWithErrorHandling(async () => {
+      const existing = await this.listRepository.findListById(listId);
+
+      if (!existing) {
+        throw new NotFoundError('List not found');
+      }
+
+      if (!this.isOwner(existing, userId)) {
+        throw new AnilistAPIError('Only list owner can update this list', 403, { listId, userId });
+      }
+
+      const payload: Partial<CustomList> = {};
+
+      if (data.name !== undefined) {
+        payload.name = data.name.trim();
+        payload.slug = await this.listRepository.generateUniqueSlug(data.name);
+      }
+
+      if (data.description !== undefined) {
+        payload.description = data.description.trim() || null;
+      }
+
+      if (data.privacy !== undefined) {
+        payload.privacy = this.mapPrivacyMode(data.privacy);
+      }
+
+      if (data.bannerImage !== undefined) {
+        payload.bannerImage = data.bannerImage?.trim() || null;
+      }
+
+      if (Object.keys(payload).length === 0) {
+        return existing;
+      }
+
+      const updated = await this.listRepository.updateList(listId, payload);
+
+      this._logInfo('List updated', { listId, userId, fields: Object.keys(payload) });
+      return updated;
+    }, 'updateList');
   }
 
   async deleteList(listId: number, userId: number): Promise<void> {
     this._validateId(listId, 'List ID');
     this._validateId(userId, 'User ID');
-    this._notImplemented('deleteList', { listId, userId });
+
+    await this._executeWithErrorHandling(async () => {
+      const existing = await this.listRepository.findListById(listId);
+
+      if (!existing) {
+        throw new NotFoundError('List not found');
+      }
+
+      if (!this.isOwner(existing, userId)) {
+        throw new AnilistAPIError('Only list owner can delete this list', 403, { listId, userId });
+      }
+
+      await this.listRepository.deleteList(listId);
+
+      this._logInfo('List deleted', { listId, userId });
+    }, 'deleteList');
   }
 
   async getListDetail(listId: number, userId?: number): Promise<ListDetailDto> {
     this._validateId(listId, 'List ID');
-    return this._notImplemented('getListDetail', { listId, userId });
+
+    return this._executeWithErrorHandling(async () => {
+      const list = await this.listRepository.findListById(listId);
+
+      if (!list) {
+        throw new NotFoundError('List not found');
+      }
+
+      this.assertCanViewList(list, userId);
+
+      return this.mapListDetail(list, userId);
+    }, 'getListDetail');
   }
 
   async getUserLists(username: string, userId?: number): Promise<ListSummaryDto[]> {
     this._validateString(username, 'Username', { minLength: 1, maxLength: 255 });
-    return this._notImplemented('getUserLists', { username, viewerId: userId });
+
+    return this._executeWithErrorHandling(async () => {
+      const lists = await this.listRepository.getListsByUsername(username.trim());
+
+      const visibleLists = lists.filter((list) => {
+        if (list.privacy === PrivacyMode.PUBLIC) {
+          return true;
+        }
+
+        return this.isOwner(list, userId);
+      });
+
+      return visibleLists.map((list) => this.mapListSummary(list));
+    }, 'getUserLists');
   }
 
-  async getListAnimes(listId: number): Promise<any[]> {
+  async getListAnimes(listId: number): Promise<ListItem[]> {
     this._validateId(listId, 'List ID');
-    return this._notImplemented('getListAnimes', { listId });
+
+    return this._executeWithErrorHandling(async () => {
+      const list = await this.listRepository.findListById(listId);
+
+      if (!list) {
+        throw new NotFoundError('List not found');
+      }
+
+      if (list.privacy !== PrivacyMode.PUBLIC) {
+        throw new AnilistAPIError('This list is private', 403, { listId, privacy: list.privacy });
+      }
+
+      return list.items || [];
+    }, 'getListAnimes');
   }
 
   // ==================== PHASE 2: MEMBER MANAGEMENT ====================
