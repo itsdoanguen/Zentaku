@@ -192,6 +192,96 @@ const options: swaggerJsdoc.Options = {
             },
           },
         },
+        ListMember: {
+          type: 'object',
+          properties: {
+            userId: { type: 'integer', example: 25 },
+            username: { type: 'string', example: 'jane_doe' },
+            displayName: { type: 'string', example: 'Jane Doe' },
+            avatar: {
+              type: 'string',
+              nullable: true,
+              example: 'https://example.com/avatar.jpg',
+            },
+            permissionLevel: {
+              type: 'string',
+              enum: ['EDITOR', 'VIEWER'],
+              example: 'EDITOR',
+            },
+            isOwner: { type: 'boolean', example: false },
+            joinedAt: { type: 'string', format: 'date-time' },
+            can_edit: { type: 'boolean', example: true },
+            permission_level: {
+              type: 'string',
+              enum: ['owner', 'edit', 'view', 'viewer'],
+              example: 'edit',
+            },
+            avatar_url: {
+              type: 'string',
+              nullable: true,
+              example: 'https://example.com/avatar.jpg',
+            },
+            is_owner: { type: 'boolean', example: false },
+          },
+        },
+        ListMembersResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/ListMember' },
+            },
+          },
+        },
+        AddListMemberRequest: {
+          type: 'object',
+          required: ['username'],
+          properties: {
+            username: { type: 'string', example: 'jane_doe' },
+            permission: {
+              type: 'string',
+              enum: ['EDITOR', 'VIEWER'],
+              example: 'VIEWER',
+              description: 'Preferred backend enum format',
+            },
+            permission_level: {
+              type: 'string',
+              enum: ['owner', 'edit', 'view', 'viewer'],
+              example: 'edit',
+              description: 'Legacy FE-compatible format',
+            },
+            can_edit: {
+              type: 'boolean',
+              example: true,
+              description: 'Legacy FE-compatible format',
+            },
+          },
+        },
+        UpdateListMemberPermissionRequest: {
+          type: 'object',
+          required: ['username', 'permission_level'],
+          properties: {
+            username: { type: 'string', example: 'jane_doe' },
+            permission_level: {
+              type: 'string',
+              enum: ['edit', 'view'],
+              example: 'edit',
+            },
+          },
+        },
+        MessageResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: {
+              type: 'object',
+              properties: {
+                message: { type: 'string', example: 'Member added' },
+              },
+            },
+          },
+        },
         ListRequestAction: {
           type: 'string',
           enum: ['ACCEPT', 'REJECT'],

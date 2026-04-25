@@ -5,8 +5,17 @@
  */
 
 import { BaseService } from '../../../core/base/BaseService';
-import { type CustomList, type ListItem, PrivacyMode } from '../../../entities';
-import { AnilistAPIError, NotFoundError } from '../../../shared/utils/error';
+import {
+  type CustomList,
+  ListInvitation,
+  type ListItem,
+  type User,
+  InviteStatus,
+  ListPermission,
+  PrivacyMode,
+} from '../../../entities';
+import { AnilistAPIError, NotFoundError, ValidationError } from '../../../shared/utils/error';
+import type { IUserRepository } from '../../user/repositories/user.repository';
 import type {
   AddMemberDto,
   CreateListDto,
@@ -26,7 +35,10 @@ import type {
 import type { IListRepository, IListService, ListSearchResult } from '../types/list.types';
 
 export class ListService extends BaseService implements IListService {
-  constructor(private readonly listRepository: IListRepository) {
+  constructor(
+    private readonly listRepository: IListRepository,
+    private readonly userRepository: IUserRepository
+  ) {
     super();
   }
 
@@ -92,15 +104,178 @@ export class ListService extends BaseService implements IListService {
     return String(list.ownerId) === String(userId);
   }
 
-  private assertCanViewList(list: CustomList, userId?: number): void {
-    if (list.privacy === PrivacyMode.PUBLIC || this.isOwner(list, userId)) {
-      return;
+  private getInvitationRepository() {
+    return this.listRepository.getRepository().manager.getRepository(ListInvitation);
+  }
+
+  private resolveMemberPermission(
+    data: Pick<
+      AddMemberDto | UpdateMemberPermissionDto,
+      'permission' | 'can_edit' | 'permission_level'
+    >
+  ): ListPermission {
+    if (data.permission_level) {
+      if (['owner'].includes(data.permission_level)) {
+        throw new ValidationError('Owner role cannot be assigned through member permission');
+      }
+
+      if (['edit'].includes(data.permission_level)) {
+        return ListPermission.EDITOR;
+      }
+
+      if (['view', 'viewer'].includes(data.permission_level)) {
+        return ListPermission.VIEWER;
+      }
     }
 
-    throw new AnilistAPIError('You do not have permission to view this list', 403, {
-      listId: this.toNumberId(list.id),
-      privacy: list.privacy,
+    if (data.permission) {
+      return data.permission === 'EDITOR' ? ListPermission.EDITOR : ListPermission.VIEWER;
+    }
+
+    if (typeof data.can_edit === 'boolean') {
+      return data.can_edit ? ListPermission.EDITOR : ListPermission.VIEWER;
+    }
+
+    throw new ValidationError('Member permission is required');
+  }
+
+  private mapMemberPermissionLevel(
+    permission: ListPermission,
+    isOwner: boolean
+  ): 'owner' | 'edit' | 'view' | 'viewer' {
+    if (isOwner) {
+      return 'owner';
+    }
+
+    return permission === ListPermission.EDITOR ? 'edit' : 'view';
+  }
+
+  private mapMemberDto(
+    user: User,
+    permission: ListPermission,
+    isOwner: boolean,
+    joinedAt: Date
+  ): ListMemberDto {
+    const displayName = user.displayName || user.username;
+    const permissionLevel = this.mapMemberPermissionLevel(permission, isOwner);
+
+    return {
+      userId: this.toNumberId(user.id),
+      username: user.username,
+      displayName,
+      avatar: user.avatar || undefined,
+      permissionLevel: permission === ListPermission.EDITOR ? 'EDITOR' : 'VIEWER',
+      isOwner,
+      joinedAt: this.toISODate(joinedAt),
+      can_edit: isOwner || permission === ListPermission.EDITOR,
+      permission_level: permissionLevel,
+      avatar_url: user.avatar || undefined,
+      is_owner: isOwner,
+    };
+  }
+
+  private async findListOrThrow(listId: number): Promise<CustomList> {
+    const list = await this.listRepository.findListById(listId);
+
+    if (!list) {
+      throw new NotFoundError('List not found');
+    }
+
+    return list;
+  }
+
+  private async findMemberInvitation(
+    listId: number,
+    inviteeId: number
+  ): Promise<ListInvitation | null> {
+    return this.getInvitationRepository().findOne({
+      where: {
+        listId: BigInt(listId),
+        inviteeId: BigInt(inviteeId),
+      },
+      relations: ['invitee'],
     });
+  }
+
+  async getListRole(
+    listId: number,
+    userId?: number
+  ): Promise<'OWNER' | 'EDITOR' | 'VIEWER' | null> {
+    const list = await this.listRepository.findListById(listId);
+
+    if (!list || !userId) {
+      return null;
+    }
+
+    if (this.isOwner(list, userId)) {
+      return 'OWNER';
+    }
+
+    const invitation = await this.findMemberInvitation(listId, userId);
+    if (!invitation || invitation.status !== InviteStatus.ACCEPTED) {
+      return null;
+    }
+
+    return invitation.permission === ListPermission.EDITOR ? 'EDITOR' : 'VIEWER';
+  }
+
+  async assertListOwner(listId: number, userId: number): Promise<CustomList> {
+    const list = await this.findListOrThrow(listId);
+
+    if (!this.isOwner(list, userId)) {
+      throw new AnilistAPIError('Only list owner can manage this resource', 403, {
+        listId,
+        userId,
+      });
+    }
+
+    return list;
+  }
+
+  async assertCanEditList(listId: number, userId: number): Promise<CustomList> {
+    const list = await this.findListOrThrow(listId);
+    if (this.isOwner(list, userId)) {
+      return list;
+    }
+
+    const invitation = await this.findMemberInvitation(listId, userId);
+    if (
+      !invitation ||
+      invitation.status !== InviteStatus.ACCEPTED ||
+      invitation.permission !== ListPermission.EDITOR
+    ) {
+      throw new AnilistAPIError('You do not have permission to edit this list', 403, {
+        listId,
+        userId,
+      });
+    }
+
+    return list;
+  }
+
+  async assertCanViewList(listId: number, userId?: number): Promise<CustomList> {
+    const list = await this.findListOrThrow(listId);
+
+    if (list.privacy === PrivacyMode.PUBLIC || this.isOwner(list, userId)) {
+      return list;
+    }
+
+    if (!userId) {
+      throw new AnilistAPIError('You do not have permission to view this list', 403, {
+        listId,
+        privacy: list.privacy,
+      });
+    }
+
+    const invitation = await this.findMemberInvitation(listId, userId);
+    if (!invitation || invitation.status !== InviteStatus.ACCEPTED) {
+      throw new AnilistAPIError('You do not have permission to view this list', 403, {
+        listId,
+        privacy: list.privacy,
+      });
+    }
+
+    return list;
   }
 
   private mapListSummary(list: CustomList): ListSummaryDto {
@@ -278,13 +453,7 @@ export class ListService extends BaseService implements IListService {
     this._validateId(listId, 'List ID');
 
     return this._executeWithErrorHandling(async () => {
-      const list = await this.listRepository.findListById(listId);
-
-      if (!list) {
-        throw new NotFoundError('List not found');
-      }
-
-      this.assertCanViewList(list, userId);
+      const list = await this.assertCanViewList(listId, userId);
 
       return this.mapListDetail(list, userId);
     }, 'getListDetail');
@@ -312,15 +481,7 @@ export class ListService extends BaseService implements IListService {
     this._validateId(listId, 'List ID');
 
     return this._executeWithErrorHandling(async () => {
-      const list = await this.listRepository.findListById(listId);
-
-      if (!list) {
-        throw new NotFoundError('List not found');
-      }
-
-      if (list.privacy !== PrivacyMode.PUBLIC) {
-        throw new AnilistAPIError('This list is private', 403, { listId, privacy: list.privacy });
-      }
+      const list = await this.assertCanViewList(listId);
 
       return list.items || [];
     }, 'getListAnimes');
@@ -330,13 +491,88 @@ export class ListService extends BaseService implements IListService {
 
   async listMembers(listId: number): Promise<ListMemberDto[]> {
     this._validateId(listId, 'List ID');
-    return this._notImplemented('listMembers', { listId });
+
+    return this._executeWithErrorHandling(async () => {
+      const list = await this.findListOrThrow(listId);
+      const invitationRepo = this.getInvitationRepository();
+
+      const acceptedInvitations = await invitationRepo.find({
+        where: {
+          listId: BigInt(listId),
+          status: InviteStatus.ACCEPTED,
+        },
+        relations: ['invitee'],
+        order: { createdAt: 'ASC' },
+      });
+
+      const members: ListMemberDto[] = [];
+
+      if (list.owner) {
+        members.push(this.mapMemberDto(list.owner, ListPermission.EDITOR, true, list.createdAt));
+      }
+
+      for (const invitation of acceptedInvitations) {
+        if (!invitation.invitee) {
+          continue;
+        }
+
+        members.push(
+          this.mapMemberDto(invitation.invitee, invitation.permission, false, invitation.createdAt)
+        );
+      }
+
+      return members;
+    }, 'listMembers');
   }
 
   async addMember(listId: number, userId: number, data: AddMemberDto): Promise<void> {
     this._validateId(listId, 'List ID');
     this._validateId(userId, 'User ID');
-    this._notImplemented('addMember', { listId, userId, username: data.username });
+    this._validateString(data.username, 'Username', { minLength: 1, maxLength: 255 });
+
+    await this._executeWithErrorHandling(async () => {
+      const list = await this.assertListOwner(listId, userId);
+      const targetUser = await this.userRepository.findByUsername(data.username.trim());
+
+      if (!targetUser) {
+        throw new NotFoundError('User not found');
+      }
+
+      if (this.isOwner(list, this.toNumberId(targetUser.id))) {
+        throw new ValidationError('Owner is already a member of the list');
+      }
+
+      const permission = this.resolveMemberPermission(data);
+      const invitationRepo = this.getInvitationRepository();
+      const existingInvitation = await this.findMemberInvitation(
+        listId,
+        this.toNumberId(targetUser.id)
+      );
+
+      if (existingInvitation) {
+        existingInvitation.inviterId = BigInt(userId);
+        existingInvitation.permission = permission;
+        existingInvitation.status = InviteStatus.ACCEPTED;
+        await invitationRepo.save(existingInvitation);
+      } else {
+        await invitationRepo.save(
+          invitationRepo.create({
+            listId: BigInt(listId),
+            inviterId: BigInt(userId),
+            inviteeId: BigInt(this.toNumberId(targetUser.id)),
+            permission,
+            status: InviteStatus.ACCEPTED,
+          })
+        );
+      }
+
+      this._logInfo('List member added', {
+        listId,
+        userId,
+        username: data.username,
+        permission,
+      });
+    }, 'addMember');
   }
 
   async updateMemberPermission(
@@ -346,14 +582,73 @@ export class ListService extends BaseService implements IListService {
   ): Promise<void> {
     this._validateId(listId, 'List ID');
     this._validateId(userId, 'User ID');
-    this._notImplemented('updateMemberPermission', { listId, userId, permission: data.permission });
+    this._validateString(data.username, 'Username', { minLength: 1, maxLength: 255 });
+
+    await this._executeWithErrorHandling(async () => {
+      await this.assertListOwner(listId, userId);
+
+      const targetUser = await this.userRepository.findByUsername(data.username.trim());
+      if (!targetUser) {
+        throw new NotFoundError('User not found');
+      }
+
+      if (String(targetUser.id) === String(userId)) {
+        throw new ValidationError('Owner permission cannot be changed');
+      }
+
+      const permission = this.resolveMemberPermission(data);
+      const invitationRepo = this.getInvitationRepository();
+      const member = await this.findMemberInvitation(listId, this.toNumberId(targetUser.id));
+
+      if (!member || member.status !== InviteStatus.ACCEPTED) {
+        throw new NotFoundError('Member not found');
+      }
+
+      member.permission = permission;
+      member.status = InviteStatus.ACCEPTED;
+      await invitationRepo.save(member);
+
+      this._logInfo('Member permission updated', {
+        listId,
+        userId,
+        username: data.username,
+        permission,
+      });
+    }, 'updateMemberPermission');
   }
 
   async removeMember(listId: number, userId: number, username: string): Promise<void> {
     this._validateId(listId, 'List ID');
     this._validateId(userId, 'User ID');
     this._validateString(username, 'Username', { minLength: 1, maxLength: 255 });
-    this._notImplemented('removeMember', { listId, userId, username });
+
+    await this._executeWithErrorHandling(async () => {
+      await this.assertListOwner(listId, userId);
+
+      const targetUser = await this.userRepository.findByUsername(username.trim());
+      if (!targetUser) {
+        throw new NotFoundError('User not found');
+      }
+
+      if (String(targetUser.id) === String(userId)) {
+        throw new ValidationError('Owner cannot remove themselves from the list');
+      }
+
+      const invitationRepo = this.getInvitationRepository();
+      const member = await this.findMemberInvitation(listId, this.toNumberId(targetUser.id));
+
+      if (!member) {
+        throw new NotFoundError('Member not found');
+      }
+
+      await invitationRepo.delete({ id: member.id });
+
+      this._logInfo('List member removed', {
+        listId,
+        userId,
+        username,
+      });
+    }, 'removeMember');
   }
 
   // ==================== PHASE 3: INVITES & REQUESTS ====================

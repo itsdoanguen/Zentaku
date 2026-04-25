@@ -25,10 +25,15 @@ export interface UpdateListDto {
 export interface AddMemberDto {
   username: string;
   permission: 'EDITOR' | 'VIEWER';
+  can_edit?: boolean;
+  permission_level?: 'owner' | 'edit' | 'view' | 'viewer';
 }
 
 export interface UpdateMemberPermissionDto {
+  username: string;
   permission: 'EDITOR' | 'VIEWER';
+  can_edit?: boolean;
+  permission_level?: 'owner' | 'edit' | 'view' | 'viewer';
 }
 
 // ==================== INVITATIONS & REQUESTS ====================
@@ -122,6 +127,10 @@ export interface ListMemberDto {
   permissionLevel: 'EDITOR' | 'VIEWER';
   isOwner: boolean;
   joinedAt: string;
+  can_edit?: boolean;
+  permission_level?: 'owner' | 'edit' | 'view' | 'viewer';
+  avatar_url?: string;
+  is_owner?: boolean;
 }
 
 export interface ListRequestDto {

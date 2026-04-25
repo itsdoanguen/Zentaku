@@ -6,6 +6,7 @@
 
 import type { IBaseService } from '../../../core/base/BaseController';
 import type { CustomList, ListItem } from '../../../entities';
+import type { Repository } from 'typeorm';
 import type {
   AddMemberDto,
   CreateListDto,
@@ -69,6 +70,7 @@ export interface IListService extends IBaseService {
 }
 
 export interface IListRepository {
+  getRepository(): Repository<CustomList>;
   findListById(listId: number): Promise<CustomList | null>;
   createList(data: Partial<CustomList>): Promise<CustomList>;
   updateList(listId: number, data: Partial<CustomList>): Promise<CustomList>;

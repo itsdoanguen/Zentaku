@@ -170,12 +170,24 @@ class ListController extends BaseController<IListService & IBaseService> {
   // ==================== PHASE 2: MEMBER MANAGEMENT (STUBS) ====================
 
   listMembers = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      this.error(res, 'Validation failed', 400, errors.array());
+      return;
+    }
+
     const listId = this.getIntParam(req, 'listId');
     const members = await this.service.listMembers(listId);
     this.success(res, members);
   });
 
   addMember = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      this.error(res, 'Validation failed', 400, errors.array());
+      return;
+    }
+
     const authReq = req as AuthenticatedRequest;
     this.requireAuth(authReq);
 
@@ -192,6 +204,12 @@ class ListController extends BaseController<IListService & IBaseService> {
   });
 
   updateMemberPermission = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      this.error(res, 'Validation failed', 400, errors.array());
+      return;
+    }
+
     const authReq = req as AuthenticatedRequest;
     this.requireAuth(authReq);
 
@@ -208,6 +226,12 @@ class ListController extends BaseController<IListService & IBaseService> {
   });
 
   removeMember = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      this.error(res, 'Validation failed', 400, errors.array());
+      return;
+    }
+
     const authReq = req as AuthenticatedRequest;
     this.requireAuth(authReq);
 

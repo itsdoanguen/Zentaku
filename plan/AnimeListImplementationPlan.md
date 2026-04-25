@@ -162,7 +162,9 @@ Muc tieu: khoa contract de backend/frontend lam song song, tranh vo API giua spr
 ### Cong viec chi tiet
 
 - Invite user vao list voi permission editor/viewer.
-- Request join cho private list.
+- Request join chi ap dung cho list public.
+- List private chi owner moi co the moi nguoi dung tu ben ngoai vao list.
+- Owner cua list public cung co the moi nguoi dung vao list voi vai tro viewer/editor.
 - Request edit cho viewer.
 - Respond approve/reject tu owner.
 - Rule tranh trung request pending cung loai.

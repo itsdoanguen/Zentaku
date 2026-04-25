@@ -8,6 +8,7 @@ import express, { type Router } from 'express';
 import type { Container } from '../../config/container';
 import { authenticate } from '../../middlewares/authenticate';
 import type ListController from './controllers/list.controller';
+import { canEditList, canViewList, isListOwner } from './middlewares/list.guards';
 import {
   addMemberValidation,
   createListValidation,
@@ -21,6 +22,7 @@ import {
   searchListValidation,
   requestJoinValidation,
   requestEditValidation,
+  removeMemberValidation,
 } from './validators/list.validators';
 
 const initializeListRoutes = (container: Container): Router => {
@@ -102,7 +104,12 @@ const initializeListRoutes = (container: Container): Router => {
    *       404:
    *         description: List not found
    */
-  router.get('/:listId', listIdParamValidation, listController.getListDetail);
+  router.get(
+    '/:listId',
+    listIdParamValidation,
+    canViewList(container),
+    listController.getListDetail
+  );
 
   /**
    * @swagger
@@ -126,7 +133,12 @@ const initializeListRoutes = (container: Container): Router => {
    *       404:
    *         description: List not found
    */
-  router.get('/anime/:listId', listIdParamValidation, listController.getListAnimes);
+  router.get(
+    '/anime/:listId',
+    listIdParamValidation,
+    canViewList(container),
+    listController.getListAnimes
+  );
 
   /**
    * @swagger
@@ -164,6 +176,8 @@ const initializeListRoutes = (container: Container): Router => {
     authenticate,
     listIdParamValidation,
     updateListValidation,
+    canEditList(container),
+    isListOwner(container),
     listController.updateList
   );
 
@@ -193,7 +207,14 @@ const initializeListRoutes = (container: Container): Router => {
    *       404:
    *         description: List not found
    */
-  router.delete('/:listId/delete', authenticate, listIdParamValidation, listController.deleteList);
+  router.delete(
+    '/:listId/delete',
+    authenticate,
+    listIdParamValidation,
+    canEditList(container),
+    isListOwner(container),
+    listController.deleteList
+  );
 
   // ==================== PHASE 2: MEMBER MANAGEMENT ====================
 
@@ -202,6 +223,7 @@ const initializeListRoutes = (container: Container): Router => {
    * /api/list/member/{listId}/list:
    *   get:
    *     summary: Get list members
+   *     description: Return owner and accepted members (editor/viewer) of a list
    *     tags: [List Members]
    *     parameters:
    *       - in: path
@@ -212,14 +234,45 @@ const initializeListRoutes = (container: Container): Router => {
    *         example: 1
    *     security:
    *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: Members retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ListMembersResponse'
+   *       400:
+   *         description: Validation failed
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ValidationError'
+   *       403:
+   *         description: Access denied
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Error'
+   *       404:
+   *         description: List not found
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Error'
    */
-  router.get('/member/:listId/list', listIdParamValidation, listController.listMembers);
+  router.get(
+    '/member/:listId/list',
+    listIdParamValidation,
+    canViewList(container),
+    listController.listMembers
+  );
 
   /**
    * @swagger
    * /api/list/member/{listId}/add:
    *   post:
    *     summary: Add member to list
+   *     description: Owner adds or updates a member role (editor/viewer)
    *     tags: [List Members]
    *     security:
    *       - bearerAuth: []
@@ -235,24 +288,34 @@ const initializeListRoutes = (container: Container): Router => {
    *       content:
    *         application/json:
    *           schema:
-   *             type: object
-   *             required:
-   *               - username
-   *               - permission
-   *             properties:
-   *               username:
-   *                 type: string
-   *                 example: jane_doe
-   *               permission:
-   *                 type: string
-   *                 enum: [EDITOR, VIEWER]
-   *                 example: VIEWER
+   *             $ref: '#/components/schemas/AddListMemberRequest'
+   *     responses:
+   *       200:
+   *         description: Member added successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/MessageResponse'
+   *       400:
+   *         description: Validation failed
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ValidationError'
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Only owner can add members
+   *       404:
+   *         description: List or user not found
    */
   router.post(
     '/member/:listId/add',
     authenticate,
     listIdParamValidation,
     addMemberValidation,
+    canEditList(container),
+    isListOwner(container),
     listController.addMember
   );
 
@@ -261,6 +324,7 @@ const initializeListRoutes = (container: Container): Router => {
    * /api/list/member/{listId}/permission:
    *   put:
    *     summary: Update member permission
+   *     description: Owner changes an existing member role between editor and viewer
    *     tags: [List Members]
    *     security:
    *       - bearerAuth: []
@@ -271,12 +335,39 @@ const initializeListRoutes = (container: Container): Router => {
    *         schema:
    *           type: integer
    *         example: 1
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             $ref: '#/components/schemas/UpdateListMemberPermissionRequest'
+   *     responses:
+   *       200:
+   *         description: Member permission updated successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/MessageResponse'
+   *       400:
+   *         description: Validation failed
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ValidationError'
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Only owner can update member permissions
+   *       404:
+   *         description: List, user, or member not found
    */
   router.put(
     '/member/:listId/permission',
     authenticate,
     listIdParamValidation,
     updateMemberPermissionValidation,
+    canEditList(container),
+    isListOwner(container),
     listController.updateMemberPermission
   );
 
@@ -285,6 +376,7 @@ const initializeListRoutes = (container: Container): Router => {
    * /api/list/member/{listId}/remove:
    *   delete:
    *     summary: Remove member from list
+   *     description: Owner removes a member by username; owner cannot remove themselves
    *     tags: [List Members]
    *     security:
    *       - bearerAuth: []
@@ -300,11 +392,33 @@ const initializeListRoutes = (container: Container): Router => {
    *         schema:
    *           type: string
    *         example: jane_doe
+   *     responses:
+   *       200:
+   *         description: Member removed successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/MessageResponse'
+   *       400:
+   *         description: Validation failed
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ValidationError'
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Only owner can remove members
+   *       404:
+   *         description: List, user, or member not found
    */
   router.delete(
     '/member/:listId/remove',
     authenticate,
     listIdParamValidation,
+    removeMemberValidation,
+    canEditList(container),
+    isListOwner(container),
     listController.removeMember
   );
 

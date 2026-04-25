@@ -69,18 +69,46 @@ export const addMemberValidation: ValidationChain[] = [
     .withMessage('Username is invalid'),
 
   body('permission')
-    .notEmpty()
-    .withMessage('Permission is required')
+    .optional()
     .isIn(['EDITOR', 'VIEWER'])
     .withMessage('Permission must be EDITOR or VIEWER'),
+
+  body('permission_level')
+    .optional()
+    .isIn(['owner', 'edit', 'view', 'viewer'])
+    .withMessage('permission_level must be owner, edit, view, or viewer'),
+
+  body('can_edit').optional().isBoolean().withMessage('can_edit must be a boolean'),
 ];
 
 export const updateMemberPermissionValidation: ValidationChain[] = [
-  body('permission')
+  body('username')
+    .trim()
     .notEmpty()
-    .withMessage('Permission is required')
+    .withMessage('Username is required')
+    .isLength({ min: 1, max: 255 })
+    .withMessage('Username is invalid'),
+
+  body('permission')
+    .optional()
     .isIn(['EDITOR', 'VIEWER'])
     .withMessage('Permission must be EDITOR or VIEWER'),
+
+  body('permission_level')
+    .optional()
+    .isIn(['owner', 'edit', 'view', 'viewer'])
+    .withMessage('permission_level must be owner, edit, view, or viewer'),
+
+  body('can_edit').optional().isBoolean().withMessage('can_edit must be a boolean'),
+];
+
+export const removeMemberValidation: ValidationChain[] = [
+  query('username')
+    .trim()
+    .notEmpty()
+    .withMessage('Username is required')
+    .isLength({ min: 1, max: 255 })
+    .withMessage('Username is invalid'),
 ];
 
 // ==================== INVITE & REQUEST VALIDATORS ====================
