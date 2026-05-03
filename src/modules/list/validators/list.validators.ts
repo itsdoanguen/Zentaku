@@ -141,8 +141,11 @@ export const requestEditValidation: ValidationChain[] = requestJoinValidation;
 export const respondToRequestValidation: ValidationChain[] = [
   body('action')
     .notEmpty()
-    .isIn(['ACCEPT', 'REJECT'])
-    .withMessage('Action must be ACCEPT or REJECT'),
+    .custom((value) => {
+      const normalized = String(value).trim().toUpperCase();
+      return ['ACCEPT', 'REJECT', 'APPROVE', 'DECLINE'].includes(normalized);
+    })
+    .withMessage('Action must be ACCEPT, REJECT, approve, or reject'),
 
   body('message')
     .optional()
@@ -151,6 +154,24 @@ export const respondToRequestValidation: ValidationChain[] = [
     .withMessage('Message must be less than 500 characters'),
 
   param('requestId').isInt({ min: 1 }).withMessage('Request ID must be a positive integer'),
+];
+
+export const respondToInviteValidation: ValidationChain[] = [
+  body('action')
+    .notEmpty()
+    .custom((value) => {
+      const normalized = String(value).trim().toUpperCase();
+      return ['ACCEPT', 'REJECT', 'APPROVE', 'DECLINE'].includes(normalized);
+    })
+    .withMessage('Action must be ACCEPT, REJECT, approve, or reject'),
+
+  body('message')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Message must be less than 500 characters'),
+
+  param('inviteId').isInt({ min: 1 }).withMessage('Invite ID must be a positive integer'),
 ];
 
 // ==================== THEME VALIDATORS ====================

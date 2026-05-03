@@ -14,7 +14,6 @@ import {
 import type {
   AddMemberDto,
   CreateListDto,
-  InviteMemberDto,
   RequestEditDto,
   RequestJoinDto,
   RespondToRequestDto,
@@ -248,22 +247,6 @@ class ListController extends BaseController<IListService & IBaseService> {
   });
 
   // ==================== PHASE 3: INVITES & REQUESTS (STUBS) ====================
-
-  inviteMember = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const authReq = req as AuthenticatedRequest;
-    this.requireAuth(authReq);
-
-    const userId = this.getUserId(authReq);
-    if (!userId) {
-      this.error(res, 'Unauthorized', 401);
-      return;
-    }
-
-    const listId = this.getIntParam(req, 'listId');
-    const payload = this.getBody<InviteMemberDto>(req);
-    await this.service.inviteMember(listId, userId, payload);
-    this.success(res, { message: 'Invitation sent' });
-  });
 
   requestJoin = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const authReq = req as AuthenticatedRequest;

@@ -12,7 +12,6 @@ import { canEditList, canViewList, isListOwner } from './middlewares/list.guards
 import {
   addMemberValidation,
   createListValidation,
-  inviteMemberValidation,
   listIdParamValidation,
   respondToRequestValidation,
   updateListValidation,
@@ -426,55 +425,38 @@ const initializeListRoutes = (container: Container): Router => {
 
   /**
    * @swagger
-   * /api/list/{listId}/invite:
-   *   post:
-   *     summary: Invite member to list
-   *     tags: [List Invitations]
-   *     security:
-   *       - bearerAuth: []
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema:
-   *             type: object
-   *             required:
-   *               - username
-   *               - permission
-   *             properties:
-   *               username:
-   *                 type: string
-   *                 example: jane_doe
-   *               permission:
-   *                 type: string
-   *                 enum: [EDITOR, VIEWER]
-   *                 example: EDITOR
-   *               message:
-   *                 type: string
-   *                 maxLength: 500
-   */
-  router.post(
-    '/:listId/invite',
-    authenticate,
-    listIdParamValidation,
-    inviteMemberValidation,
-    listController.inviteMember
-  );
-
-  /**
-   * @swagger
    * /api/list/{listId}/request-join:
    *   post:
-   *     summary: Request to join a private list
+   *     summary: Request to join a public list
    *     tags: [List Requests]
    *     security:
    *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: listId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         example: 1
    *     requestBody:
    *       required: false
    *       content:
    *         application/json:
    *           schema:
    *             $ref: '#/components/schemas/ListRequestBody'
+   *     responses:
+   *       200:
+   *         description: Join request submitted successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/MessageResponse'
+   *       400:
+   *         description: Validation failed or already requested
+   *       401:
+   *         description: Unauthorized
+   *       404:
+   *         description: List not found
    */
   router.post(
     '/:listId/request-join',
@@ -492,12 +474,34 @@ const initializeListRoutes = (container: Container): Router => {
    *     tags: [List Requests]
    *     security:
    *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: listId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         example: 1
    *     requestBody:
    *       required: false
    *       content:
    *         application/json:
    *           schema:
    *             $ref: '#/components/schemas/ListRequestBody'
+   *     responses:
+   *       200:
+   *         description: Edit request submitted successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/MessageResponse'
+   *       400:
+   *         description: Validation failed or already requested
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Only viewers can request edit permission
+   *       404:
+   *         description: List not found
    */
   router.post(
     '/:listId/request-edit',
@@ -522,6 +526,19 @@ const initializeListRoutes = (container: Container): Router => {
    *         schema:
    *           type: integer
    *         example: 1
+   *     responses:
+   *       200:
+   *         description: Pending requests retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ListRequestsResponse'
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Only owner can view requests
+   *       404:
+   *         description: List not found
    */
   router.get(
     '/:listId/requests',
@@ -538,12 +555,40 @@ const initializeListRoutes = (container: Container): Router => {
    *     tags: [List Requests]
    *     security:
    *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: listId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         example: 1
+   *       - in: path
+   *         name: requestId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         example: 101
    *     requestBody:
    *       required: true
    *       content:
    *         application/json:
    *           schema:
    *             $ref: '#/components/schemas/RespondToRequestBody'
+   *     responses:
+   *       200:
+   *         description: Join request processed successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/MessageResponse'
+   *       400:
+   *         description: Validation failed
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Only owner can respond to requests
+   *       404:
+   *         description: List or request not found
    */
   router.post(
     '/:listId/join-requests/:requestId/respond',
@@ -560,12 +605,40 @@ const initializeListRoutes = (container: Container): Router => {
    *     tags: [List Requests]
    *     security:
    *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: listId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         example: 1
+   *       - in: path
+   *         name: requestId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         example: 101
    *     requestBody:
    *       required: true
    *       content:
    *         application/json:
    *           schema:
    *             $ref: '#/components/schemas/RespondToRequestBody'
+   *     responses:
+   *       200:
+   *         description: Edit request processed successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/MessageResponse'
+   *       400:
+   *         description: Validation failed
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Only owner can respond to requests
+   *       404:
+   *         description: List or request not found
    */
   router.post(
     '/:listId/edit-requests/:requestId/respond',

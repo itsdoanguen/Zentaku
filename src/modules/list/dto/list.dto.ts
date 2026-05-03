@@ -53,7 +53,7 @@ export interface RequestEditDto {
 }
 
 export interface RespondToRequestDto {
-  action: 'ACCEPT' | 'REJECT';
+  action: 'ACCEPT' | 'REJECT' | 'approve' | 'reject';
   message?: string;
 }
 
@@ -135,12 +135,19 @@ export interface ListMemberDto {
 
 export interface ListRequestDto {
   id: number;
+  request_id?: number;
   userId: number;
   username: string;
   requestType: 'JOIN' | 'EDIT';
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  request_type?: 'join' | 'edit_permission';
+  status: 'pending' | 'approved' | 'rejected';
+  status_code?: 'PENDING' | 'ACCEPTED' | 'DECLINED';
   message?: string;
   requestedAt: string;
+  requested_at?: string;
+  permissionLevel?: 'EDITOR' | 'VIEWER';
+  permission_level?: 'edit' | 'view';
+  can_edit?: boolean;
 }
 
 export interface ListSummaryDto {

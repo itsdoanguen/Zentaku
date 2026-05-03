@@ -7,8 +7,8 @@ Tinh nang can ho tro day du:
 - Set private/public cho list.
 - Role trong list: owner, editor, viewer.
 - Invite nguoi dung vao list voi role editor hoac viewer.
-- Nguoi dung co the request join list private.
-- Viewer co quyen request len editor.
+- Nguoi dung co the request join vao 1 list public (luon mac dinh voi vai tro viewer).
+- Sau khi da join list (role viewer), mem co the request len lam editor.
 - Doi mau theme cua list bang bang mau.
 - Co the tim (yeu thich) list, hien thi so luot like.
 - API phai match voi ZentakuFE va pbl5_fe_shared-logic.

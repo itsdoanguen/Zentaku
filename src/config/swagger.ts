@@ -284,7 +284,7 @@ const options: swaggerJsdoc.Options = {
         },
         ListRequestAction: {
           type: 'string',
-          enum: ['ACCEPT', 'REJECT'],
+          enum: ['ACCEPT', 'REJECT', 'approve', 'reject'],
           example: 'ACCEPT',
         },
         ListRequestBody: {
@@ -306,6 +306,50 @@ const options: swaggerJsdoc.Options = {
               type: 'string',
               maxLength: 500,
               example: 'Approved',
+            },
+          },
+        },
+        ListRequestItem: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer', example: 15 },
+            request_id: { type: 'integer', example: 15 },
+            userId: { type: 'integer', example: 25 },
+            username: { type: 'string', example: 'jane_doe' },
+            requestType: { type: 'string', enum: ['JOIN', 'EDIT'], example: 'JOIN' },
+            request_type: {
+              type: 'string',
+              enum: ['join', 'edit_permission'],
+              example: 'join',
+            },
+            status: {
+              type: 'string',
+              enum: ['pending', 'approved', 'rejected'],
+              example: 'pending',
+            },
+            status_code: {
+              type: 'string',
+              enum: ['PENDING', 'ACCEPTED', 'DECLINED'],
+              example: 'PENDING',
+            },
+            requestedAt: { type: 'string', format: 'date-time' },
+            requested_at: { type: 'string', format: 'date-time' },
+            permissionLevel: { type: 'string', enum: ['EDITOR', 'VIEWER'], example: 'VIEWER' },
+            permission_level: {
+              type: 'string',
+              enum: ['edit', 'view'],
+              example: 'view',
+            },
+            can_edit: { type: 'boolean', example: false },
+          },
+        },
+        ListRequestsResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/ListRequestItem' },
             },
           },
         },

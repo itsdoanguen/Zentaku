@@ -10,7 +10,6 @@ import type { Repository } from 'typeorm';
 import type {
   AddMemberDto,
   CreateListDto,
-  InviteMemberDto,
   ListDetailDto,
   ListMemberDto,
   ListRequestDto,
@@ -49,7 +48,6 @@ export interface IListService extends IBaseService {
   removeMember(listId: number, userId: number, username: string): Promise<void>;
 
   // Phase 3: Invitations & Requests (stub for now)
-  inviteMember(listId: number, userId: number, data: InviteMemberDto): Promise<void>;
   requestJoin(listId: number, userId: number, data: RequestJoinDto): Promise<void>;
   requestEdit(listId: number, userId: number, data: RequestEditDto): Promise<void>;
   getListRequests(listId: number, userId: number): Promise<ListRequestDto[]>;

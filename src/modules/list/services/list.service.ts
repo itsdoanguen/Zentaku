@@ -19,7 +19,6 @@ import type { IUserRepository } from '../../user/repositories/user.repository';
 import type {
   AddMemberDto,
   CreateListDto,
-  InviteMemberDto,
   ListDetailDto,
   ListMemberDto,
   ListRequestDto,
@@ -108,6 +107,62 @@ export class ListService extends BaseService implements IListService {
     return this.listRepository.getRepository().manager.getRepository(ListInvitation);
   }
 
+  private normalizeRequestAction(action: string): InviteStatus {
+    const normalized = String(action).trim().toUpperCase();
+
+    if (normalized === 'ACCEPT' || normalized === 'APPROVE') {
+      return InviteStatus.ACCEPTED;
+    }
+
+    if (normalized === 'REJECT' || normalized === 'DECLINE') {
+      return InviteStatus.DECLINED;
+    }
+
+    throw new ValidationError('Action must be ACCEPT or REJECT');
+  }
+
+  private mapRequestStatus(status: InviteStatus): 'pending' | 'approved' | 'rejected' {
+    if (status === InviteStatus.ACCEPTED) {
+      return 'approved';
+    }
+
+    if (status === InviteStatus.DECLINED) {
+      return 'rejected';
+    }
+
+    return 'pending';
+  }
+
+  private mapRequestType(permission: ListPermission): 'join' | 'edit_permission' {
+    return permission === ListPermission.EDITOR ? 'edit_permission' : 'join';
+  }
+
+  private mapRequestDto(invitation: ListInvitation): ListRequestDto | null {
+    if (!invitation.invitee) {
+      return null;
+    }
+
+    const requestType = this.mapRequestType(invitation.permission);
+    const requestedAt = this.toISODate(invitation.createdAt);
+
+    return {
+      id: this.toNumberId(invitation.id),
+      request_id: this.toNumberId(invitation.id),
+      userId: this.toNumberId(invitation.inviteeId),
+      username: invitation.invitee.username,
+      requestType: requestType === 'edit_permission' ? 'EDIT' : 'JOIN',
+      request_type: requestType,
+      status: this.mapRequestStatus(invitation.status),
+      status_code: invitation.status,
+      message: undefined,
+      requestedAt,
+      requested_at: requestedAt,
+      permissionLevel: invitation.permission,
+      permission_level: invitation.permission === ListPermission.EDITOR ? 'edit' : 'view',
+      can_edit: invitation.permission === ListPermission.EDITOR,
+    };
+  }
+
   private resolveMemberPermission(
     data: Pick<
       AddMemberDto | UpdateMemberPermissionDto,
@@ -186,14 +241,17 @@ export class ListService extends BaseService implements IListService {
 
   private async findMemberInvitation(
     listId: number,
-    inviteeId: number
+    inviteeId: number,
+    status?: InviteStatus
   ): Promise<ListInvitation | null> {
     return this.getInvitationRepository().findOne({
       where: {
         listId: BigInt(listId),
         inviteeId: BigInt(inviteeId),
+        ...(status ? { status } : {}),
       },
       relations: ['invitee'],
+      order: { createdAt: 'DESC' },
     });
   }
 
@@ -211,7 +269,7 @@ export class ListService extends BaseService implements IListService {
       return 'OWNER';
     }
 
-    const invitation = await this.findMemberInvitation(listId, userId);
+    const invitation = await this.findMemberInvitation(listId, userId, InviteStatus.ACCEPTED);
     if (!invitation || invitation.status !== InviteStatus.ACCEPTED) {
       return null;
     }
@@ -238,7 +296,7 @@ export class ListService extends BaseService implements IListService {
       return list;
     }
 
-    const invitation = await this.findMemberInvitation(listId, userId);
+    const invitation = await this.findMemberInvitation(listId, userId, InviteStatus.ACCEPTED);
     if (
       !invitation ||
       invitation.status !== InviteStatus.ACCEPTED ||
@@ -267,7 +325,7 @@ export class ListService extends BaseService implements IListService {
       });
     }
 
-    const invitation = await this.findMemberInvitation(listId, userId);
+    const invitation = await this.findMemberInvitation(listId, userId, InviteStatus.ACCEPTED);
     if (!invitation || invitation.status !== InviteStatus.ACCEPTED) {
       throw new AnilistAPIError('You do not have permission to view this list', 403, {
         listId,
@@ -544,27 +602,45 @@ export class ListService extends BaseService implements IListService {
 
       const permission = this.resolveMemberPermission(data);
       const invitationRepo = this.getInvitationRepository();
-      const existingInvitation = await this.findMemberInvitation(
+      const targetUserId = this.toNumberId(targetUser.id);
+      const acceptedInvitation = await this.findMemberInvitation(
         listId,
-        this.toNumberId(targetUser.id)
+        targetUserId,
+        InviteStatus.ACCEPTED
+      );
+      const pendingInvitation = await this.findMemberInvitation(
+        listId,
+        targetUserId,
+        InviteStatus.PENDING
       );
 
-      if (existingInvitation) {
-        existingInvitation.inviterId = BigInt(userId);
-        existingInvitation.permission = permission;
-        existingInvitation.status = InviteStatus.ACCEPTED;
-        await invitationRepo.save(existingInvitation);
+      if (acceptedInvitation) {
+        acceptedInvitation.inviterId = BigInt(userId);
+        acceptedInvitation.permission = permission;
+        acceptedInvitation.status = InviteStatus.ACCEPTED;
+        await invitationRepo.save(acceptedInvitation);
+      } else if (pendingInvitation) {
+        pendingInvitation.inviterId = BigInt(userId);
+        pendingInvitation.permission = permission;
+        pendingInvitation.status = InviteStatus.ACCEPTED;
+        await invitationRepo.save(pendingInvitation);
       } else {
         await invitationRepo.save(
           invitationRepo.create({
             listId: BigInt(listId),
             inviterId: BigInt(userId),
-            inviteeId: BigInt(this.toNumberId(targetUser.id)),
+            inviteeId: BigInt(targetUserId),
             permission,
             status: InviteStatus.ACCEPTED,
           })
         );
       }
+
+      await invitationRepo.delete({
+        listId: BigInt(listId),
+        inviteeId: BigInt(targetUserId),
+        status: InviteStatus.PENDING,
+      });
 
       this._logInfo('List member added', {
         listId,
@@ -598,7 +674,11 @@ export class ListService extends BaseService implements IListService {
 
       const permission = this.resolveMemberPermission(data);
       const invitationRepo = this.getInvitationRepository();
-      const member = await this.findMemberInvitation(listId, this.toNumberId(targetUser.id));
+      const member = await this.findMemberInvitation(
+        listId,
+        this.toNumberId(targetUser.id),
+        InviteStatus.ACCEPTED
+      );
 
       if (!member || member.status !== InviteStatus.ACCEPTED) {
         throw new NotFoundError('Member not found');
@@ -635,13 +715,20 @@ export class ListService extends BaseService implements IListService {
       }
 
       const invitationRepo = this.getInvitationRepository();
-      const member = await this.findMemberInvitation(listId, this.toNumberId(targetUser.id));
+      const member = await this.findMemberInvitation(
+        listId,
+        this.toNumberId(targetUser.id),
+        InviteStatus.ACCEPTED
+      );
 
       if (!member) {
         throw new NotFoundError('Member not found');
       }
 
-      await invitationRepo.delete({ id: member.id });
+      await invitationRepo.delete({
+        listId: BigInt(listId),
+        inviteeId: BigInt(this.toNumberId(targetUser.id)),
+      });
 
       this._logInfo('List member removed', {
         listId,
@@ -653,28 +740,144 @@ export class ListService extends BaseService implements IListService {
 
   // ==================== PHASE 3: INVITES & REQUESTS ====================
 
-  async inviteMember(listId: number, userId: number, data: InviteMemberDto): Promise<void> {
-    this._validateId(listId, 'List ID');
-    this._validateId(userId, 'User ID');
-    this._notImplemented('inviteMember', { listId, userId, username: data.username });
-  }
-
   async requestJoin(listId: number, userId: number, data: RequestJoinDto): Promise<void> {
     this._validateId(listId, 'List ID');
     this._validateId(userId, 'User ID');
-    this._notImplemented('requestJoin', { listId, userId, hasMessage: !!data.message });
+
+    await this._executeWithErrorHandling(async () => {
+      const list = await this.findListOrThrow(listId);
+
+      if (list.privacy !== PrivacyMode.PUBLIC) {
+        throw new ValidationError(
+          'Only public lists accept join requests. For private lists, owner invitation is required.'
+        );
+      }
+
+      const currentRole = await this.getListRole(listId, userId);
+      if (currentRole) {
+        throw new ValidationError('User already has access to this list');
+      }
+
+      const invitationRepo = this.getInvitationRepository();
+      const existingPending = await this.findMemberInvitation(listId, userId, InviteStatus.PENDING);
+
+      if (existingPending) {
+        throw new ValidationError('Join request is already pending');
+      }
+
+      const declinedInvitation = await this.findMemberInvitation(
+        listId,
+        userId,
+        InviteStatus.DECLINED
+      );
+
+      if (declinedInvitation) {
+        declinedInvitation.inviterId = BigInt(userId);
+        declinedInvitation.inviteeId = BigInt(userId);
+        declinedInvitation.permission = ListPermission.VIEWER;
+        declinedInvitation.status = InviteStatus.PENDING;
+        await invitationRepo.save(declinedInvitation);
+      } else {
+        await invitationRepo.save(
+          invitationRepo.create({
+            listId: BigInt(listId),
+            inviterId: BigInt(userId),
+            inviteeId: BigInt(userId),
+            permission: ListPermission.VIEWER,
+            status: InviteStatus.PENDING,
+          })
+        );
+      }
+
+      this._logInfo('Join request submitted', {
+        listId,
+        userId,
+        hasMessage: !!data.message,
+      });
+    }, 'requestJoin');
   }
 
   async requestEdit(listId: number, userId: number, data: RequestEditDto): Promise<void> {
     this._validateId(listId, 'List ID');
     this._validateId(userId, 'User ID');
-    this._notImplemented('requestEdit', { listId, userId, hasMessage: !!data.message });
+
+    await this._executeWithErrorHandling(async () => {
+      await this.assertCanViewList(listId, userId);
+
+      const role = await this.getListRole(listId, userId);
+      if (role !== 'VIEWER') {
+        throw new ValidationError('Only viewers can request edit permission');
+      }
+
+      const invitationRepo = this.getInvitationRepository();
+      const existingPending = await this.findMemberInvitation(listId, userId, InviteStatus.PENDING);
+      if (existingPending) {
+        throw new ValidationError('Edit request is already pending');
+      }
+
+      const existingAccepted = await this.findMemberInvitation(
+        listId,
+        userId,
+        InviteStatus.ACCEPTED
+      );
+
+      if (!existingAccepted || existingAccepted.permission !== ListPermission.VIEWER) {
+        throw new ValidationError('Only viewers can request edit permission');
+      }
+
+      const declinedInvitation = await this.findMemberInvitation(
+        listId,
+        userId,
+        InviteStatus.DECLINED
+      );
+
+      if (declinedInvitation) {
+        declinedInvitation.inviterId = BigInt(userId);
+        declinedInvitation.inviteeId = BigInt(userId);
+        declinedInvitation.permission = ListPermission.EDITOR;
+        declinedInvitation.status = InviteStatus.PENDING;
+        await invitationRepo.save(declinedInvitation);
+      } else {
+        await invitationRepo.save(
+          invitationRepo.create({
+            listId: BigInt(listId),
+            inviterId: BigInt(userId),
+            inviteeId: BigInt(userId),
+            permission: ListPermission.EDITOR,
+            status: InviteStatus.PENDING,
+          })
+        );
+      }
+
+      this._logInfo('Edit request submitted', {
+        listId,
+        userId,
+        hasMessage: !!data.message,
+      });
+    }, 'requestEdit');
   }
 
   async getListRequests(listId: number, userId: number): Promise<ListRequestDto[]> {
     this._validateId(listId, 'List ID');
     this._validateId(userId, 'User ID');
-    return this._notImplemented('getListRequests', { listId, userId });
+
+    return this._executeWithErrorHandling(async () => {
+      await this.assertListOwner(listId, userId);
+
+      const invitationRepo = this.getInvitationRepository();
+      const pendingRequests = await invitationRepo.find({
+        where: {
+          listId: BigInt(listId),
+          status: InviteStatus.PENDING,
+        },
+        relations: ['invitee'],
+        order: { createdAt: 'DESC' },
+      });
+
+      return pendingRequests
+        .map((invitation) => this.mapRequestDto(invitation))
+        .filter((request): request is ListRequestDto => request !== null);
+    }, 'getListRequests');
   }
 
   async respondToRequest(
@@ -686,7 +889,63 @@ export class ListService extends BaseService implements IListService {
     this._validateId(listId, 'List ID');
     this._validateId(userId, 'User ID');
     this._validateId(requestId, 'Request ID');
-    this._notImplemented('respondToRequest', { listId, userId, requestId, action: data.action });
+
+    await this._executeWithErrorHandling(async () => {
+      await this.assertListOwner(listId, userId);
+
+      const invitationRepo = this.getInvitationRepository();
+      const request = await invitationRepo.findOne({
+        where: {
+          id: BigInt(requestId),
+          listId: BigInt(listId),
+          status: InviteStatus.PENDING,
+        },
+        relations: ['invitee'],
+      });
+
+      if (!request) {
+        throw new NotFoundError('Request not found');
+      }
+
+      const requestUserId = this.toNumberId(request.inviteeId);
+      const nextStatus = this.normalizeRequestAction(data.action);
+      const existingAccepted = await this.findMemberInvitation(
+        listId,
+        requestUserId,
+        InviteStatus.ACCEPTED
+      );
+
+      if (nextStatus === InviteStatus.ACCEPTED) {
+        if (request.permission === ListPermission.EDITOR) {
+          if (existingAccepted) {
+            existingAccepted.permission = ListPermission.EDITOR;
+            existingAccepted.status = InviteStatus.ACCEPTED;
+            await invitationRepo.save(existingAccepted);
+            await invitationRepo.delete({ id: request.id });
+          } else {
+            request.status = InviteStatus.ACCEPTED;
+            await invitationRepo.save(request);
+          }
+        } else {
+          if (existingAccepted) {
+            await invitationRepo.delete({ id: request.id });
+          } else {
+            request.status = InviteStatus.ACCEPTED;
+            await invitationRepo.save(request);
+          }
+        }
+      } else {
+        request.status = InviteStatus.DECLINED;
+        await invitationRepo.save(request);
+      }
+
+      this._logInfo('List request processed', {
+        listId,
+        userId,
+        requestId,
+        action: data.action,
+      });
+    }, 'respondToRequest');
   }
 
   // ==================== PHASE 4: THEME & LIKES ====================
