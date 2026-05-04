@@ -71,7 +71,7 @@ export interface LikeToggleDto {
 // ==================== ANIME ITEMS ====================
 
 export interface AddAnimeToListDto {
-  mediaId: number;
+  anilistId: number;
   note?: string;
 }
 

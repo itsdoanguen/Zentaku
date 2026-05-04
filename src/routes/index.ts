@@ -60,10 +60,9 @@ const initializeRoutes = (container: unknown): Router => {
     (container as any).resolve('streamingController').getTaskStatus
   );
 
+  router.use('/search', searchRoutes(container));
   router.use('/', activityRoutes(container));
   router.use('/', followRoutes(container));
-
-  router.use('/search', searchRoutes(container));
   router.use('/list', listRoutes(container));
   return router;
 };

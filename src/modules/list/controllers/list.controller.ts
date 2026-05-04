@@ -14,6 +14,7 @@ import {
 import type {
   AddMemberDto,
   CreateListDto,
+  AddAnimeToListDto,
   RequestEditDto,
   RequestJoinDto,
   RespondToRequestDto,
@@ -360,12 +361,51 @@ class ListController extends BaseController<IListService & IBaseService> {
     this.success(res, likeStatus);
   });
 
-  // ==================== PHASE 5: SEARCH (STUBS) ====================
+  // ==================== PHASE 5: SEARCH & DISCOVER & ITEM MANAGE ====================
 
   searchLists = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    const userId = this.getUserId(authReq);
     const payload = this.getBody<SearchListDto>(req);
-    const result = await this.service.searchLists(payload);
+    const result = await this.service.searchLists(payload, userId ?? undefined);
     this.success(res, result);
+  });
+
+  discoverLists = this.asyncHandler(async (_req: Request, res: Response): Promise<void> => {
+    const result = await this.service.discoverLists();
+    this.success(res, result);
+  });
+
+  addAnimeToList = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    this.requireAuth(authReq);
+
+    const userId = this.getUserId(authReq);
+    if (!userId) {
+      this.error(res, 'Unauthorized', 401);
+      return;
+    }
+
+    const listId = this.getIntParam(req, 'listId');
+    const payload = this.getBody<AddAnimeToListDto>(req);
+    await this.service.addAnimeToList(listId, userId, payload);
+    this.success(res, { message: 'Anime added to list successfully' });
+  });
+
+  removeAnimeFromList = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    this.requireAuth(authReq);
+
+    const userId = this.getUserId(authReq);
+    if (!userId) {
+      this.error(res, 'Unauthorized', 401);
+      return;
+    }
+
+    const listId = this.getIntParam(req, 'listId');
+    const anilistId = this.getIntParam(req, 'anilistId');
+    await this.service.removeAnimeFromList(listId, userId, anilistId);
+    this.success(res, { message: 'Anime removed from list successfully' });
   });
 }
 

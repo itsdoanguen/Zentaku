@@ -353,6 +353,33 @@ const options: swaggerJsdoc.Options = {
             },
           },
         },
+
+        ListSearchResultResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: {
+              type: 'object',
+              properties: {
+                items: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/ListSummary' },
+                },
+                total: { type: 'integer', example: 100 },
+              },
+            },
+          },
+        },
+        DiscoverListsResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/ListSummary' },
+            },
+          },
+        },
         PageInfo: {
           type: 'object',
           properties: {

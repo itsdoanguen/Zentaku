@@ -8,17 +8,19 @@ import { BaseService } from '../../../core/base/BaseService';
 import {
   type CustomList,
   ListInvitation,
-  type ListItem,
+  ListItem,
   type User,
   InviteStatus,
   ListPermission,
   PrivacyMode,
 } from '../../../entities';
 import { AnilistAPIError, NotFoundError, ValidationError } from '../../../shared/utils/error';
+import type AnimeRepository from '../../anime/anime.repository';
 import type { IUserRepository } from '../../user/repositories/user.repository';
 import type {
   AddMemberDto,
   CreateListDto,
+  AddAnimeToListDto,
   ListDetailDto,
   ListMemberDto,
   ListRequestDto,
@@ -36,7 +38,8 @@ import type { IListRepository, IListService, ListSearchResult } from '../types/l
 export class ListService extends BaseService implements IListService {
   constructor(
     private readonly listRepository: IListRepository,
-    private readonly userRepository: IUserRepository
+    private readonly userRepository: IUserRepository,
+    private readonly animeRepository: AnimeRepository
   ) {
     super();
   }
@@ -105,6 +108,10 @@ export class ListService extends BaseService implements IListService {
 
   private getInvitationRepository() {
     return this.listRepository.getRepository().manager.getRepository(ListInvitation);
+  }
+
+  private getListItemRepository() {
+    return this.listRepository.getRepository().manager.getRepository(ListItem);
   }
 
   private normalizeRequestAction(action: string): InviteStatus {
@@ -968,10 +975,146 @@ export class ListService extends BaseService implements IListService {
     return this._notImplemented('getLikeStatus', { listId, userId });
   }
 
-  // ==================== PHASE 5: SEARCH ====================
+  // ==================== PHASE 5: SEARCH & DISCOVER & ITEM MANAGE ====================
 
-  async searchLists(options: SearchListDto): Promise<ListSearchResult> {
+  async searchLists(options: SearchListDto, userId?: number): Promise<ListSearchResult> {
     this._validateString(options.query, 'Query', { minLength: 1, maxLength: 255 });
-    return this._notImplemented('searchLists', { ...options });
+
+    return this._executeWithErrorHandling(async () => {
+      const qb = this.listRepository
+        .getRepository()
+        .createQueryBuilder('list')
+        .leftJoinAndSelect('list.owner', 'owner')
+        .leftJoinAndSelect('list.items', 'items')
+        .where('list.name LIKE :query', { query: `%${options.query}%` })
+        .orWhere('list.description LIKE :query', { query: `%${options.query}%` });
+
+      if (options.isPublicOnly) {
+        qb.andWhere('list.privacy = :privacy', { privacy: PrivacyMode.PUBLIC });
+      } else if (userId) {
+        // Find public lists OR lists owned by user
+        qb.andWhere('(list.privacy = :privacy OR list.ownerId = :userId)', {
+          privacy: PrivacyMode.PUBLIC,
+          userId,
+        });
+      } else {
+        qb.andWhere('list.privacy = :privacy', { privacy: PrivacyMode.PUBLIC });
+      }
+
+      const sortOrder = options.sortBy === 'NAME' ? 'ASC' : 'DESC';
+      const sortColumn = options.sortBy === 'NAME' ? 'list.name' : 'list.updatedAt'; // Fallback MOST_LIKED to updatedAt for now
+
+      qb.orderBy(sortColumn, sortOrder);
+
+      const page = Math.max(1, options.page || 1);
+      const limit = Math.min(50, Math.max(1, options.limit || 10));
+      qb.skip((page - 1) * limit).take(limit);
+
+      const [lists, total] = await qb.getManyAndCount();
+
+      return {
+        items: lists.map((list) => this.mapListSummary(list)),
+        total,
+      };
+    }, 'searchLists');
+  }
+
+  async discoverLists(): Promise<ListSummaryDto[]> {
+    return this._executeWithErrorHandling(async () => {
+      const qb = this.listRepository
+        .getRepository()
+        .createQueryBuilder('list')
+        .leftJoinAndSelect('list.owner', 'owner')
+        .leftJoinAndSelect('list.items', 'items')
+        .where('list.privacy = :privacy', { privacy: PrivacyMode.PUBLIC })
+        .orderBy('list.updatedAt', 'DESC')
+        .take(20);
+
+      const lists = await qb.getMany();
+      return lists.map((list) => this.mapListSummary(list));
+    }, 'discoverLists');
+  }
+
+  async addAnimeToList(listId: number, userId: number, data: AddAnimeToListDto): Promise<void> {
+    this._validateId(listId, 'List ID');
+    this._validateId(userId, 'User ID');
+    this._validateId(data.anilistId, 'AniList ID');
+
+    await this._executeWithErrorHandling(async () => {
+      await this.assertCanEditList(listId, userId);
+
+      // Resolve anilistId to mediaId by querying anime repository
+      const animeItem = await this.animeRepository.findByExternalId(data.anilistId);
+      if (!animeItem) {
+        throw new NotFoundError(
+          `Anime with AniList ID ${data.anilistId} not found. Please search and sync the anime first.`
+        );
+      }
+
+      const mediaId = animeItem.id;
+      const listItemRepo = this.getListItemRepository();
+
+      const existing = await listItemRepo.findOne({
+        where: { listId: BigInt(listId), mediaId: BigInt(mediaId) },
+      });
+
+      if (existing) {
+        throw new ValidationError('Anime is already in this list');
+      }
+
+      // Find max orderIndex
+      const maxOrder = await listItemRepo
+        .createQueryBuilder('item')
+        .where('item.list_id = :listId', { listId })
+        .select('MAX(item.order_index)', 'max')
+        .getRawOne();
+
+      const nextOrder = (maxOrder?.max || 0) + 1;
+
+      await listItemRepo.save(
+        listItemRepo.create({
+          listId: BigInt(listId),
+          mediaId: BigInt(mediaId),
+          addedById: BigInt(userId),
+          orderIndex: nextOrder,
+          note: data.note?.trim() || null,
+        })
+      );
+
+      this._logInfo('Anime added to list', { listId, userId, anilistId: data.anilistId, mediaId });
+    }, 'addAnimeToList');
+  }
+
+  async removeAnimeFromList(listId: number, userId: number, anilistId: number): Promise<void> {
+    this._validateId(listId, 'List ID');
+    this._validateId(userId, 'User ID');
+    this._validateId(anilistId, 'AniList ID');
+
+    await this._executeWithErrorHandling(async () => {
+      await this.assertCanEditList(listId, userId);
+
+      // Resolve anilistId to mediaId by querying anime repository
+      const animeItem = await this.animeRepository.findByExternalId(anilistId);
+      if (!animeItem) {
+        throw new NotFoundError(
+          `Anime with AniList ID ${anilistId} not found. Please search and sync the anime first.`
+        );
+      }
+
+      const mediaId = animeItem.id;
+      const listItemRepo = this.getListItemRepository();
+
+      const existing = await listItemRepo.findOne({
+        where: { listId: BigInt(listId), mediaId: BigInt(mediaId) },
+      });
+
+      if (!existing) {
+        throw new NotFoundError('Anime not found in this list');
+      }
+
+      await listItemRepo.delete({ id: existing.id });
+
+      this._logInfo('Anime removed from list', { listId, userId, anilistId, mediaId });
+    }, 'removeAnimeFromList');
   }
 }

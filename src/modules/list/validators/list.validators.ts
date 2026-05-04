@@ -194,7 +194,7 @@ export const updateThemeValidation: ValidationChain[] = [
 // ==================== ANIME ITEM VALIDATORS ====================
 
 export const addAnimeToListValidation: ValidationChain[] = [
-  body('mediaId').isInt({ min: 1 }).withMessage('Media ID must be a positive integer'),
+  body('anilistId').isInt({ min: 1 }).withMessage('AniList ID must be a positive integer'),
 
   body('note')
     .optional()
@@ -210,26 +210,26 @@ export const mediaIdParamValidation: ValidationChain[] = [
 // ==================== SEARCH VALIDATORS ====================
 
 export const searchListValidation: ValidationChain[] = [
-  query('query')
+  body('query')
     .trim()
     .notEmpty()
     .withMessage('Search query is required')
     .isLength({ min: 1, max: 255 })
     .withMessage('Query must be between 1 and 255 characters'),
 
-  query('sortBy')
+  body('sortBy')
     .optional()
     .isIn(['RECENT', 'MOST_LIKED', 'NAME'])
     .withMessage('Invalid sort option'),
 
-  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  body('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
 
-  query('limit')
+  body('limit')
     .optional()
     .isInt({ min: 1, max: 100 })
     .withMessage('Limit must be between 1 and 100'),
 
-  query('isPublicOnly').optional().isBoolean().withMessage('isPublicOnly must be a boolean'),
+  body('isPublicOnly').optional().isBoolean().withMessage('isPublicOnly must be a boolean'),
 ];
 
 // ==================== QUERY VALIDATORS ====================

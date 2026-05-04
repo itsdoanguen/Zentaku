@@ -10,6 +10,7 @@ import type { Repository } from 'typeorm';
 import type {
   AddMemberDto,
   CreateListDto,
+  AddAnimeToListDto,
   ListDetailDto,
   ListMemberDto,
   ListRequestDto,
@@ -63,8 +64,11 @@ export interface IListService extends IBaseService {
   toggleLike(listId: number, userId: number): Promise<void>;
   getLikeStatus(listId: number, userId: number): Promise<{ likedByMe: boolean }>;
 
-  // Phase 5: Search (stub for now)
-  searchLists(options: SearchListDto): Promise<ListSearchResult>;
+  // Phase 5: Search & Discover & Item Manage
+  searchLists(options: SearchListDto, userId?: number): Promise<ListSearchResult>;
+  discoverLists(): Promise<ListSummaryDto[]>;
+  addAnimeToList(listId: number, userId: number, data: AddAnimeToListDto): Promise<void>;
+  removeAnimeFromList(listId: number, userId: number, mediaId: number): Promise<void>;
 }
 
 export interface IListRepository {

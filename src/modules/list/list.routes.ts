@@ -22,6 +22,8 @@ import {
   requestJoinValidation,
   requestEditValidation,
   removeMemberValidation,
+  addAnimeToListValidation,
+  mediaIdParamValidation,
 } from './validators/list.validators';
 
 const initializeListRoutes = (container: Container): Router => {
@@ -709,13 +711,24 @@ const initializeListRoutes = (container: Container): Router => {
   );
 
   // ==================== PHASE 5: SEARCH ====================
+  // Search lists (kept as POST for backward compatibility)
+  router.post('/search', searchListValidation, listController.searchLists);
 
   /**
    * @swagger
-   * /api/list/search:
+   * /api/list/anime/{listId}/add:
    *   post:
-   *     summary: Search lists
-   *     tags: [List Search]
+   *     summary: Add anime to list
+   *     description: Add an anime to the list by AniList ID (requires Editor permission). The anime must exist in the database.
+   *     tags: [List]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: listId
+   *         required: true
+   *         schema:
+   *           type: integer
    *     requestBody:
    *       required: true
    *       content:
@@ -723,24 +736,84 @@ const initializeListRoutes = (container: Container): Router => {
    *           schema:
    *             type: object
    *             required:
-   *               - query
+   *               - anilistId
    *             properties:
-   *               query:
-   *                 type: string
-   *                 example: action
-   *               sortBy:
-   *                 type: string
-   *                 enum: [RECENT, MOST_LIKED, NAME]
-   *               page:
+   *               anilistId:
    *                 type: integer
+   *                 description: The AniList ID of the anime
    *                 example: 1
-   *               limit:
-   *                 type: integer
-   *                 example: 20
-   *               isPublicOnly:
-   *                 type: boolean
+   *               note:
+   *                 type: string
+   *                 description: Optional note about the anime in the list
+   *     responses:
+   *       200:
+   *         description: Anime added
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/MessageResponse'
+   *       400:
+   *         description: Validation failed or anime not found
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: No edit permission
+   *       404:
+   *         description: List not found
    */
-  router.post('/search', searchListValidation, listController.searchLists);
+  router.post(
+    '/anime/:listId/add',
+    authenticate,
+    listIdParamValidation,
+    addAnimeToListValidation,
+    listController.addAnimeToList
+  );
+
+  /**
+   * @swagger
+   * /api/list/anime/{listId}/{anilistId}/remove:
+   *   delete:
+   *     summary: Remove anime from list
+   *     description: Remove an anime from the list by AniList ID (requires Editor permission). The anime must exist in the database.
+   *     tags: [List]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: listId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *       - in: path
+   *         name: anilistId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *           description: The AniList ID of the anime
+   *           example: 1
+   *     responses:
+   *       200:
+   *         description: Anime removed
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/MessageResponse'
+   *       400:
+   *         description: Validation failed or anime not found
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: No edit permission
+   *       404:
+   *         description: List not found
+   */
+  router.delete(
+    '/anime/:listId/:anilistId/remove',
+    authenticate,
+    listIdParamValidation,
+    mediaIdParamValidation,
+    listController.removeAnimeFromList
+  );
 
   return router;
 };
