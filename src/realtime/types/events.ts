@@ -1,6 +1,5 @@
 /**
  * Realtime Event Catalog v1
- * Defined in: docs/plan/realtime/contracts/event-catalog-v1.md
  */
 
 // ============================================================================

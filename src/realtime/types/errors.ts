@@ -1,6 +1,5 @@
 /**
  * Realtime Error Codes v1
- * Defined in: docs/plan/realtime/contracts/error-codes-v1.md
  */
 
 export enum RealtimeErrorCode {

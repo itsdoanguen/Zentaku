@@ -6,8 +6,6 @@
  * - Connect and disconnect
  * - Envelope validation
  * - Event routing
- *
- * From: docs/plan/realtime/phases/phase-0-architecture-and-contract-technical-plan.md#3.1
  */
 
 import type { EventEmitter } from 'events';

@@ -1,6 +1,5 @@
 /**
  * Realtime Authorization Matrix v1
- * Defined in: docs/plan/realtime/contracts/authorization-matrix-v1.md
  */
 
 export enum RealtimeRole {

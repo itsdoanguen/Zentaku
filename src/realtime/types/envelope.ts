@@ -1,6 +1,5 @@
 /**
  * Realtime Event Envelope v1
- * Defined in: docs/plan/realtime/contracts/event-envelope-v1.md
  */
 
 import type { RealtimeError } from './errors';
