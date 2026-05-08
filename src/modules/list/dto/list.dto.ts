@@ -68,6 +68,35 @@ export interface LikeToggleDto {
   // No payload needed, toggle via POST
 }
 
+// ==================== LIKE DISCOVERY ====================
+
+export interface LikesDiscoveryOptionsDto {
+  page?: number;
+  limit?: number;
+  sortBy?: 'RECENT' | 'POPULAR';
+}
+
+export interface LikedListDto {
+  id: number;
+  name: string;
+  slug: string;
+  ownerUsername: string;
+  likeCount: number;
+  itemCount: number;
+  bannerImage?: string;
+  privacy: 'PUBLIC' | 'PRIVATE' | 'SHARED';
+}
+
+export interface LikesDiscoveryResultDto {
+  data: LikedListDto[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 // ==================== ANIME ITEMS ====================
 
 export interface AddAnimeToListDto {

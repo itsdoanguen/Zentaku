@@ -9,6 +9,7 @@ import {
   type CustomList,
   ListInvitation,
   ListItem,
+  Activity,
   type User,
   InviteStatus,
   ListPermission,
@@ -32,6 +33,8 @@ import type {
   UpdateListDto,
   UpdateMemberPermissionDto,
   UpdateThemeDto,
+  LikesDiscoveryOptionsDto,
+  LikesDiscoveryResultDto,
 } from '../dto/list.dto';
 import type { IListRepository, IListService, ListSearchResult } from '../types/list.types';
 
@@ -42,18 +45,6 @@ export class ListService extends BaseService implements IListService {
     private readonly animeRepository: AnimeRepository
   ) {
     super();
-  }
-
-  private _notImplemented(method: string, context?: Record<string, unknown>): never {
-    this.logWarn(`ListService.${method} is not implemented in phase 0`, {
-      ...context,
-      hasRepository: !!this.listRepository,
-    });
-    throw new Error(`Not implemented yet (phase 0): ${method}`);
-  }
-
-  private logWarn(message: string, meta: Record<string, unknown> = {}): void {
-    this.logger.warn(`[${this.constructor.name}] ${message}`, meta);
   }
 
   private _validatePrivacy(privacy?: string): void {
@@ -376,8 +367,16 @@ export class ListService extends BaseService implements IListService {
     });
   }
 
-  private mapListDetail(list: CustomList, userId?: number): ListDetailDto {
+  private async mapListDetailWithLikes(list: CustomList, userId?: number): Promise<ListDetailDto> {
     const animeItems = this.mapAnimeItems(list.items || []);
+    let likeCount = 0;
+    let likedByMe = false;
+
+    if (this.toNumberId(list.id)) {
+      const likeStatus = await this.getLikeStatus(this.toNumberId(list.id), userId || 0);
+      likeCount = likeStatus.likeCount;
+      likedByMe = userId ? likeStatus.likedByMe : false;
+    }
 
     return {
       id: this.toNumberId(list.id),
@@ -391,8 +390,8 @@ export class ListService extends BaseService implements IListService {
       bannerImage: list.bannerImage || undefined,
       createdAt: this.toISODate(list.createdAt),
       updatedAt: this.toISODate(list.updatedAt),
-      likeCount: 0,
-      likedByMe: false,
+      likeCount,
+      likedByMe,
       animeItems,
     };
   }
@@ -520,7 +519,7 @@ export class ListService extends BaseService implements IListService {
     return this._executeWithErrorHandling(async () => {
       const list = await this.assertCanViewList(listId, userId);
 
-      return this.mapListDetail(list, userId);
+      return this.mapListDetailWithLikes(list, userId);
     }, 'getListDetail');
   }
 
@@ -957,25 +956,306 @@ export class ListService extends BaseService implements IListService {
 
   // ==================== PHASE 4: THEME & LIKES ====================
 
+  // ==================== PHASE 4: THEME & LIKES ====================
+
   async updateTheme(listId: number, userId: number, data: UpdateThemeDto): Promise<CustomList> {
     this._validateId(listId, 'List ID');
     this._validateId(userId, 'User ID');
-    return this._notImplemented('updateTheme', { listId, userId, themeKey: data.themeKey });
+
+    return this._executeWithErrorHandling(async () => {
+      await this.assertCanEditList(listId, userId);
+
+      const list = await this.listRepository.findListById(listId);
+      if (!list) {
+        throw new NotFoundError(`List ${listId} not found`);
+      }
+
+      // Validate theme key
+      const validThemes = [
+        'summer-vibes',
+        'neon-night',
+        'pastel-dream',
+        'dark-mode',
+        'cherry-blossom',
+        'ocean-blue',
+        'sunset-gold',
+        'forest-green',
+        'midnight-purple',
+        'rose-gold',
+      ];
+      if (!validThemes.includes(data.themeKey)) {
+        throw new ValidationError(`Invalid theme key. Must be one of: ${validThemes.join(', ')}`);
+      }
+
+      // Validate hex color if provided
+      if (data.themeColor && !/^#[0-9A-Fa-f]{6}$/.test(data.themeColor)) {
+        throw new ValidationError('Theme color must be a valid hex color (e.g., #FF5733)');
+      }
+
+      // Update settings
+      list.settings = {
+        ...list.settings,
+        themeKey: data.themeKey,
+        themeColor: data.themeColor || null,
+      };
+
+      const updated = await this.listRepository.updateList(listId, { settings: list.settings });
+      this._logInfo('Theme updated', { listId, userId, themeKey: data.themeKey });
+      return updated;
+    }, 'updateTheme');
   }
 
   async toggleLike(listId: number, userId: number): Promise<void> {
     this._validateId(listId, 'List ID');
     this._validateId(userId, 'User ID');
-    this._notImplemented('toggleLike', { listId, userId });
+
+    return this._executeWithErrorHandling(async () => {
+      // Verify list exists
+      const list = await this.listRepository.findListById(listId);
+      if (!list) {
+        throw new NotFoundError(`List ${listId} not found`);
+      }
+
+      const activityRepo = this.listRepository.getRepository().manager.getRepository(Activity);
+
+      // Check if like already exists
+      const existing = await activityRepo.findOne({
+        where: {
+          userId: BigInt(userId),
+          listId: BigInt(listId),
+          type: 'LIST_LIKE',
+        },
+      });
+
+      if (existing) {
+        // Remove like (soft delete or hard delete)
+        await activityRepo.delete({ id: existing.id });
+        this._logInfo('Like removed', { listId, userId });
+      } else {
+        // Add like
+        const activity = activityRepo.create({
+          userId: BigInt(userId),
+          listId: BigInt(listId),
+          type: 'LIST_LIKE',
+          metaData: { timestamp: new Date().toISOString() },
+        });
+        await activityRepo.save(activity);
+        this._logInfo('Like added', { listId, userId });
+      }
+    }, 'toggleLike');
   }
 
-  async getLikeStatus(listId: number, userId: number): Promise<{ likedByMe: boolean }> {
+  async getLikeStatus(
+    listId: number,
+    userId: number
+  ): Promise<{ likedByMe: boolean; likeCount: number }> {
     this._validateId(listId, 'List ID');
     this._validateId(userId, 'User ID');
-    return this._notImplemented('getLikeStatus', { listId, userId });
+
+    return this._executeWithErrorHandling(async () => {
+      const activityRepo = this.listRepository.getRepository().manager.getRepository(Activity);
+
+      // Check if user liked this list
+      const userLike = await activityRepo.findOne({
+        where: {
+          userId: BigInt(userId),
+          listId: BigInt(listId),
+          type: 'LIST_LIKE',
+        },
+      });
+
+      // Count total likes
+      const likeCount = await activityRepo.count({
+        where: {
+          listId: BigInt(listId),
+          type: 'LIST_LIKE',
+        },
+      });
+
+      return {
+        likedByMe: !!userLike,
+        likeCount,
+      };
+    }, 'getLikeStatus');
   }
 
-  // ==================== PHASE 5: SEARCH & DISCOVER & ITEM MANAGE ====================
+  async getMostLikedLists(options: LikesDiscoveryOptionsDto): Promise<LikesDiscoveryResultDto> {
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(options.limit || 10, 50);
+    const skip = (page - 1) * limit;
+
+    return this._executeWithErrorHandling(async () => {
+      const listRepo = this.listRepository.getRepository();
+
+      // Rank only public lists so valid public lists are never dropped later.
+      const publicLikeStats = (await listRepo
+        .createQueryBuilder('list')
+        .select('list.id', 'listId')
+        .addSelect('COUNT(activity.id)', 'likeCount')
+        .leftJoin('list.activities', 'activity', 'activity.type = :type', { type: 'LIST_LIKE' })
+        .where('list.privacy = :privacy', { privacy: PrivacyMode.PUBLIC })
+        .groupBy('list.id')
+        .having('COUNT(activity.id) > 0')
+        .orderBy('likeCount', 'DESC')
+        .getRawMany()) as Array<{ listId: string; likeCount: number }>;
+
+      const total = publicLikeStats.length;
+
+      // Get paginated list IDs in ranked order.
+      const paginatedListIds = publicLikeStats
+        .slice(skip, skip + limit)
+        .map((stat) => Number(stat.listId));
+
+      if (paginatedListIds.length === 0) {
+        return {
+          data: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+          },
+        };
+      }
+
+      // Fetch full list details with relations
+      const lists = await listRepo
+        .createQueryBuilder('list')
+        .leftJoinAndSelect('list.owner', 'owner')
+        .leftJoinAndSelect('list.items', 'items')
+        .where('list.id IN (:...listIds)', { listIds: paginatedListIds })
+        .andWhere('list.privacy = :privacy', { privacy: PrivacyMode.PUBLIC })
+        .getMany();
+
+      // Map to result with like counts
+      const likeCountMap = new Map<number, number>(
+        publicLikeStats.map((stat) => [Number(stat.listId), Number(stat.likeCount)])
+      );
+
+      const listMap = new Map<number, (typeof lists)[number]>(
+        lists.map((list) => [this.toNumberId(list.id), list])
+      );
+
+      const data = paginatedListIds
+        .map((listId) => {
+          const list = listMap.get(listId);
+          if (!list) {
+            return null;
+          }
+
+          return {
+            id: this.toNumberId(list.id),
+            name: list.name,
+            slug: list.slug,
+            ownerUsername: list.owner?.username || '',
+            likeCount: likeCountMap.get(listId) || 0,
+            itemCount: list.items?.length || 0,
+            bannerImage: list.bannerImage || undefined,
+            privacy: list.privacy,
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null);
+
+      return {
+        data,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    }, 'getMostLikedLists');
+  }
+
+  async getUserLikedLists(
+    userId: number,
+    options: LikesDiscoveryOptionsDto
+  ): Promise<LikesDiscoveryResultDto> {
+    this._validateId(userId, 'User ID');
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(options.limit || 10, 50);
+    const skip = (page - 1) * limit;
+
+    return this._executeWithErrorHandling(async () => {
+      const activityRepo = this.listRepository.getRepository().manager.getRepository(Activity);
+      const listRepo = this.listRepository.getRepository();
+
+      // Get user's liked list IDs with pagination
+      const userLikes = (await activityRepo
+        .createQueryBuilder('activity')
+        .select('activity.listId', 'listId')
+        .where('activity.userId = :userId', { userId: BigInt(userId) })
+        .andWhere('activity.type = :type', { type: 'LIST_LIKE' })
+        .orderBy('activity.createdAt', 'DESC')
+        .skip(skip)
+        .take(limit)
+        .getRawMany()) as Array<{ listId: string }>;
+
+      const userLikedListIds = userLikes.map((like) => BigInt(like.listId));
+
+      // Get total count of liked lists
+      const totalCount = await activityRepo
+        .createQueryBuilder('activity')
+        .where('activity.userId = :userId', { userId: BigInt(userId) })
+        .andWhere('activity.type = :type', { type: 'LIST_LIKE' })
+        .getCount();
+
+      if (userLikedListIds.length === 0) {
+        return {
+          data: [],
+          pagination: {
+            page,
+            limit,
+            total: totalCount,
+            totalPages: Math.ceil(totalCount / limit),
+          },
+        };
+      }
+
+      // Fetch full list details, only get public lists
+      const lists = await listRepo
+        .createQueryBuilder('list')
+        .leftJoinAndSelect('list.owner', 'owner')
+        .leftJoinAndSelect('list.items', 'items')
+        .where('list.id IN (:...listIds)', { listIds: userLikedListIds })
+        .andWhere('list.privacy = :privacy', { privacy: PrivacyMode.PUBLIC })
+        .getMany();
+
+      // Get like counts for all lists
+      const likeCounts = (await activityRepo
+        .createQueryBuilder('activity')
+        .select('activity.listId', 'listId')
+        .addSelect('COUNT(activity.id)', 'likeCount')
+        .where('activity.type = :type', { type: 'LIST_LIKE' })
+        .andWhere('activity.listId IN (:...listIds)', { listIds: userLikedListIds })
+        .groupBy('activity.listId')
+        .getRawMany()) as Array<{ listId: string; likeCount: number }>;
+
+      const likeCountMap = new Map(likeCounts.map((stat) => [BigInt(stat.listId), stat.likeCount]));
+
+      const data = lists.map((list) => ({
+        id: this.toNumberId(list.id),
+        name: list.name,
+        slug: list.slug,
+        ownerUsername: list.owner?.username || '',
+        likeCount: likeCountMap.get(list.id) || 0,
+        itemCount: list.items?.length || 0,
+        bannerImage: list.bannerImage || undefined,
+        privacy: list.privacy,
+      }));
+
+      return {
+        data,
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+        },
+      };
+    }, 'getUserLikedLists');
+  }
 
   async searchLists(options: SearchListDto, userId?: number): Promise<ListSearchResult> {
     this._validateString(options.query, 'Query', { minLength: 1, maxLength: 255 });

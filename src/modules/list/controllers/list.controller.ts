@@ -361,6 +361,29 @@ class ListController extends BaseController<IListService & IBaseService> {
     this.success(res, likeStatus);
   });
 
+  getMostLikedLists = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const page = this.getIntQuery(req, 'page', 1) || 1;
+    const limit = this.getIntQuery(req, 'limit', 10) || 10;
+    const result = await this.service.getMostLikedLists({ page, limit });
+    this.success(res, result);
+  });
+
+  getUserLikedLists = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    this.requireAuth(authReq);
+
+    const userId = this.getUserId(authReq);
+    if (!userId) {
+      this.error(res, 'Unauthorized', 401);
+      return;
+    }
+
+    const page = this.getIntQuery(req, 'page', 1) || 1;
+    const limit = this.getIntQuery(req, 'limit', 10) || 10;
+    const result = await this.service.getUserLikedLists(userId, { page, limit });
+    this.success(res, result);
+  });
+
   // ==================== PHASE 5: SEARCH & DISCOVER & ITEM MANAGE ====================
 
   searchLists = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {

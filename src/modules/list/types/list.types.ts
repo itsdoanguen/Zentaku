@@ -22,6 +22,8 @@ import type {
   UpdateListDto,
   UpdateMemberPermissionDto,
   UpdateThemeDto,
+  LikesDiscoveryOptionsDto,
+  LikesDiscoveryResultDto,
 } from '../dto/list.dto';
 
 export interface ListSearchResult {
@@ -62,7 +64,15 @@ export interface IListService extends IBaseService {
   // Phase 4: Theme & Likes (stub for now)
   updateTheme(listId: number, userId: number, data: UpdateThemeDto): Promise<CustomList>;
   toggleLike(listId: number, userId: number): Promise<void>;
-  getLikeStatus(listId: number, userId: number): Promise<{ likedByMe: boolean }>;
+  getLikeStatus(
+    listId: number,
+    userId?: number
+  ): Promise<{ likedByMe: boolean; likeCount: number }>;
+  getMostLikedLists(options: LikesDiscoveryOptionsDto): Promise<LikesDiscoveryResultDto>;
+  getUserLikedLists(
+    userId: number,
+    options: LikesDiscoveryOptionsDto
+  ): Promise<LikesDiscoveryResultDto>;
 
   // Phase 5: Search & Discover & Item Manage
   searchLists(options: SearchListDto, userId?: number): Promise<ListSearchResult>;

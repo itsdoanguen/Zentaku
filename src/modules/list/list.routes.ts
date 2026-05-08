@@ -659,6 +659,13 @@ const initializeListRoutes = (container: Container): Router => {
    *     tags: [List Theme]
    *     security:
    *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: listId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         example: 1
    *     requestBody:
    *       required: true
    *       content:
@@ -671,9 +678,31 @@ const initializeListRoutes = (container: Container): Router => {
    *               themeKey:
    *                 type: string
    *                 example: summer-vibes
+   *                 description: Theme key (e.g., summer-vibes, neon-night, pastel-dream)
    *               themeColor:
    *                 type: string
    *                 example: '#FFAA00'
+   *                 description: Hex color override for theme
+   *     responses:
+   *       200:
+   *         description: Theme updated successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     id:
+   *                       type: integer
+   *                     settings:
+   *                       type: object
+   *                       properties:
+   *                         themeKey:
+   *                           type: string
+   *                         themeColor:
+   *                           type: string
    */
   router.put(
     '/:listId/theme',
@@ -691,6 +720,31 @@ const initializeListRoutes = (container: Container): Router => {
    *     tags: [List Likes]
    *     security:
    *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: listId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         example: 1
+   *     responses:
+   *       200:
+   *         description: Like status toggled successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     message:
+   *                       type: string
+   *                       example: Like status toggled
+   *       401:
+   *         description: Unauthorized
+   *       404:
+   *         description: List not found
    */
   router.post('/:listId/like', authenticate, listIdParamValidation, listController.toggleLike);
 
@@ -698,10 +752,38 @@ const initializeListRoutes = (container: Container): Router => {
    * @swagger
    * /api/list/{listId}/like/status:
    *   get:
-   *     summary: Get like status
+   *     summary: Get like status and count
    *     tags: [List Likes]
    *     security:
    *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: listId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         example: 1
+   *     responses:
+   *       200:
+   *         description: Like status retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     likedByMe:
+   *                       type: boolean
+   *                       example: true
+   *                     likeCount:
+   *                       type: integer
+   *                       example: 42
+   *       401:
+   *         description: Unauthorized
+   *       404:
+   *         description: List not found
    */
   router.get(
     '/:listId/like/status',
@@ -709,6 +791,127 @@ const initializeListRoutes = (container: Container): Router => {
     listIdParamValidation,
     listController.getLikeStatus
   );
+
+  /**
+   * @swagger
+   * /api/list/likes/most-liked:
+   *   get:
+   *     summary: Get most liked lists (public only)
+   *     tags: [List Likes]
+   *     description: Discover lists sorted by like count (descending). Returns public lists only.
+   *     security: []
+   *     parameters:
+   *       - in: query
+   *         name: page
+   *         required: false
+   *         schema:
+   *           type: integer
+   *           default: 1
+   *         example: 1
+   *       - in: query
+   *         name: limit
+   *         required: false
+   *         schema:
+   *           type: integer
+   *           default: 10
+   *         example: 10
+   *     responses:
+   *       200:
+   *         description: Most liked lists retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                     properties:
+   *                       id:
+   *                         type: integer
+   *                       name:
+   *                         type: string
+   *                       ownerUsername:
+   *                         type: string
+   *                       likeCount:
+   *                         type: integer
+   *                       itemCount:
+   *                         type: integer
+   *                 pagination:
+   *                   type: object
+   *                   properties:
+   *                     page:
+   *                       type: integer
+   *                     limit:
+   *                       type: integer
+   *                     total:
+   *                       type: integer
+   *                     totalPages:
+   *                       type: integer
+   */
+  router.get('/likes/most-liked', listController.getMostLikedLists);
+  router.post('/likes/most-liked', listController.getMostLikedLists);
+
+  /**
+   * @swagger
+   * /api/list/likes/user:
+   *   post:
+   *     summary: Get lists liked by current user
+   *     tags: [List Likes]
+   *     description: Get all public lists that the authenticated user has liked, sorted by most recent first.
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               page:
+   *                 type: integer
+   *                 example: 1
+   *               limit:
+   *                 type: integer
+   *                 example: 10
+   *     responses:
+   *       200:
+   *         description: User liked lists retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                     properties:
+   *                       id:
+   *                         type: integer
+   *                       name:
+   *                         type: string
+   *                       ownerUsername:
+   *                         type: string
+   *                       likeCount:
+   *                         type: integer
+   *                       itemCount:
+   *                         type: integer
+   *                 pagination:
+   *                   type: object
+   *                   properties:
+   *                     page:
+   *                       type: integer
+   *                     limit:
+   *                       type: integer
+   *                     total:
+   *                       type: integer
+   *                     totalPages:
+   *                       type: integer
+   *       401:
+   *         description: Unauthorized
+   */
+  router.post('/likes/user', authenticate, listController.getUserLikedLists);
 
   // ==================== PHASE 5: SEARCH ====================
   // Search lists (kept as POST for backward compatibility)
