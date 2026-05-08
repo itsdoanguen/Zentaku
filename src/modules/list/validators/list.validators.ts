@@ -69,18 +69,46 @@ export const addMemberValidation: ValidationChain[] = [
     .withMessage('Username is invalid'),
 
   body('permission')
-    .notEmpty()
-    .withMessage('Permission is required')
+    .optional()
     .isIn(['EDITOR', 'VIEWER'])
     .withMessage('Permission must be EDITOR or VIEWER'),
+
+  body('permission_level')
+    .optional()
+    .isIn(['owner', 'edit', 'view', 'viewer'])
+    .withMessage('permission_level must be owner, edit, view, or viewer'),
+
+  body('can_edit').optional().isBoolean().withMessage('can_edit must be a boolean'),
 ];
 
 export const updateMemberPermissionValidation: ValidationChain[] = [
-  body('permission')
+  body('username')
+    .trim()
     .notEmpty()
-    .withMessage('Permission is required')
+    .withMessage('Username is required')
+    .isLength({ min: 1, max: 255 })
+    .withMessage('Username is invalid'),
+
+  body('permission')
+    .optional()
     .isIn(['EDITOR', 'VIEWER'])
     .withMessage('Permission must be EDITOR or VIEWER'),
+
+  body('permission_level')
+    .optional()
+    .isIn(['owner', 'edit', 'view', 'viewer'])
+    .withMessage('permission_level must be owner, edit, view, or viewer'),
+
+  body('can_edit').optional().isBoolean().withMessage('can_edit must be a boolean'),
+];
+
+export const removeMemberValidation: ValidationChain[] = [
+  query('username')
+    .trim()
+    .notEmpty()
+    .withMessage('Username is required')
+    .isLength({ min: 1, max: 255 })
+    .withMessage('Username is invalid'),
 ];
 
 // ==================== INVITE & REQUEST VALIDATORS ====================
@@ -113,8 +141,11 @@ export const requestEditValidation: ValidationChain[] = requestJoinValidation;
 export const respondToRequestValidation: ValidationChain[] = [
   body('action')
     .notEmpty()
-    .isIn(['ACCEPT', 'REJECT'])
-    .withMessage('Action must be ACCEPT or REJECT'),
+    .custom((value) => {
+      const normalized = String(value).trim().toUpperCase();
+      return ['ACCEPT', 'REJECT', 'APPROVE', 'DECLINE'].includes(normalized);
+    })
+    .withMessage('Action must be ACCEPT, REJECT, approve, or reject'),
 
   body('message')
     .optional()
@@ -123,6 +154,24 @@ export const respondToRequestValidation: ValidationChain[] = [
     .withMessage('Message must be less than 500 characters'),
 
   param('requestId').isInt({ min: 1 }).withMessage('Request ID must be a positive integer'),
+];
+
+export const respondToInviteValidation: ValidationChain[] = [
+  body('action')
+    .notEmpty()
+    .custom((value) => {
+      const normalized = String(value).trim().toUpperCase();
+      return ['ACCEPT', 'REJECT', 'APPROVE', 'DECLINE'].includes(normalized);
+    })
+    .withMessage('Action must be ACCEPT, REJECT, approve, or reject'),
+
+  body('message')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Message must be less than 500 characters'),
+
+  param('inviteId').isInt({ min: 1 }).withMessage('Invite ID must be a positive integer'),
 ];
 
 // ==================== THEME VALIDATORS ====================
@@ -145,7 +194,7 @@ export const updateThemeValidation: ValidationChain[] = [
 // ==================== ANIME ITEM VALIDATORS ====================
 
 export const addAnimeToListValidation: ValidationChain[] = [
-  body('mediaId').isInt({ min: 1 }).withMessage('Media ID must be a positive integer'),
+  body('anilistId').isInt({ min: 1 }).withMessage('AniList ID must be a positive integer'),
 
   body('note')
     .optional()
@@ -161,26 +210,26 @@ export const mediaIdParamValidation: ValidationChain[] = [
 // ==================== SEARCH VALIDATORS ====================
 
 export const searchListValidation: ValidationChain[] = [
-  query('query')
+  body('query')
     .trim()
     .notEmpty()
     .withMessage('Search query is required')
     .isLength({ min: 1, max: 255 })
     .withMessage('Query must be between 1 and 255 characters'),
 
-  query('sortBy')
+  body('sortBy')
     .optional()
     .isIn(['RECENT', 'MOST_LIKED', 'NAME'])
     .withMessage('Invalid sort option'),
 
-  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  body('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
 
-  query('limit')
+  body('limit')
     .optional()
     .isInt({ min: 1, max: 100 })
     .withMessage('Limit must be between 1 and 100'),
 
-  query('isPublicOnly').optional().isBoolean().withMessage('isPublicOnly must be a boolean'),
+  body('isPublicOnly').optional().isBoolean().withMessage('isPublicOnly must be a boolean'),
 ];
 
 // ==================== QUERY VALIDATORS ====================

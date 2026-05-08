@@ -7,8 +7,8 @@ Tinh nang can ho tro day du:
 - Set private/public cho list.
 - Role trong list: owner, editor, viewer.
 - Invite nguoi dung vao list voi role editor hoac viewer.
-- Nguoi dung co the request join list private.
-- Viewer co quyen request len editor.
+- Nguoi dung co the request join vao 1 list public (luon mac dinh voi vai tro viewer).
+- Sau khi da join list (role viewer), mem co the request len lam editor.
 - Doi mau theme cua list bang bang mau.
 - Co the tim (yeu thich) list, hien thi so luot like.
 - API phai match voi ZentakuFE va pbl5_fe_shared-logic.
@@ -162,7 +162,9 @@ Muc tieu: khoa contract de backend/frontend lam song song, tranh vo API giua spr
 ### Cong viec chi tiet
 
 - Invite user vao list voi permission editor/viewer.
-- Request join cho private list.
+- Request join chi ap dung cho list public.
+- List private chi owner moi co the moi nguoi dung tu ben ngoai vao list.
+- Owner cua list public cung co the moi nguoi dung vao list voi vai tro viewer/editor.
 - Request edit cho viewer.
 - Respond approve/reject tu owner.
 - Rule tranh trung request pending cung loai.

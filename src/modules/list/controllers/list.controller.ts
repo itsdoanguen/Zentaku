@@ -14,7 +14,7 @@ import {
 import type {
   AddMemberDto,
   CreateListDto,
-  InviteMemberDto,
+  AddAnimeToListDto,
   RequestEditDto,
   RequestJoinDto,
   RespondToRequestDto,
@@ -52,7 +52,6 @@ class ListController extends BaseController<IListService & IBaseService> {
       return;
     }
 
-    // TODO: Implement in Phase 1
     const createData = this.getBody<CreateListDto>(req);
     const newList = await this.service.createList(userId, createData);
     this.success(res, newList, 201);
@@ -74,7 +73,6 @@ class ListController extends BaseController<IListService & IBaseService> {
 
     const username = this.getStringQuery(req, 'username');
 
-    // TODO: Implement in Phase 1
     const lists = await this.service.getUserLists(username, userId ?? undefined);
     this.success(res, lists);
   });
@@ -95,7 +93,6 @@ class ListController extends BaseController<IListService & IBaseService> {
 
     const listId = this.getIntParam(req, 'listId');
 
-    // TODO: Implement in Phase 1
     const listDetail = await this.service.getListDetail(listId, userId ?? undefined);
     this.success(res, listDetail);
   });
@@ -113,7 +110,6 @@ class ListController extends BaseController<IListService & IBaseService> {
 
     const listId = this.getIntParam(req, 'listId');
 
-    // TODO: Implement in Phase 1
     const animes = await this.service.getListAnimes(listId);
     this.success(res, animes);
   });
@@ -141,7 +137,6 @@ class ListController extends BaseController<IListService & IBaseService> {
     const listId = this.getIntParam(req, 'listId');
     const updateData = this.getBody<UpdateListDto>(req);
 
-    // TODO: Implement in Phase 1
     const updatedList = await this.service.updateList(listId, userId, updateData);
     this.success(res, updatedList);
   });
@@ -168,7 +163,6 @@ class ListController extends BaseController<IListService & IBaseService> {
 
     const listId = this.getIntParam(req, 'listId');
 
-    // TODO: Implement in Phase 1
     await this.service.deleteList(listId, userId);
     this.success(res, { message: 'List deleted successfully' });
   });
@@ -176,12 +170,24 @@ class ListController extends BaseController<IListService & IBaseService> {
   // ==================== PHASE 2: MEMBER MANAGEMENT (STUBS) ====================
 
   listMembers = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      this.error(res, 'Validation failed', 400, errors.array());
+      return;
+    }
+
     const listId = this.getIntParam(req, 'listId');
     const members = await this.service.listMembers(listId);
     this.success(res, members);
   });
 
   addMember = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      this.error(res, 'Validation failed', 400, errors.array());
+      return;
+    }
+
     const authReq = req as AuthenticatedRequest;
     this.requireAuth(authReq);
 
@@ -198,6 +204,12 @@ class ListController extends BaseController<IListService & IBaseService> {
   });
 
   updateMemberPermission = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      this.error(res, 'Validation failed', 400, errors.array());
+      return;
+    }
+
     const authReq = req as AuthenticatedRequest;
     this.requireAuth(authReq);
 
@@ -214,6 +226,12 @@ class ListController extends BaseController<IListService & IBaseService> {
   });
 
   removeMember = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      this.error(res, 'Validation failed', 400, errors.array());
+      return;
+    }
+
     const authReq = req as AuthenticatedRequest;
     this.requireAuth(authReq);
 
@@ -230,22 +248,6 @@ class ListController extends BaseController<IListService & IBaseService> {
   });
 
   // ==================== PHASE 3: INVITES & REQUESTS (STUBS) ====================
-
-  inviteMember = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const authReq = req as AuthenticatedRequest;
-    this.requireAuth(authReq);
-
-    const userId = this.getUserId(authReq);
-    if (!userId) {
-      this.error(res, 'Unauthorized', 401);
-      return;
-    }
-
-    const listId = this.getIntParam(req, 'listId');
-    const payload = this.getBody<InviteMemberDto>(req);
-    await this.service.inviteMember(listId, userId, payload);
-    this.success(res, { message: 'Invitation sent' });
-  });
 
   requestJoin = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const authReq = req as AuthenticatedRequest;
@@ -359,12 +361,74 @@ class ListController extends BaseController<IListService & IBaseService> {
     this.success(res, likeStatus);
   });
 
-  // ==================== PHASE 5: SEARCH (STUBS) ====================
+  getMostLikedLists = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const page = this.getIntQuery(req, 'page', 1) || 1;
+    const limit = this.getIntQuery(req, 'limit', 10) || 10;
+    const result = await this.service.getMostLikedLists({ page, limit });
+    this.success(res, result);
+  });
+
+  getUserLikedLists = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    this.requireAuth(authReq);
+
+    const userId = this.getUserId(authReq);
+    if (!userId) {
+      this.error(res, 'Unauthorized', 401);
+      return;
+    }
+
+    const page = this.getIntQuery(req, 'page', 1) || 1;
+    const limit = this.getIntQuery(req, 'limit', 10) || 10;
+    const result = await this.service.getUserLikedLists(userId, { page, limit });
+    this.success(res, result);
+  });
+
+  // ==================== PHASE 5: SEARCH & DISCOVER & ITEM MANAGE ====================
 
   searchLists = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    const userId = this.getUserId(authReq);
     const payload = this.getBody<SearchListDto>(req);
-    const result = await this.service.searchLists(payload);
+    const result = await this.service.searchLists(payload, userId ?? undefined);
     this.success(res, result);
+  });
+
+  discoverLists = this.asyncHandler(async (_req: Request, res: Response): Promise<void> => {
+    const result = await this.service.discoverLists();
+    this.success(res, result);
+  });
+
+  addAnimeToList = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    this.requireAuth(authReq);
+
+    const userId = this.getUserId(authReq);
+    if (!userId) {
+      this.error(res, 'Unauthorized', 401);
+      return;
+    }
+
+    const listId = this.getIntParam(req, 'listId');
+    const payload = this.getBody<AddAnimeToListDto>(req);
+    await this.service.addAnimeToList(listId, userId, payload);
+    this.success(res, { message: 'Anime added to list successfully' });
+  });
+
+  removeAnimeFromList = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    this.requireAuth(authReq);
+
+    const userId = this.getUserId(authReq);
+    if (!userId) {
+      this.error(res, 'Unauthorized', 401);
+      return;
+    }
+
+    const listId = this.getIntParam(req, 'listId');
+    const anilistId = this.getIntParam(req, 'anilistId');
+    await this.service.removeAnimeFromList(listId, userId, anilistId);
+    this.success(res, { message: 'Anime removed from list successfully' });
   });
 }
 
