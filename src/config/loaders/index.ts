@@ -7,6 +7,7 @@
 import logger from '../../shared/utils/logger';
 import type { Container } from '../container';
 import authLoader = require('./auth.loader');
+import realtimeLoader = require('./realtime.loader');
 import infrastructureLoader = require('./infrastructure.loader');
 import animeLoader = require('./anime.loader');
 import readingMediaLoader = require('./reading-media.loader');
@@ -28,6 +29,8 @@ const loadModules = (container: Container): void => {
   infrastructureLoader(container);
 
   authLoader(container);
+
+  realtimeLoader(container);
 
   userLoader(container);
 

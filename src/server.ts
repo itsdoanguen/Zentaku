@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import type { Server } from 'http';
 import { container, createApp } from './app';
+import { initializeRealtime } from './realtime';
 import logger from './shared/utils/logger';
 
 dotenv.config();
@@ -16,6 +17,8 @@ const startServer = async (): Promise<void> => {
     const server: Server = app.listen(PORT, () => {
       logger.info(`Server is running on port ${PORT}`);
     });
+
+    initializeRealtime(server, container);
 
     server.on('error', (err: Error & { code?: string }) => {
       console.error('Server error:', err.message);

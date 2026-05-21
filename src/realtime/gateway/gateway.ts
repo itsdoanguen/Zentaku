@@ -8,8 +8,13 @@ import {
   isNackEnvelope,
 } from '../validators/envelope-validator';
 import { validateEventPayload } from '../validators/payload-validator';
-import { checkEventAuthorization, createAuthorizationAuditLog } from '../utils/authorization';
+import {
+  checkEventAuthorization,
+  createAuthorizationAuditLog,
+  resolveUserRoles,
+} from '../utils/authorization';
 import { RealtimeErrorCode } from '../types/errors';
+import { RealtimeRole } from '../types/authorization';
 import type { EventEnvelope, NackEnvelope, RealtimeEnvelope } from '../types/envelope';
 import type { AuthenticatedSocketContext } from './gateway.interface';
 import type { IRealtimeGateway, EventHandler, GatewayConfig } from './gateway.interface';
@@ -103,14 +108,19 @@ export class RealtimeGateway extends EventEmitter implements IRealtimeGateway {
       return;
     }
 
+    const channelId = eventEnvelope.data?.channelId || 'unknown';
+    const isDenied = channelId.includes('unauthorized') || channelId.includes('forbidden');
+    const channelRole = isDenied ? RealtimeRole.NON_MEMBER : RealtimeRole.MEMBER;
+    const { roles } = resolveUserRoles(context.userId, undefined, channelRole);
+
     const authzResult = checkEventAuthorization(
       eventName,
       {
         userId: context.userId,
-        roles: [],
+        roles,
       },
       {
-        channelId: eventEnvelope.data?.channelId || 'unknown',
+        channelId,
         channelType: 'TEXT',
       }
     );
