@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
+import mongoose from 'mongoose';
 import * as entities from '../entities';
 
 dotenv.config();
@@ -63,8 +64,17 @@ export const initializeDatabase = async (): Promise<void> => {
       // eslint-disable-next-line no-console
       console.log('✓ TypeORM DataSource initialized');
     }
+
+    const mongoUri = process.env.MONGODB_URI;
+    if (mongoUri) {
+      await mongoose.connect(mongoUri);
+      // eslint-disable-next-line no-console
+      console.log('✓ MongoDB connection initialized');
+    } else {
+      console.warn('⚠ MONGODB_URI is not set, MongoDB connection skipped');
+    }
   } catch (error) {
-    console.error('✗ TypeORM DataSource initialization failed:', error);
+    console.error('✗ Database initialization failed:', error);
     throw error;
   }
 };
@@ -76,8 +86,11 @@ export const closeDatabase = async (): Promise<void> => {
       // eslint-disable-next-line no-console
       console.log('✓ TypeORM DataSource closed');
     }
+    await mongoose.disconnect();
+    // eslint-disable-next-line no-console
+    console.log('✓ MongoDB connection closed');
   } catch (error) {
-    console.error('✗ TypeORM DataSource close failed:', error);
+    console.error('✗ Database close failed:', error);
     throw error;
   }
 };

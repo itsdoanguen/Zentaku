@@ -19,9 +19,13 @@ const initializeRoutes = (container: unknown): Router => {
   const userRoutes = require('../modules/user/user.routes');
   const activityRoutes = require('../modules/activity/activity.routes');
   const followRoutes = require('../modules/follow/follow.routes');
+  const communityRoutes = require('../modules/community/community.routes');
+  const channelRoutes = require('../modules/channel/channel.routes');
 
   router.use('/auth', authRoutes(container));
   router.use('/user', userRoutes(container));
+  router.use('/communities', communityRoutes(container));
+  router.use('/', channelRoutes(container));
   router.use('/anilist/anime', animeRoutes(container));
   router.use('/anilist', readingMediaRoutes(container));
   router.use('/streaming', streamingRoutes(container));

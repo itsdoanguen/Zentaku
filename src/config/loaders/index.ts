@@ -17,6 +17,8 @@ import listLoader = require('./list.loader');
 import userLoader = require('./user.loader');
 import activityLoader = require('./activity.loader');
 import followLoader = require('./follow.loader');
+import communityLoader = require('./community.loader');
+import channelLoader = require('./channel.loader');
 
 /**
  * Load all modules into the container
@@ -45,6 +47,8 @@ const loadModules = (container: Container): void => {
   listLoader(container);
   activityLoader(container);
   followLoader(container);
+  communityLoader(container);
+  channelLoader(container);
 
   logger.debug('[Loaders] All modules registered successfully');
   logger.debug(`[Loaders] Total registered: ${container.getRegistered().length} dependencies`);
