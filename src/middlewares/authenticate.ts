@@ -4,6 +4,16 @@ import { TokenUtil } from '../modules/auth/utils/token.util';
 
 export const authenticate = (req: Request, res: Response, next: NextFunction): void => {
   try {
+    // Allow public endpoints that don't require authentication
+    const isPublicMostLikedListsRoute =
+      (req.method === 'GET' || req.method === 'POST') &&
+      req.originalUrl.startsWith('/api/list/likes/most-liked');
+
+    if (isPublicMostLikedListsRoute) {
+      next();
+      return;
+    }
+
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {

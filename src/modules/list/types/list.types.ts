@@ -6,10 +6,11 @@
 
 import type { IBaseService } from '../../../core/base/BaseController';
 import type { CustomList, ListItem } from '../../../entities';
+import type { Repository } from 'typeorm';
 import type {
   AddMemberDto,
   CreateListDto,
-  InviteMemberDto,
+  AddAnimeToListDto,
   ListDetailDto,
   ListMemberDto,
   ListRequestDto,
@@ -21,6 +22,8 @@ import type {
   UpdateListDto,
   UpdateMemberPermissionDto,
   UpdateThemeDto,
+  LikesDiscoveryOptionsDto,
+  LikesDiscoveryResultDto,
 } from '../dto/list.dto';
 
 export interface ListSearchResult {
@@ -48,7 +51,6 @@ export interface IListService extends IBaseService {
   removeMember(listId: number, userId: number, username: string): Promise<void>;
 
   // Phase 3: Invitations & Requests (stub for now)
-  inviteMember(listId: number, userId: number, data: InviteMemberDto): Promise<void>;
   requestJoin(listId: number, userId: number, data: RequestJoinDto): Promise<void>;
   requestEdit(listId: number, userId: number, data: RequestEditDto): Promise<void>;
   getListRequests(listId: number, userId: number): Promise<ListRequestDto[]>;
@@ -62,13 +64,25 @@ export interface IListService extends IBaseService {
   // Phase 4: Theme & Likes (stub for now)
   updateTheme(listId: number, userId: number, data: UpdateThemeDto): Promise<CustomList>;
   toggleLike(listId: number, userId: number): Promise<void>;
-  getLikeStatus(listId: number, userId: number): Promise<{ likedByMe: boolean }>;
+  getLikeStatus(
+    listId: number,
+    userId?: number
+  ): Promise<{ likedByMe: boolean; likeCount: number }>;
+  getMostLikedLists(options: LikesDiscoveryOptionsDto): Promise<LikesDiscoveryResultDto>;
+  getUserLikedLists(
+    userId: number,
+    options: LikesDiscoveryOptionsDto
+  ): Promise<LikesDiscoveryResultDto>;
 
-  // Phase 5: Search (stub for now)
-  searchLists(options: SearchListDto): Promise<ListSearchResult>;
+  // Phase 5: Search & Discover & Item Manage
+  searchLists(options: SearchListDto, userId?: number): Promise<ListSearchResult>;
+  discoverLists(): Promise<ListSummaryDto[]>;
+  addAnimeToList(listId: number, userId: number, data: AddAnimeToListDto): Promise<void>;
+  removeAnimeFromList(listId: number, userId: number, mediaId: number): Promise<void>;
 }
 
 export interface IListRepository {
+  getRepository(): Repository<CustomList>;
   findListById(listId: number): Promise<CustomList | null>;
   createList(data: Partial<CustomList>): Promise<CustomList>;
   updateList(listId: number, data: Partial<CustomList>): Promise<CustomList>;
@@ -76,4 +90,6 @@ export interface IListRepository {
   getUserLists(userId: number): Promise<CustomList[]>;
   getListBySlug(slug: string): Promise<CustomList | null>;
   getListsByUsername(username: string): Promise<CustomList[]>;
+  generateUniqueSlug(name: string): Promise<string>;
+  isValidColor(color: string): boolean;
 }
