@@ -21,11 +21,13 @@ const initializeRoutes = (container: unknown): Router => {
   const followRoutes = require('../modules/follow/follow.routes');
   const communityRoutes = require('../modules/community/community.routes');
   const channelRoutes = require('../modules/channel/channel.routes');
+  const messageRoutes = require('../modules/message/message.routes');
 
   router.use('/auth', authRoutes(container));
   router.use('/user', userRoutes(container));
   router.use('/communities', communityRoutes(container));
   router.use('/', channelRoutes(container));
+  router.use('/', messageRoutes(container));
   router.use('/anilist/anime', animeRoutes(container));
   router.use('/anilist', readingMediaRoutes(container));
   router.use('/streaming', streamingRoutes(container));
