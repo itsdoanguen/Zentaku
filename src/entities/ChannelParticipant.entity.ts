@@ -18,6 +18,9 @@ export class ChannelParticipant extends BaseJoinEntity {
   @Column({ name: 'last_read_at', type: 'datetime', nullable: true })
   lastReadAt?: Date | null;
 
+  @Column({ name: 'last_read_message_id', type: 'bigint', nullable: true })
+  lastReadMessageId?: bigint | null;
+
   @Column({ name: 'is_muted', type: 'boolean', default: false })
   isMuted!: boolean;
 

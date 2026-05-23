@@ -7,7 +7,7 @@ module.exports = {
   },
 
   // Test file patterns
-  testMatch: ['**/test/**/*.test.js', '**/__tests__/**/*.js'],
+  testMatch: ['**/test/**/*.test.js', '**/__tests__/**/*.js', '**/__tests__/**/*.spec.ts'],
 
   // Reporters - output to console and file
   reporters: [

@@ -37,9 +37,11 @@
     "mysql2": "^3.16.1",
     "nodemailer": "^8.0.2",
     "reflect-metadata": "^0.2.2",
+    "socket.io": "^4.8.3",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "typeorm": "^0.3.28"
+    "typeorm": "^0.3.28",
+    "mongoose": "^8.9.5"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -61,6 +63,7 @@
     "nodemon": "^3.1.11",
     "prettier": "^3.7.4",
     "rimraf": "^6.1.2",
+    "socket.io-client": "^4.8.3",
     "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
