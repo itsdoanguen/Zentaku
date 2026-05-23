@@ -1,7 +1,9 @@
-import express, { type Router } from 'express';
+import express, { type Router, type Request, type Response, type NextFunction } from 'express';
 import type { Container } from '../../config/container';
 import type SearchController from './search.controller';
+import type ListController from '../list/controllers/list.controller';
 import SearchValidator from './search.validator';
+import { searchListValidation } from '../list/validators/list.validators';
 
 /**
  * Initialize search routes with dependency injection
@@ -529,6 +531,78 @@ const initializeSearchRoutes = (container: Container): Router => {
    *         description: Server error
    */
   router.get('/seasonal/next', searchController.getNextSeason);
+
+  /**
+   * @swagger
+   * /api/search/list:
+   *   get:
+   *     summary: Search lists
+   *     description: Search user-created lists (public/shared/private depending on auth)
+   *     tags:
+   *       - Search
+   *     parameters:
+   *       - in: query
+   *         name: q
+   *         required: true
+   *         schema:
+   *           type: string
+   *           minLength: 1
+   *           maxLength: 255
+   *         description: Search query string
+   *         example: action
+   *       - in: query
+   *         name: sortBy
+   *         schema:
+   *           type: string
+   *           enum: [RECENT, MOST_LIKED, NAME]
+   *       - in: query
+   *         name: page
+   *         schema:
+   *           type: integer
+   *           default: 1
+   *       - in: query
+   *         name: perPage
+   *         schema:
+   *           type: integer
+   *           default: 20
+   *       - in: query
+   *         name: isPublicOnly
+   *         schema:
+   *           type: boolean
+   *     responses:
+   *       200:
+   *         description: Search results
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ListSearchResultResponse'
+   */
+  const listController = container.resolve<ListController>('listController');
+
+  router.get(
+    '/list',
+    (req: Request, _res: Response, next: NextFunction) => {
+      const q =
+        typeof req.query.q === 'string' ? req.query.q : (req.query.query as string | undefined);
+      req.body = {
+        query: q,
+        sortBy: req.query.sortBy,
+        page: req.query.page ? Number(req.query.page) : undefined,
+        limit: req.query.perPage
+          ? Number(req.query.perPage)
+          : req.query.limit
+            ? Number(req.query.limit)
+            : undefined,
+        isPublicOnly:
+          req.query.isPublicOnly === 'true' ||
+          req.query.isPublicOnly === '1' ||
+          req.query.isPublicOnly === 'True',
+      };
+      next();
+    },
+    searchListValidation,
+    listController.searchLists
+  );
 
   return router;
 };

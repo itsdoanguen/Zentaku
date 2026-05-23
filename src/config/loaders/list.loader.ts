@@ -31,11 +31,13 @@ const loadList = (container: Container): void => {
     (c: any) => {
       const { ListService } = require('../../modules/list/services/list.service');
       const listRepository = c.resolve('listRepository');
-      return new ListService(listRepository);
+      const userRepository = c.resolve('userRepository');
+      const animeRepository = c.resolve('animeRepository');
+      return new ListService(listRepository, userRepository, animeRepository);
     },
     {
       singleton: true,
-      dependencies: ['listRepository'],
+      dependencies: ['listRepository', 'userRepository', 'animeRepository'],
     }
   );
 

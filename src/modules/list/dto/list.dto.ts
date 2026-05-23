@@ -25,10 +25,15 @@ export interface UpdateListDto {
 export interface AddMemberDto {
   username: string;
   permission: 'EDITOR' | 'VIEWER';
+  can_edit?: boolean;
+  permission_level?: 'owner' | 'edit' | 'view' | 'viewer';
 }
 
 export interface UpdateMemberPermissionDto {
+  username: string;
   permission: 'EDITOR' | 'VIEWER';
+  can_edit?: boolean;
+  permission_level?: 'owner' | 'edit' | 'view' | 'viewer';
 }
 
 // ==================== INVITATIONS & REQUESTS ====================
@@ -48,7 +53,7 @@ export interface RequestEditDto {
 }
 
 export interface RespondToRequestDto {
-  action: 'ACCEPT' | 'REJECT';
+  action: 'ACCEPT' | 'REJECT' | 'approve' | 'reject';
   message?: string;
 }
 
@@ -63,10 +68,39 @@ export interface LikeToggleDto {
   // No payload needed, toggle via POST
 }
 
+// ==================== LIKE DISCOVERY ====================
+
+export interface LikesDiscoveryOptionsDto {
+  page?: number;
+  limit?: number;
+  sortBy?: 'RECENT' | 'POPULAR';
+}
+
+export interface LikedListDto {
+  id: number;
+  name: string;
+  slug: string;
+  ownerUsername: string;
+  likeCount: number;
+  itemCount: number;
+  bannerImage?: string;
+  privacy: 'PUBLIC' | 'PRIVATE' | 'SHARED';
+}
+
+export interface LikesDiscoveryResultDto {
+  data: LikedListDto[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 // ==================== ANIME ITEMS ====================
 
 export interface AddAnimeToListDto {
-  mediaId: number;
+  anilistId: number;
   note?: string;
 }
 
@@ -122,16 +156,27 @@ export interface ListMemberDto {
   permissionLevel: 'EDITOR' | 'VIEWER';
   isOwner: boolean;
   joinedAt: string;
+  can_edit?: boolean;
+  permission_level?: 'owner' | 'edit' | 'view' | 'viewer';
+  avatar_url?: string;
+  is_owner?: boolean;
 }
 
 export interface ListRequestDto {
   id: number;
+  request_id?: number;
   userId: number;
   username: string;
   requestType: 'JOIN' | 'EDIT';
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  request_type?: 'join' | 'edit_permission';
+  status: 'pending' | 'approved' | 'rejected';
+  status_code?: 'PENDING' | 'ACCEPTED' | 'DECLINED';
   message?: string;
   requestedAt: string;
+  requested_at?: string;
+  permissionLevel?: 'EDITOR' | 'VIEWER';
+  permission_level?: 'edit' | 'view';
+  can_edit?: boolean;
 }
 
 export interface ListSummaryDto {
