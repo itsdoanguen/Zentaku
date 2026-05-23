@@ -65,6 +65,23 @@ export class RoomOrchestratorService {
     const roomName = `channel:${channelId}`;
     this.gateway.joinRoom(socket, roomName, context);
 
+    // Broadcast presence.joined to the room
+    this.gateway.broadcastToRoom(roomName, {
+      event: 'presence.joined',
+      version: '1.0',
+      requestId,
+      timestamp: Date.now(),
+      data: {
+        channelId,
+        userId: context.userId,
+        displayName: context.displayName,
+      },
+    });
+
+    const activeParticipants = (this.gateway as any).getRoomParticipants
+      ? (this.gateway as any).getRoomParticipants(roomName)
+      : [{ userId: context.userId, displayName: context.displayName }];
+
     // Emit room.snapshot to client
     const snapshotEvent = {
       event: 'room.snapshot',
@@ -73,8 +90,9 @@ export class RoomOrchestratorService {
       timestamp: Date.now(),
       data: {
         channelId,
-        participants: [context.userId],
-        messages: [],
+        channelType: 'TEXT',
+        participants: activeParticipants,
+        serverTime: Date.now(),
       },
     };
     socket.emit('message', snapshotEvent);
@@ -87,6 +105,20 @@ export class RoomOrchestratorService {
     requestId: string
   ): Promise<void> {
     const roomName = `channel:${channelId}`;
+
+    // Broadcast presence.left before leaving room
+    this.gateway.broadcastToRoom(roomName, {
+      event: 'presence.left',
+      version: '1.0',
+      requestId,
+      timestamp: Date.now(),
+      data: {
+        channelId,
+        userId: context.userId,
+        displayName: context.displayName,
+      },
+    });
+
     this.gateway.leaveRoom(socket, roomName, context);
 
     const ack = createAckEnvelope(requestId, 'room.leave');

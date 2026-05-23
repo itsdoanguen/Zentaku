@@ -18,6 +18,7 @@ import type { AckEnvelope, EventEnvelope, NackEnvelope, RealtimeEnvelope } from 
 export interface AuthenticatedSocketContext {
   socketId: string;
   userId: string;
+  displayName: string;
   sessionId: string;
   authenticatedAt: number;
   rooms: Set<string>; // Set of joined channelIds

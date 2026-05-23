@@ -31,6 +31,27 @@ export function initializeRealtime(server: HttpServer, container: Container): So
     return io.sockets.sockets.get(socketId);
   };
 
+  (gateway as any).getRoomParticipants = (roomName: string): any[] => {
+    const roomSockets = io.sockets.adapter.rooms.get(roomName);
+    if (!roomSockets) return [];
+    const participants: any[] = [];
+    for (const socketId of roomSockets) {
+      const ctx = gateway.getSocketContext(socketId);
+      if (ctx) {
+        participants.push({
+          userId: ctx.userId,
+          displayName: ctx.displayName,
+        });
+      }
+    }
+    // De-duplicate participants by userId
+    const uniqueMap = new Map<string, any>();
+    for (const p of participants) {
+      uniqueMap.set(p.userId, p);
+    }
+    return Array.from(uniqueMap.values());
+  };
+
   io.use(createAuthMiddleware());
 
   io.on('connection', (socket) => {
@@ -84,6 +105,22 @@ export function initializeRealtime(server: HttpServer, container: Container): So
     //Clean up on disconnect
     socket.on('disconnect', (reason) => {
       logger.info(`[Realtime] Client disconnected: socketId=${socket.id}, reason=${reason}`);
+      if (context.rooms) {
+        for (const roomName of context.rooms) {
+          const channelId = roomName.startsWith('channel:') ? roomName.substring(8) : roomName;
+          gateway.broadcastToRoom(roomName, {
+            event: 'presence.left',
+            version: '1.0',
+            requestId: randomUUID(),
+            timestamp: Date.now(),
+            data: {
+              channelId,
+              userId: context.userId,
+              displayName: context.displayName,
+            },
+          });
+        }
+      }
       gateway.removeSocketContext(socket.id);
     });
   });
