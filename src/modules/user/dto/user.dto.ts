@@ -1,10 +1,11 @@
 export interface UpdateProfileDto {
+  username?: string;
   displayName?: string;
-  bio?: string;
-  birthday?: Date;
-  location?: string;
-  website?: string;
-  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  bio?: string | null;
+  birthday?: Date | string | null;
+  location?: string | null;
+  website?: string | null;
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say' | null | '';
 }
 
 export interface UpdatePreferencesDto {

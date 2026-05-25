@@ -1,6 +1,6 @@
 import { BaseService } from '../../../core/base/BaseService';
 import type { User } from '../../../entities/User.entity';
-import { NotFoundError } from '../../../shared/utils/error';
+import { NotFoundError, ValidationError } from '../../../shared/utils/error';
 import type { UpdatePreferencesDto, UpdatePrivacyDto, UpdateProfileDto } from '../dto/user.dto';
 import type { UserRepository } from '../repositories/user.repository';
 import type { IUserService } from '../types/user.types';
@@ -35,41 +35,91 @@ export class UserService extends BaseService implements IUserService {
 
     const payload: Partial<User> = {};
 
+    const normalizeNullableString = (
+      value: unknown,
+      fieldName: string,
+      maxLength: number
+    ): string | null => {
+      if (value === null) {
+        return null;
+      }
+
+      const normalized = this._validateString(value, fieldName, {
+        minLength: 0,
+        maxLength,
+      });
+
+      return normalized.length === 0 ? null : normalized;
+    };
+
+    if (updateData.username !== undefined) {
+      const username = this._validateString(updateData.username, 'Username', {
+        minLength: 3,
+        maxLength: 50,
+      });
+
+      if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+        throw new ValidationError(
+          'Username can only contain letters, numbers, underscores, and hyphens'
+        );
+      }
+
+      const existingUser = await this.userRepository.findByUsername(username);
+      if (existingUser && existingUser.id !== user.id) {
+        throw new ValidationError('Username already taken');
+      }
+
+      payload.username = username;
+    }
+
     if (updateData.displayName !== undefined) {
       payload.displayName = this._validateString(updateData.displayName, 'Display name', {
-        minLength: 1,
+        minLength: 0,
         maxLength: 255,
       });
+
+      if (payload.displayName.length === 0) {
+        payload.displayName = null;
+      }
     }
 
     if (updateData.bio !== undefined) {
-      payload.bio = this._validateString(updateData.bio, 'Bio', {
-        maxLength: 5000,
-      });
+      payload.bio = normalizeNullableString(updateData.bio, 'Bio', 5000);
     }
 
     if (updateData.location !== undefined) {
-      payload.location = this._validateString(updateData.location, 'Location', {
-        maxLength: 100,
-      });
+      payload.location = normalizeNullableString(updateData.location, 'Location', 100);
     }
 
     if (updateData.website !== undefined) {
-      payload.website = this._validateString(updateData.website, 'Website', {
-        maxLength: 255,
-      });
+      payload.website = normalizeNullableString(updateData.website, 'Website', 255);
     }
 
     if (updateData.gender !== undefined) {
-      payload.gender = this._validateEnum(
-        updateData.gender,
-        ['male', 'female', 'other', 'prefer_not_to_say'] as const,
-        'Gender'
-      );
+      if (updateData.gender === null || updateData.gender === '') {
+        payload.gender = null;
+      } else {
+        payload.gender = this._validateEnum(
+          updateData.gender,
+          ['male', 'female', 'other', 'prefer_not_to_say'] as const,
+          'Gender'
+        );
+      }
     }
 
     if (updateData.birthday !== undefined) {
-      payload.birthday = updateData.birthday;
+      if (updateData.birthday === null || updateData.birthday === '') {
+        payload.birthday = null;
+      } else {
+        const parsedBirthday =
+          updateData.birthday instanceof Date ? updateData.birthday : new Date(updateData.birthday);
+
+        if (Number.isNaN(parsedBirthday.getTime())) {
+          throw new ValidationError('Birthday must be a valid date');
+        }
+
+        payload.birthday = parsedBirthday;
+      }
     }
 
     const updated = await this._executeWithErrorHandling(

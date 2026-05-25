@@ -3,11 +3,6 @@ import type { Container } from '../../config/container';
 import { authenticate } from '../../middlewares/authenticate';
 import { avatarUpload, bannerUpload } from '../../middlewares/upload';
 import type UserController from './controllers/user.controller';
-import {
-  updatePreferencesValidation,
-  updatePrivacyValidation,
-  updateProfileValidation,
-} from './validators/user.validators';
 
 const initializeUserRoutes = (container: Container): Router => {
   const router = express.Router();
@@ -87,7 +82,7 @@ const initializeUserRoutes = (container: Container): Router => {
    * /api/user/me:
    *   patch:
    *     summary: Update user profile
-   *     description: Update profile information like display name, bio, location, website, and gender
+   *     description: Partially update user profile. Any omitted field is kept unchanged.
    *     tags: [User]
    *     parameters:
    *       - in: header
@@ -106,30 +101,41 @@ const initializeUserRoutes = (container: Container): Router => {
    *           schema:
    *             type: object
    *             properties:
+   *               username:
+   *                 type: string
+   *                 minLength: 3
+   *                 maxLength: 50
+   *                 pattern: ^[a-zA-Z0-9_-]+$
+   *                 example: john_doe_99
    *               displayName:
    *                 type: string
-   *                 minLength: 1
+   *                 minLength: 0
    *                 maxLength: 255
    *                 example: John Doe
    *               bio:
    *                 type: string
    *                 maxLength: 5000
+   *                 nullable: true
    *                 example: I love anime and manga
    *               location:
    *                 type: string
    *                 maxLength: 100
+   *                 nullable: true
    *                 example: Tokyo, Japan
    *               website:
    *                 type: string
    *                 format: uri
+   *                 nullable: true
    *                 example: https://example.com
    *               gender:
    *                 type: string
    *                 enum: [male, female, other, prefer_not_to_say]
+   *                 nullable: true
    *                 example: male
    *               birthday:
    *                 type: string
    *                 format: date
+   *                 nullable: true
    *                 example: "1990-01-15"
    *     responses:
    *       200:
@@ -145,11 +151,11 @@ const initializeUserRoutes = (container: Container): Router => {
    *                 data:
    *                   type: object
    *       400:
-   *         description: Validation error
+   *         description: Invalid profile payload (e.g., duplicate username or invalid date)
    *       401:
    *         description: Unauthorized
    */
-  router.patch('/me', updateProfileValidation, userController.updateProfile);
+  router.patch('/me', userController.updateProfile);
 
   /**
    * @swagger
@@ -217,11 +223,11 @@ const initializeUserRoutes = (container: Container): Router => {
    *       200:
    *         description: Preferences updated successfully
    *       400:
-   *         description: Validation error
+   *         description: Invalid preferences payload
    *       401:
    *         description: Unauthorized
    */
-  router.patch('/me/preferences', updatePreferencesValidation, userController.updatePreferences);
+  router.patch('/me/preferences', userController.updatePreferences);
 
   /**
    * @swagger
@@ -271,11 +277,11 @@ const initializeUserRoutes = (container: Container): Router => {
    *                       type: string
    *                       example: friends
    *       400:
-   *         description: Validation error - invalid profileVisibility value
+   *         description: Invalid privacy payload (profileVisibility must be PUBLIC, FRIENDS_ONLY, or PRIVATE)
    *       401:
    *         description: Unauthorized
    */
-  router.patch('/me/privacy', updatePrivacyValidation, userController.updatePrivacy);
+  router.patch('/me/privacy', userController.updatePrivacy);
 
   /**
    * @swagger

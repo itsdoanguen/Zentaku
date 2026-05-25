@@ -1,5 +1,4 @@
 import type { NextFunction, Request, Response } from 'express';
-import { validationResult } from 'express-validator';
 import {
   BaseController,
   type AuthenticatedRequest,
@@ -27,12 +26,6 @@ class UserController extends BaseController<IUserService & IBaseService> {
   });
 
   updateProfile = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      this.error(res, 'Validation failed', 400, errors.array());
-      return;
-    }
-
     const authReq = req as AuthenticatedRequest;
     this.requireAuth(authReq);
 
@@ -63,12 +56,6 @@ class UserController extends BaseController<IUserService & IBaseService> {
   });
 
   updatePrivacy = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      this.error(res, 'Validation failed', 400, errors.array());
-      return;
-    }
-
     const authReq = req as AuthenticatedRequest;
     this.requireAuth(authReq);
 
