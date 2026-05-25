@@ -9,22 +9,6 @@ import type { Container } from '../../config/container';
 import { authenticate } from '../../middlewares/authenticate';
 import type ListController from './controllers/list.controller';
 import { canEditList, canViewList, isListOwner } from './middlewares/list.guards';
-import {
-  addMemberValidation,
-  createListValidation,
-  listIdParamValidation,
-  respondToRequestValidation,
-  updateListValidation,
-  updateMemberPermissionValidation,
-  updateThemeValidation,
-  getUserListsValidation,
-  searchListValidation,
-  requestJoinValidation,
-  requestEditValidation,
-  removeMemberValidation,
-  addAnimeToListValidation,
-  mediaIdParamValidation,
-} from './validators/list.validators';
 
 const initializeListRoutes = (container: Container): Router => {
   const router = express.Router();
@@ -51,11 +35,11 @@ const initializeListRoutes = (container: Container): Router => {
    *       201:
    *         description: List created successfully
    *       400:
-   *         description: Validation failed
+   *         description: Invalid request payload
    *       401:
    *         description: Unauthorized
    */
-  router.post('/create', authenticate, createListValidation, listController.createList);
+  router.post('/create', authenticate, listController.createList);
 
   /**
    * @swagger
@@ -77,9 +61,9 @@ const initializeListRoutes = (container: Container): Router => {
    *       200:
    *         description: Lists retrieved successfully
    *       400:
-   *         description: Validation failed
+   *         description: Invalid request query
    */
-  router.get('/user', getUserListsValidation, listController.getUserLists);
+  router.get('/user', listController.getUserLists);
 
   /**
    * @swagger
@@ -105,12 +89,7 @@ const initializeListRoutes = (container: Container): Router => {
    *       404:
    *         description: List not found
    */
-  router.get(
-    '/:listId',
-    listIdParamValidation,
-    canViewList(container),
-    listController.getListDetail
-  );
+  router.get('/:listId', canViewList(container), listController.getListDetail);
 
   /**
    * @swagger
@@ -134,12 +113,7 @@ const initializeListRoutes = (container: Container): Router => {
    *       404:
    *         description: List not found
    */
-  router.get(
-    '/anime/:listId',
-    listIdParamValidation,
-    canViewList(container),
-    listController.getListAnimes
-  );
+  router.get('/anime/:listId', canViewList(container), listController.getListAnimes);
 
   /**
    * @swagger
@@ -175,8 +149,6 @@ const initializeListRoutes = (container: Container): Router => {
   router.put(
     '/:listId/update',
     authenticate,
-    listIdParamValidation,
-    updateListValidation,
     canEditList(container),
     isListOwner(container),
     listController.updateList
@@ -211,7 +183,6 @@ const initializeListRoutes = (container: Container): Router => {
   router.delete(
     '/:listId/delete',
     authenticate,
-    listIdParamValidation,
     canEditList(container),
     isListOwner(container),
     listController.deleteList
@@ -243,11 +214,7 @@ const initializeListRoutes = (container: Container): Router => {
    *             schema:
    *               $ref: '#/components/schemas/ListMembersResponse'
    *       400:
-   *         description: Validation failed
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/ValidationError'
+   *         description: Invalid request data
    *       403:
    *         description: Access denied
    *         content:
@@ -261,12 +228,7 @@ const initializeListRoutes = (container: Container): Router => {
    *             schema:
    *               $ref: '#/components/schemas/Error'
    */
-  router.get(
-    '/member/:listId/list',
-    listIdParamValidation,
-    canViewList(container),
-    listController.listMembers
-  );
+  router.get('/member/:listId/list', canViewList(container), listController.listMembers);
 
   /**
    * @swagger
@@ -298,11 +260,7 @@ const initializeListRoutes = (container: Container): Router => {
    *             schema:
    *               $ref: '#/components/schemas/MessageResponse'
    *       400:
-   *         description: Validation failed
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/ValidationError'
+   *         description: Invalid request data
    *       401:
    *         description: Unauthorized
    *       403:
@@ -313,8 +271,6 @@ const initializeListRoutes = (container: Container): Router => {
   router.post(
     '/member/:listId/add',
     authenticate,
-    listIdParamValidation,
-    addMemberValidation,
     canEditList(container),
     isListOwner(container),
     listController.addMember
@@ -350,11 +306,7 @@ const initializeListRoutes = (container: Container): Router => {
    *             schema:
    *               $ref: '#/components/schemas/MessageResponse'
    *       400:
-   *         description: Validation failed
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/ValidationError'
+   *         description: Invalid request data
    *       401:
    *         description: Unauthorized
    *       403:
@@ -365,8 +317,6 @@ const initializeListRoutes = (container: Container): Router => {
   router.put(
     '/member/:listId/permission',
     authenticate,
-    listIdParamValidation,
-    updateMemberPermissionValidation,
     canEditList(container),
     isListOwner(container),
     listController.updateMemberPermission
@@ -401,11 +351,7 @@ const initializeListRoutes = (container: Container): Router => {
    *             schema:
    *               $ref: '#/components/schemas/MessageResponse'
    *       400:
-   *         description: Validation failed
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/ValidationError'
+   *         description: Invalid request data
    *       401:
    *         description: Unauthorized
    *       403:
@@ -416,8 +362,6 @@ const initializeListRoutes = (container: Container): Router => {
   router.delete(
     '/member/:listId/remove',
     authenticate,
-    listIdParamValidation,
-    removeMemberValidation,
     canEditList(container),
     isListOwner(container),
     listController.removeMember
@@ -454,19 +398,13 @@ const initializeListRoutes = (container: Container): Router => {
    *             schema:
    *               $ref: '#/components/schemas/MessageResponse'
    *       400:
-   *         description: Validation failed or already requested
+   *         description: Invalid request or already requested
    *       401:
    *         description: Unauthorized
    *       404:
    *         description: List not found
    */
-  router.post(
-    '/:listId/request-join',
-    authenticate,
-    listIdParamValidation,
-    requestJoinValidation,
-    listController.requestJoin
-  );
+  router.post('/:listId/request-join', authenticate, listController.requestJoin);
 
   /**
    * @swagger
@@ -497,7 +435,7 @@ const initializeListRoutes = (container: Container): Router => {
    *             schema:
    *               $ref: '#/components/schemas/MessageResponse'
    *       400:
-   *         description: Validation failed or already requested
+   *         description: Invalid request or already requested
    *       401:
    *         description: Unauthorized
    *       403:
@@ -505,13 +443,7 @@ const initializeListRoutes = (container: Container): Router => {
    *       404:
    *         description: List not found
    */
-  router.post(
-    '/:listId/request-edit',
-    authenticate,
-    listIdParamValidation,
-    requestEditValidation,
-    listController.requestEdit
-  );
+  router.post('/:listId/request-edit', authenticate, listController.requestEdit);
 
   /**
    * @swagger
@@ -542,12 +474,7 @@ const initializeListRoutes = (container: Container): Router => {
    *       404:
    *         description: List not found
    */
-  router.get(
-    '/:listId/requests',
-    authenticate,
-    listIdParamValidation,
-    listController.getListRequests
-  );
+  router.get('/:listId/requests', authenticate, listController.getListRequests);
 
   /**
    * @swagger
@@ -584,7 +511,7 @@ const initializeListRoutes = (container: Container): Router => {
    *             schema:
    *               $ref: '#/components/schemas/MessageResponse'
    *       400:
-   *         description: Validation failed
+   *         description: Invalid request data
    *       401:
    *         description: Unauthorized
    *       403:
@@ -595,7 +522,6 @@ const initializeListRoutes = (container: Container): Router => {
   router.post(
     '/:listId/join-requests/:requestId/respond',
     authenticate,
-    respondToRequestValidation,
     listController.respondToRequest
   );
 
@@ -634,7 +560,7 @@ const initializeListRoutes = (container: Container): Router => {
    *             schema:
    *               $ref: '#/components/schemas/MessageResponse'
    *       400:
-   *         description: Validation failed
+   *         description: Invalid request data
    *       401:
    *         description: Unauthorized
    *       403:
@@ -645,7 +571,6 @@ const initializeListRoutes = (container: Container): Router => {
   router.post(
     '/:listId/edit-requests/:requestId/respond',
     authenticate,
-    respondToRequestValidation,
     listController.respondToRequest
   );
 
@@ -704,13 +629,7 @@ const initializeListRoutes = (container: Container): Router => {
    *                         themeColor:
    *                           type: string
    */
-  router.put(
-    '/:listId/theme',
-    authenticate,
-    listIdParamValidation,
-    updateThemeValidation,
-    listController.updateTheme
-  );
+  router.put('/:listId/theme', authenticate, listController.updateTheme);
 
   /**
    * @swagger
@@ -746,7 +665,7 @@ const initializeListRoutes = (container: Container): Router => {
    *       404:
    *         description: List not found
    */
-  router.post('/:listId/like', authenticate, listIdParamValidation, listController.toggleLike);
+  router.post('/:listId/like', authenticate, listController.toggleLike);
 
   /**
    * @swagger
@@ -785,12 +704,7 @@ const initializeListRoutes = (container: Container): Router => {
    *       404:
    *         description: List not found
    */
-  router.get(
-    '/:listId/like/status',
-    authenticate,
-    listIdParamValidation,
-    listController.getLikeStatus
-  );
+  router.get('/:listId/like/status', authenticate, listController.getLikeStatus);
 
   /**
    * @swagger
@@ -915,7 +829,7 @@ const initializeListRoutes = (container: Container): Router => {
 
   // ==================== PHASE 5: SEARCH ====================
   // Search lists (kept as POST for backward compatibility)
-  router.post('/search', searchListValidation, listController.searchLists);
+  router.post('/search', listController.searchLists);
 
   /**
    * @swagger
@@ -956,7 +870,7 @@ const initializeListRoutes = (container: Container): Router => {
    *             schema:
    *               $ref: '#/components/schemas/MessageResponse'
    *       400:
-   *         description: Validation failed or anime not found
+   *         description: Invalid request or anime not found
    *       401:
    *         description: Unauthorized
    *       403:
@@ -964,13 +878,7 @@ const initializeListRoutes = (container: Container): Router => {
    *       404:
    *         description: List not found
    */
-  router.post(
-    '/anime/:listId/add',
-    authenticate,
-    listIdParamValidation,
-    addAnimeToListValidation,
-    listController.addAnimeToList
-  );
+  router.post('/anime/:listId/add', authenticate, listController.addAnimeToList);
 
   /**
    * @swagger
@@ -1002,7 +910,7 @@ const initializeListRoutes = (container: Container): Router => {
    *             schema:
    *               $ref: '#/components/schemas/MessageResponse'
    *       400:
-   *         description: Validation failed or anime not found
+   *         description: Invalid request or anime not found
    *       401:
    *         description: Unauthorized
    *       403:
@@ -1013,8 +921,6 @@ const initializeListRoutes = (container: Container): Router => {
   router.delete(
     '/anime/:listId/:anilistId/remove',
     authenticate,
-    listIdParamValidation,
-    mediaIdParamValidation,
     listController.removeAnimeFromList
   );
 
