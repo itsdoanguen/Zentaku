@@ -18,10 +18,12 @@ import type {
   SyncHianimeIdResponse,
 } from '../../core/types/streaming.types';
 import type AniProviderClient from '../../infrastructure/external/aniprovider/AniProviderClient';
-import type {
-  AniProviderEpisodesResponse,
-  AniProviderSourcesSuccessResponse,
-} from '../../infrastructure/external/aniprovider/aniprovider.types';
+// Legacy AniProvider types — kept for reference
+// import type {
+//   AniProviderEpisodesResponse,
+//   AniProviderSourcesSuccessResponse,
+// } from '../../infrastructure/external/aniprovider/aniprovider.types';
+import type FilmServerClient from '../../infrastructure/external/filmserver/FilmServerClient';
 import type MalSyncClient from '../../infrastructure/external/malsync/MalSyncClient';
 import { NotFoundError, ValidationError } from '../../shared/utils/error';
 import type AnimeRepository from '../anime/anime.repository';
@@ -32,7 +34,8 @@ class StreamingService extends BaseService implements IStreamingService {
     private readonly animeRepository: AnimeRepository,
     private readonly animeService: AnimeService,
     private readonly malSyncClient: MalSyncClient,
-    private readonly aniProviderClient: AniProviderClient
+    private readonly aniProviderClient: AniProviderClient,
+    private readonly filmServerClient: FilmServerClient
   ) {
     super();
     this.logger.info('[StreamingService] Initialized');
@@ -122,46 +125,59 @@ class StreamingService extends BaseService implements IStreamingService {
       requestId,
     });
 
-    const hianimeId = await this._getOrSyncHianimeId(validAnilistId);
-
-    const episodesData = await this.aniProviderClient.getEpisodes(hianimeId, {
-      refresh,
-      requestId,
-    });
-    const episode = this._findEpisodeByNumber(episodesData, validEpisodeNumber);
-
-    if (!episode) {
-      throw new NotFoundError(
-        `Episode ${validEpisodeNumber} not found for anime ${validAnilistId}`
+    if (this.filmServerClient.hasAnime(validAnilistId)) {
+      this.logger.info(
+        `[StreamingService] Using FilmServer for anime ${validAnilistId} episode ${validEpisodeNumber}`
       );
+      return this._buildFilmServerSourcesResponse(validAnilistId, validEpisodeNumber);
     }
 
-    const sources = await this.aniProviderClient.getSources(episode.episodeId, {
-      refresh,
-      async: asyncMode,
-      requestId,
-    });
+    throw new NotFoundError(
+      `Anime with AniList ID ${validAnilistId} is not available for streaming. ` +
+        `Only anime hosted on FilmServer are currently supported.`
+    );
 
-    if ('task_id' in sources) {
-      return {
-        anilistId: validAnilistId,
-        episodeNumber: validEpisodeNumber,
-        hianimeId,
-        status: 'pending',
-        task: {
-          taskId: sources.task_id,
-          status: sources.status,
-        },
-      };
-    }
-
-    return {
-      anilistId: validAnilistId,
-      episodeNumber: validEpisodeNumber,
-      hianimeId,
-      status: 'success',
-      data: this._mapSourcesSuccess(episode.episodeId, sources),
-    };
+    // --- Legacy AniProvider flow (kept for reference, currently unreachable) ---
+    // const hianimeId = await this._getOrSyncHianimeId(validAnilistId);
+    //
+    // const episodesData = await this.aniProviderClient.getEpisodes(hianimeId, {
+    //   refresh,
+    //   requestId,
+    // });
+    // const episode = this._findEpisodeByNumber(episodesData, validEpisodeNumber);
+    //
+    // if (!episode) {
+    //   throw new NotFoundError(
+    //     `Episode ${validEpisodeNumber} not found for anime ${validAnilistId}`
+    //   );
+    // }
+    //
+    // const sources = await this.aniProviderClient.getSources(episode.episodeId, {
+    //   refresh,
+    //   async: asyncMode,
+    //   requestId,
+    // });
+    //
+    // if ('task_id' in sources) {
+    //   return {
+    //     anilistId: validAnilistId,
+    //     episodeNumber: validEpisodeNumber,
+    //     hianimeId,
+    //     status: 'pending',
+    //     task: {
+    //       taskId: sources.task_id,
+    //       status: sources.status,
+    //     },
+    //   };
+    // }
+    //
+    // return {
+    //   anilistId: validAnilistId,
+    //   episodeNumber: validEpisodeNumber,
+    //   hianimeId,
+    //   status: 'success',
+    //   data: this._mapSourcesSuccess(episode.episodeId, sources),
+    // };
   }
 
   /**
@@ -183,33 +199,44 @@ class StreamingService extends BaseService implements IStreamingService {
       `[StreamingService] Getting available episodes for AniList ID: ${validId} (page: ${page}, limit: ${limit})`
     );
 
-    const hianimeId = await this._getOrSyncHianimeId(validId);
+    if (this.filmServerClient.hasAnime(validId)) {
+      this.logger.info(`[StreamingService] Using FilmServer episodes for anime ${validId}`);
+      return this._buildFilmServerEpisodesResponse(validId, page, limit);
+    }
 
-    const episodesData = await this.aniProviderClient.getEpisodes(hianimeId);
-    const allEpisodes = this._toEpisodeInfoList(episodesData.items);
+    throw new NotFoundError(
+      `Anime with AniList ID ${validId} is not available for streaming. ` +
+        `Only anime hosted on FilmServer are currently supported.`
+    );
 
-    const normalizedPage = Math.max(1, page);
-    const normalizedLimit = Math.min(500, Math.max(1, limit));
-    const totalPages = Math.max(1, Math.ceil(allEpisodes.length / normalizedLimit));
-    const startIndex = (normalizedPage - 1) * normalizedLimit;
-    const pagedEpisodes = allEpisodes.slice(startIndex, startIndex + normalizedLimit);
-
-    this.logger.debug(`[StreamingService] Found ${pagedEpisodes.length} episodes from AniProvider`);
-
-    return {
-      anilistId: validId,
-      hianimeId,
-      totalEpisodes: episodesData.total,
-      episodes: pagedEpisodes,
-      pagination: {
-        currentPage: normalizedPage,
-        totalPages,
-        pageSize: normalizedLimit,
-        totalItems: episodesData.total,
-        hasNextPage: normalizedPage < totalPages,
-        hasPreviousPage: normalizedPage > 1,
-      },
-    };
+    // --- Legacy AniProvider flow (kept for reference, currently unreachable) ---
+    // const hianimeId = await this._getOrSyncHianimeId(validId);
+    //
+    // const episodesData = await this.aniProviderClient.getEpisodes(hianimeId);
+    // const allEpisodes = this._toEpisodeInfoList(episodesData.items);
+    //
+    // const normalizedPage = Math.max(1, page);
+    // const normalizedLimit = Math.min(500, Math.max(1, limit));
+    // const totalPages = Math.max(1, Math.ceil(allEpisodes.length / normalizedLimit));
+    // const startIndex = (normalizedPage - 1) * normalizedLimit;
+    // const pagedEpisodes = allEpisodes.slice(startIndex, startIndex + normalizedLimit);
+    //
+    // this.logger.debug(`[StreamingService] Found ${pagedEpisodes.length} episodes from AniProvider`);
+    //
+    // return {
+    //   anilistId: validId,
+    //   hianimeId,
+    //   totalEpisodes: episodesData.total,
+    //   episodes: pagedEpisodes,
+    //   pagination: {
+    //     currentPage: normalizedPage,
+    //     totalPages,
+    //     pageSize: normalizedLimit,
+    //     totalItems: episodesData.total,
+    //     hasNextPage: normalizedPage < totalPages,
+    //     hasPreviousPage: normalizedPage > 1,
+    //   },
+    // };
   }
 
   async getTaskStatus(taskId: string, requestId?: string): Promise<StreamingTaskStatusResponse> {
@@ -229,38 +256,32 @@ class StreamingService extends BaseService implements IStreamingService {
     };
   }
 
-  /**
-   * Get HiAnime ID from database or sync from MALSync
-   *
-   * @private
-   * @param anilistId - AniList anime ID
-   * @returns HiAnime identifier
-   */
-  private async _getOrSyncHianimeId(anilistId: number): Promise<string> {
-    let anime = await this.animeRepository.findByAnilistId(anilistId);
-
-    if (!anime) {
-      this.logger.debug(
-        `[StreamingService] Anime ${anilistId} not found in DB, auto-syncing from AniList...`
-      );
-      await this.animeService.getAnimeDetails(anilistId);
-      anime = await this.animeRepository.findByAnilistId(anilistId);
-
-      if (!anime) {
-        throw new NotFoundError(
-          `Anime with AniList ID ${anilistId} not found on AniList or failed to sync`
-        );
-      }
-    }
-
-    if (anime.idHianime) {
-      return anime.idHianime;
-    }
-
-    this.logger.debug(`[StreamingService] HiAnime ID not found, syncing...`);
-    const syncResult = await this.syncHianimeId(anilistId);
-    return syncResult.hianimeId;
-  }
+  // --- Legacy AniProvider helper methods (kept for reference) ---
+  // private async _getOrSyncHianimeId(anilistId: number): Promise<string> {
+  //   let anime = await this.animeRepository.findByAnilistId(anilistId);
+  //
+  //   if (!anime) {
+  //     this.logger.debug(
+  //       `[StreamingService] Anime ${anilistId} not found in DB, auto-syncing from AniList...`
+  //     );
+  //     await this.animeService.getAnimeDetails(anilistId);
+  //     anime = await this.animeRepository.findByAnilistId(anilistId);
+  //
+  //     if (!anime) {
+  //       throw new NotFoundError(
+  //         `Anime with AniList ID ${anilistId} not found on AniList or failed to sync`
+  //       );
+  //     }
+  //   }
+  //
+  //   if (anime.idHianime) {
+  //     return anime.idHianime;
+  //   }
+  //
+  //   this.logger.debug(`[StreamingService] HiAnime ID not found, syncing...`);
+  //   const syncResult = await this.syncHianimeId(anilistId);
+  //   return syncResult.hianimeId;
+  // }
 
   /**
    * Validate HiAnime identifier format and length
@@ -297,43 +318,43 @@ class StreamingService extends BaseService implements IStreamingService {
     this.logger.debug(`[StreamingService] HiAnime ID validated: ${hianimeId}`);
   }
 
-  private _findEpisodeByNumber(
-    response: AniProviderEpisodesResponse,
-    episodeNumber: number
-  ): EpisodeInfo | undefined {
-    return this._toEpisodeInfoList(response.items).find(
-      (episode) => episode.number === episodeNumber
-    );
-  }
+  // private _findEpisodeByNumber(
+  //   response: AniProviderEpisodesResponse,
+  //   episodeNumber: number
+  // ): EpisodeInfo | undefined {
+  //   return this._toEpisodeInfoList(response.items).find(
+  //     (episode) => episode.number === episodeNumber
+  //   );
+  // }
 
-  private _toEpisodeInfoList(items: AniProviderEpisodesResponse['items']): EpisodeInfo[] {
-    return items.map((item) => ({
-      number: item.order,
-      order: item.order,
-      title: item.title,
-      episodeId: item.episode_id,
-      episodeUrl: item.episode_url,
-    }));
-  }
+  // private _toEpisodeInfoList(items: AniProviderEpisodesResponse['items']): EpisodeInfo[] {
+  //   return items.map((item) => ({
+  //     number: item.order,
+  //     order: item.order,
+  //     title: item.title,
+  //     episodeId: item.episode_id,
+  //     episodeUrl: item.episode_url,
+  //   }));
+  // }
 
-  private _mapSourcesSuccess(
-    upstreamEpisodeId: string,
-    sources: AniProviderSourcesSuccessResponse
-  ): EpisodeSourcesData {
-    return {
-      streamLinks: sources.stream_links,
-      subtitles: sources.vtt_links.map((url) => ({
-        url,
-        lang: this._detectSubtitleLanguage(url),
-      })),
-      capturedAt: sources.captured_at,
-      upstreamEpisodeId,
-      meta: {
-        refreshed: sources.meta.refreshed,
-        source: sources.meta.source,
-      },
-    };
-  }
+  // private _mapSourcesSuccess(
+  //   upstreamEpisodeId: string,
+  //   sources: AniProviderSourcesSuccessResponse
+  // ): EpisodeSourcesData {
+  //   return {
+  //     streamLinks: sources.stream_links,
+  //     subtitles: sources.vtt_links.map((url) => ({
+  //       url,
+  //       lang: this._detectSubtitleLanguage(url),
+  //     })),
+  //     capturedAt: sources.captured_at,
+  //     upstreamEpisodeId,
+  //     meta: {
+  //       refreshed: sources.meta.refreshed,
+  //       source: sources.meta.source,
+  //     },
+  //   };
+  // }
 
   private _mapTaskResult(result: unknown): EpisodeSourcesData | undefined {
     if (!result || typeof result !== 'object') {
@@ -385,6 +406,71 @@ class StreamingService extends BaseService implements IStreamingService {
     }
 
     return 'unknown';
+  }
+
+  private _buildFilmServerSourcesResponse(
+    anilistId: number,
+    episodeNumber: number
+  ): EpisodeSourcesResponse {
+    const episodeCount = this.filmServerClient.getAvailableEpisodeCount(anilistId);
+    if (episodeNumber > episodeCount) {
+      throw new NotFoundError(
+        `Episode ${episodeNumber} not found for anime ${anilistId}. Available: 1-${episodeCount}`
+      );
+    }
+
+    const source = this.filmServerClient.getEpisodeSource(anilistId, episodeNumber);
+    return {
+      anilistId,
+      episodeNumber,
+      hianimeId: `filmserver-${anilistId}`,
+      status: 'success',
+      data: {
+        streamLinks: [source.streamUrl],
+        subtitles: [{ url: source.subtitleUrl, lang: 'en' }],
+        capturedAt: new Date().toISOString(),
+        upstreamEpisodeId: `filmserver-${anilistId}-ep${episodeNumber}`,
+        meta: {
+          refreshed: false,
+          source: 'filmserver',
+        },
+      },
+    };
+  }
+
+  private _buildFilmServerEpisodesResponse(
+    anilistId: number,
+    page: number,
+    limit: number
+  ): AvailableEpisodesResponse {
+    const episodeCount = this.filmServerClient.getAvailableEpisodeCount(anilistId);
+    const allEpisodes: EpisodeInfo[] = Array.from({ length: episodeCount }, (_, i) => ({
+      number: i + 1,
+      order: i + 1,
+      title: `Episode ${i + 1}`,
+      episodeId: `filmserver-${anilistId}-ep${i + 1}`,
+    }));
+
+    const normalizedPage = Math.max(1, page);
+    const normalizedLimit = Math.min(500, Math.max(1, limit));
+    const totalPages = Math.max(1, Math.ceil(allEpisodes.length / normalizedLimit));
+    const startIndex = (normalizedPage - 1) * normalizedLimit;
+    const pagedEpisodes = allEpisodes.slice(startIndex, startIndex + normalizedLimit);
+
+    return {
+      anilistId,
+      hianimeId: `filmserver-${anilistId}`,
+      totalEpisodes: episodeCount,
+      episodes: pagedEpisodes,
+      pagination: {
+        currentPage: normalizedPage,
+        totalPages,
+        pageSize: normalizedLimit,
+        totalItems: episodeCount,
+        hasNextPage: normalizedPage < totalPages,
+        hasPreviousPage: normalizedPage > 1,
+      },
+    };
   }
 }
 
