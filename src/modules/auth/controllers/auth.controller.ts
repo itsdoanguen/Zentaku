@@ -43,6 +43,7 @@ class AuthController {
         accessToken: result.accessToken,
         expiresIn: result.expiresIn,
         user: result.user,
+        refreshToken: result.refreshToken,
       });
     } catch (error) {
       next(error);
@@ -200,6 +201,7 @@ class AuthController {
       res.json({
         accessToken: result.accessToken,
         expiresIn: result.expiresIn,
+        refreshToken: result.refreshToken,
       });
     } catch (error) {
       next(error);
