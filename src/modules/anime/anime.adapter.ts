@@ -11,6 +11,7 @@
 import type { AnimeItem } from '../../entities';
 import type {
   CoverImage,
+  MediaDate,
   Studio,
   Tag,
   Trailer,
@@ -48,6 +49,8 @@ interface TypeORMAnimeCreateData {
   source?: string | null;
   trailerUrl?: string | null;
   nextAiringEpisode?: object | null;
+  startDate?: MediaDate | null;
+  endDate?: MediaDate | null;
 }
 
 interface AnimeResponse {
@@ -79,6 +82,8 @@ interface AnimeResponse {
   source: string | null;
   trailerUrl: string | null;
   nextAiringEpisode: object | null;
+  startDate: MediaDate | null;
+  endDate: MediaDate | null;
   lastSyncedAt: string | null;
 }
 
@@ -152,6 +157,8 @@ class AnimeAdapter {
       source: externalData.source || null,
       trailerUrl: this._buildTrailerUrl(externalData.trailer),
       nextAiringEpisode: externalData.nextAiringEpisode || null,
+      startDate: externalData.startDate || null,
+      endDate: externalData.endDate || null,
     };
   }
 
@@ -246,6 +253,8 @@ class AnimeAdapter {
       source: animeModel.source ?? null,
       trailerUrl: animeModel.trailerUrl ?? null,
       nextAiringEpisode: (animeModel.nextAiringEpisode as object | null) ?? null,
+      startDate: (animeModel.startDate as MediaDate | null) ?? null,
+      endDate: (animeModel.endDate as MediaDate | null) ?? null,
 
       lastSyncedAt: this._formatDate(animeModel.lastSyncedAt),
     };

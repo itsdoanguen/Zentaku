@@ -87,6 +87,12 @@ export abstract class MediaItem extends SoftDeletableEntity {
   @Column({ name: 'mean_score', type: 'float', nullable: true })
   meanScore?: number | null;
 
+  @Column({ name: 'start_date', type: 'json', nullable: true })
+  startDate?: Record<string, unknown> | null;
+
+  @Column({ name: 'end_date', type: 'json', nullable: true })
+  endDate?: Record<string, unknown> | null;
+
   // ==================== RELATIONSHIPS ====================
 
   @OneToMany('LibraryEntry', 'media')
