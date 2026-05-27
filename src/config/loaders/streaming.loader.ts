@@ -7,6 +7,16 @@
 import logger from '../../shared/utils/logger';
 
 const loadStreaming = (container: any): void => {
+  //Load FilmServer Client
+  container.register(
+    'filmServerClient',
+    () => {
+      const { FilmServerClient } = require('../../infrastructure/external/filmserver');
+      return new FilmServerClient();
+    },
+    { singleton: true }
+  );
+
   //Load MALSync Client
   container.register(
     'malSyncClient',
@@ -37,11 +47,23 @@ const loadStreaming = (container: any): void => {
       const malSyncClient = c.resolve('malSyncClient');
       const aniProviderClient = c.resolve('aniProviderClient');
 
-      return new StreamingService(animeRepository, animeService, malSyncClient, aniProviderClient);
+      return new StreamingService(
+        animeRepository,
+        animeService,
+        malSyncClient,
+        aniProviderClient,
+        c.resolve('filmServerClient')
+      );
     },
     {
       singleton: true,
-      dependencies: ['animeRepository', 'animeService', 'malSyncClient', 'aniProviderClient'],
+      dependencies: [
+        'animeRepository',
+        'animeService',
+        'malSyncClient',
+        'aniProviderClient',
+        'filmServerClient',
+      ],
     }
   );
 
