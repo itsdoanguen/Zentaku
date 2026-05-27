@@ -42,8 +42,7 @@ class SearchValidator {
   static animeSearchRules() {
     return [
       query('q')
-        .notEmpty()
-        .withMessage('Search query is required')
+        .optional()
         .trim()
         .isLength({ min: 2, max: 100 })
         .withMessage('Query must be between 2 and 100 characters'),

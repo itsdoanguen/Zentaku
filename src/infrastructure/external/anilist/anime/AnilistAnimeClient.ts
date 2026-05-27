@@ -225,6 +225,7 @@ class AnilistAnimeClient extends AnilistClient {
    */
   async searchByCriteria(
     criteria: {
+      query?: string;
       genres?: string[];
       season?: string;
       seasonYear?: number;
@@ -240,12 +241,12 @@ class AnilistAnimeClient extends AnilistClient {
     pageInfo: PageInfo;
     media: AnimeSeasonalResult[];
   }> {
-    const { genres, season, seasonYear, format, status } = criteria;
+    const { query, genres, season, seasonYear, format, status } = criteria;
     const { page = 1, perPage = 20, sort = ['POPULARITY_DESC'] } = options;
 
     const data = await this.executeQuery<AnimeSeasonalResponse>(
       ANIME_SEARCH_CRITERIA_QS,
-      { genres, season, seasonYear, format, status, page, perpage: perPage, sort },
+      { query, genres, season, seasonYear, format, status, page, perpage: perPage, sort },
       `searchAnimeByCriteria()`
     );
 
