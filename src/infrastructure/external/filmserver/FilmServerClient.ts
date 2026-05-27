@@ -1,30 +1,46 @@
 import logger from '../../../shared/utils/logger';
 import type { FilmServerEpisodeSource } from './filmserver.types';
+import axios from 'axios';
 
 class FilmServerClient {
   private readonly baseUrl: string;
-  private readonly availableAnimeIds: Set<number>;
+  private cachedMovies: Record<number, number> = {};
+  private lastFetchTime: number = 0;
+  private readonly CACHE_TTL = 30000; // 30 seconds
 
   constructor() {
     const configuredBaseUrl = process.env.FILMSERVER_BASE_URL?.trim();
     this.baseUrl = configuredBaseUrl ? configuredBaseUrl.replace(/\/+$/, '') : '';
 
-    const idsRaw = process.env.FILMSERVER_ANIME_IDS || '';
-    this.availableAnimeIds = new Set(
-      idsRaw
-        .split(',')
-        .map((s) => parseInt(s.trim(), 10))
-        .filter((n) => !isNaN(n))
-    );
-
     logger.info(
-      `[FilmServerClient] Initialized with base URL: ${this.baseUrl || '(not configured)'}, ` +
-        `anime IDs: [${Array.from(this.availableAnimeIds).join(', ')}]`
+      `[FilmServerClient] Initialized with base URL: ${this.baseUrl || '(not configured)'}`
     );
   }
 
-  hasAnime(anilistId: number): boolean {
-    return this.availableAnimeIds.has(anilistId) && this.baseUrl.length > 0;
+  private async fetchMovies(): Promise<void> {
+    if (!this.baseUrl) return;
+
+    // Check if cache is still valid
+    if (Date.now() - this.lastFetchTime < this.CACHE_TTL) {
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${this.baseUrl}/api/movies`, { timeout: 3000 });
+      if (response.data?.success && response.data?.movies) {
+        this.cachedMovies = response.data.movies;
+        this.lastFetchTime = Date.now();
+      }
+    } catch (err: any) {
+      logger.error(`[FilmServerClient] Failed to fetch movies from FilmServer: ${err.message}`);
+      // Keep using old cache if failed
+    }
+  }
+
+  async hasAnime(anilistId: number): Promise<boolean> {
+    if (!this.baseUrl) return false;
+    await this.fetchMovies();
+    return this.cachedMovies[anilistId] !== undefined;
   }
 
   getEpisodeSource(anilistId: number, episodeNumber: number): FilmServerEpisodeSource {
@@ -35,20 +51,14 @@ class FilmServerClient {
     };
   }
 
-  getAvailableEpisodeCount(anilistId: number): number {
-    // Episode count per anime — default fallback used when count is unknown.
-    // To support dynamic detection, this could be replaced with a discovery
-    // endpoint on FilmServer or a config map keyed by anime ID.
-    const EPISODE_COUNT_MAP: Record<number, number> = {
-      108941: 12,
-      178022: 12,
-    };
-
-    return EPISODE_COUNT_MAP[anilistId] ?? 12;
+  async getAvailableEpisodeCount(anilistId: number): Promise<number> {
+    await this.fetchMovies();
+    return this.cachedMovies[anilistId] ?? 12;
   }
 
-  getAvailableAnimeIds(): number[] {
-    return Array.from(this.availableAnimeIds);
+  async getAvailableAnimeIds(): Promise<number[]> {
+    await this.fetchMovies();
+    return Object.keys(this.cachedMovies).map(Number);
   }
 }
 

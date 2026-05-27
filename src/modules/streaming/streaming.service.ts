@@ -125,11 +125,11 @@ class StreamingService extends BaseService implements IStreamingService {
       requestId,
     });
 
-    if (this.filmServerClient.hasAnime(validAnilistId)) {
+    if (await this.filmServerClient.hasAnime(validAnilistId)) {
       this.logger.info(
         `[StreamingService] Using FilmServer for anime ${validAnilistId} episode ${validEpisodeNumber}`
       );
-      return this._buildFilmServerSourcesResponse(validAnilistId, validEpisodeNumber);
+      return await this._buildFilmServerSourcesResponse(validAnilistId, validEpisodeNumber);
     }
 
     throw new NotFoundError(
@@ -199,9 +199,9 @@ class StreamingService extends BaseService implements IStreamingService {
       `[StreamingService] Getting available episodes for AniList ID: ${validId} (page: ${page}, limit: ${limit})`
     );
 
-    if (this.filmServerClient.hasAnime(validId)) {
+    if (await this.filmServerClient.hasAnime(validId)) {
       this.logger.info(`[StreamingService] Using FilmServer episodes for anime ${validId}`);
-      return this._buildFilmServerEpisodesResponse(validId, page, limit);
+      return await this._buildFilmServerEpisodesResponse(validId, page, limit);
     }
 
     throw new NotFoundError(
@@ -408,11 +408,11 @@ class StreamingService extends BaseService implements IStreamingService {
     return 'unknown';
   }
 
-  private _buildFilmServerSourcesResponse(
+  private async _buildFilmServerSourcesResponse(
     anilistId: number,
     episodeNumber: number
-  ): EpisodeSourcesResponse {
-    const episodeCount = this.filmServerClient.getAvailableEpisodeCount(anilistId);
+  ): Promise<EpisodeSourcesResponse> {
+    const episodeCount = await this.filmServerClient.getAvailableEpisodeCount(anilistId);
     if (episodeNumber > episodeCount) {
       throw new NotFoundError(
         `Episode ${episodeNumber} not found for anime ${anilistId}. Available: 1-${episodeCount}`
@@ -438,12 +438,12 @@ class StreamingService extends BaseService implements IStreamingService {
     };
   }
 
-  private _buildFilmServerEpisodesResponse(
+  private async _buildFilmServerEpisodesResponse(
     anilistId: number,
     page: number,
     limit: number
-  ): AvailableEpisodesResponse {
-    const episodeCount = this.filmServerClient.getAvailableEpisodeCount(anilistId);
+  ): Promise<AvailableEpisodesResponse> {
+    const episodeCount = await this.filmServerClient.getAvailableEpisodeCount(anilistId);
     const allEpisodes: EpisodeInfo[] = Array.from({ length: episodeCount }, (_, i) => ({
       number: i + 1,
       order: i + 1,
