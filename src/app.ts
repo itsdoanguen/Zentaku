@@ -13,7 +13,7 @@ dotenv.config();
 const createApp = (): Application => {
   const app: Application = express();
 
-  app.use(helmet());
+  app.use(helmet({ crossOriginResourcePolicy: false }));
   app.use(cors());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));

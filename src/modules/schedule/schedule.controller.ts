@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { LibraryEntryRepository } from '../follow/repositories/library-entry.repository';
-import type { AnilistScheduleClient } from '../../infrastructure/external/anilist/schedule/AnilistScheduleClient';
+import type AnilistScheduleClient from '../../infrastructure/external/anilist/schedule/AnilistScheduleClient';
 import { LibraryStatus } from '../../entities/types/enums';
 
 export default class ScheduleController {
