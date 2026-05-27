@@ -22,6 +22,7 @@ const initializeRoutes = (container: unknown): Router => {
   const communityRoutes = require('../modules/community/community.routes');
   const channelRoutes = require('../modules/channel/channel.routes');
   const messageRoutes = require('../modules/message/message.routes');
+  const scheduleRoutes = require('../modules/schedule/schedule.routes');
 
   router.use('/auth', authRoutes(container));
   router.use('/user', userRoutes(container));
@@ -161,6 +162,7 @@ const initializeRoutes = (container: unknown): Router => {
   router.use('/', activityRoutes(container));
   router.use('/', followRoutes(container));
   router.use('/list', listRoutes(container));
+  router.use('/schedule', scheduleRoutes(container));
   return router;
 };
 
