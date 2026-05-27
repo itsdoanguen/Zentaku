@@ -8,6 +8,7 @@ export interface IUserRepository {
   findByUsername(username: string): Promise<User | null>;
   create(data: DeepPartial<User>): Promise<User>;
   update(id: number | bigint, data: DeepPartial<User>): Promise<User | null>;
+  searchUsers(searchTerm: string, take?: number): Promise<User[]>;
 }
 
 export class UserRepository extends BaseRepository<User> implements IUserRepository {
@@ -31,10 +32,12 @@ export class UserRepository extends BaseRepository<User> implements IUserReposit
     });
   }
 
-  async searchByDisplayName(searchTerm: string, take: number = 10): Promise<User[]> {
+  async searchUsers(searchTerm: string, take: number = 10): Promise<User[]> {
     return this.repository
       .createQueryBuilder('user')
       .where('LOWER(user.displayName) LIKE LOWER(:searchTerm)', { searchTerm: `%${searchTerm}%` })
+      .orWhere('LOWER(user.username) LIKE LOWER(:searchTerm)', { searchTerm: `%${searchTerm}%` })
+      .loadRelationCountAndMap('user.followersCount', 'user.followers')
       .take(take)
       .getMany();
   }
