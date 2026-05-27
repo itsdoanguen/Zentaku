@@ -10,6 +10,8 @@ const initializeUserRoutes = (container: Container): Router => {
 
   router.use(authenticate);
 
+  router.get('/search', userController.searchUsers);
+
   /**
    * @swagger
    * /api/user/me:

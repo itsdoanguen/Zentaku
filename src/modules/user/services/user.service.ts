@@ -237,4 +237,21 @@ export class UserService extends BaseService implements IUserService {
     this._logInfo('User banner updated', { userId: id, bannerPath: safePath });
     return updated;
   }
+
+  async searchUsers(query: string, limit: number = 20): Promise<any> {
+    const safeQuery = this._validateString(query, 'Search Query', { maxLength: 100 });
+
+    const users = await this._executeWithErrorHandling(
+      () => this.userRepository.searchUsers(safeQuery, limit),
+      'searchUsers'
+    );
+
+    return users.map((user: any) => ({
+      id: user.id,
+      username: user.username,
+      displayName: user.displayName,
+      avatar: user.avatar,
+      followersCount: user.followersCount || 0,
+    }));
+  }
 }

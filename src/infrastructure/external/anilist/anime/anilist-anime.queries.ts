@@ -101,10 +101,10 @@ query ($season: MediaSeason, $seasonYear: Int, $page: Int, $perpage: Int, $sort:
 `;
 
 export const ANIME_SEARCH_CRITERIA_QS = `
-query ($genres: [String], $season: MediaSeason, $seasonYear: Int, $format: MediaFormat, $status: MediaStatus, $page: Int, $perpage: Int, $sort: [MediaSort]) {
+query ($query: String, $genres: [String], $season: MediaSeason, $seasonYear: Int, $format: MediaFormat, $status: MediaStatus, $page: Int, $perpage: Int, $sort: [MediaSort]) {
   Page(page: $page, perPage: $perpage) {
     pageInfo { total currentPage lastPage hasNextPage }
-    media(genre_in: $genres, season: $season, seasonYear: $seasonYear, format: $format, status: $status, type: ANIME, sort: $sort) {
+    media(search: $query, genre_in: $genres, season: $season, seasonYear: $seasonYear, format: $format, status: $status, type: ANIME, sort: $sort) {
       id
       title { romaji english native }
       coverImage { large }

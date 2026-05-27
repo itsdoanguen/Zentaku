@@ -113,6 +113,22 @@ const loadInfrastructure = (container: any): void => {
     }
   );
 
+  //Load AniList Schedule Client
+  container.register(
+    'anilistScheduleClient',
+    () => {
+      const AnilistScheduleClient =
+        require('../../infrastructure/external/anilist/schedule/AnilistScheduleClient').default ||
+        require('../../infrastructure/external/anilist/schedule/AnilistScheduleClient');
+      const client = new AnilistScheduleClient();
+      return client;
+    },
+    {
+      singleton: true,
+      dependencies: ['httpClient'],
+    }
+  );
+
   //Load AniList Metadata Adapter
   container.register(
     'anilistMetadataAdapter',

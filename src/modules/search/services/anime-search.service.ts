@@ -39,10 +39,11 @@ class AnimeSearchService {
     options: { page?: number; perPage?: number } = {}
   ): Promise<SearchResult<unknown>> {
     const { page = 1, perPage = 20 } = options;
-    const { sort, format, status, genres, season, seasonYear } = criteria;
+    const { query, sort, format, status, genres, season, seasonYear } = criteria;
 
     const results = await this.animeClient.searchByCriteria(
       {
+        query,
         genres,
         season,
         seasonYear,

@@ -77,18 +77,22 @@ class SearchController {
     try {
       const { q, page, perPage, genres, year, season, status, format, sort, isAdult } = req.query;
 
-      const result = await this.animeSearchService.searchByText({
-        q: q as string,
-        page: page ? parseInt(page as string, 10) : 1,
-        perPage: perPage ? parseInt(perPage as string, 10) : 20,
-        genres: genres ? (genres as string).split(',') : undefined,
-        year: year ? parseInt(year as string, 10) : undefined,
-        season: season as string | undefined,
-        status: status as string | undefined,
-        format: format ? (format as string).split(',') : undefined,
-        sort: sort ? (sort as string).split(',') : undefined,
-        isAdult: isAdult === 'true',
-      });
+      const result = await this.animeSearchService.searchByCriteria(
+        {
+          query: q as string,
+          genres: genres ? (genres as string).split(',') : undefined,
+          seasonYear: year ? parseInt(year as string, 10) : undefined,
+          season: season as any,
+          status: status as any,
+          format: format ? ((format as string).split(',') as any) : undefined,
+          sort: sort ? ((sort as string).split(',') as any) : undefined,
+          isAdult: isAdult === 'true',
+        },
+        {
+          page: page ? parseInt(page as string, 10) : 1,
+          perPage: perPage ? parseInt(perPage as string, 10) : 20,
+        }
+      );
 
       res.json(result);
     } catch (error) {

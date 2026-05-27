@@ -8,4 +8,5 @@ export interface IUserService {
   updatePrivacy(userId: number, updateData: UpdatePrivacyDto): Promise<User>;
   updateAvatar(userId: number, avatarPath: string): Promise<User>;
   updateBanner(userId: number, bannerPath: string): Promise<User>;
+  searchUsers(query: string, limit?: number): Promise<any>;
 }

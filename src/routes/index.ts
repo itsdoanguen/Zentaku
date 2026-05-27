@@ -22,13 +22,100 @@ const initializeRoutes = (container: unknown): Router => {
   const communityRoutes = require('../modules/community/community.routes');
   const channelRoutes = require('../modules/channel/channel.routes');
   const messageRoutes = require('../modules/message/message.routes');
+  const scheduleRoutes = require('../modules/schedule/schedule.routes');
 
   router.use('/auth', authRoutes(container));
   router.use('/user', userRoutes(container));
   router.use('/communities', communityRoutes(container));
-  router.use('/', channelRoutes(container));
-  router.use('/', messageRoutes(container));
+
   router.use('/anilist/anime', animeRoutes(container));
+
+  /**
+   * @swagger
+   * /api/anilist/staff/{id}:
+   *   get:
+   *     tags:
+   *       - Staff
+   *     summary: Get staff information
+   *     description: Retrieve detailed information about a staff member from AniList API.
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: Staff details retrieved successfully
+   *       400:
+   *         description: Invalid ID
+   *       404:
+   *         description: Staff not found
+   *       500:
+   *         description: Server error
+   */
+  router.get(
+    '/anilist/staff/:id',
+    async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+      try {
+        const idParam = req.params.id || '';
+        const staffId = parseInt(idParam, 10);
+        if (isNaN(staffId)) {
+          res.status(400).json({ success: false, errors: [{ message: 'Invalid staff ID' }] });
+          return;
+        }
+        const staffClient = (container as any).resolve('anilistStaffClient');
+        const data = await staffClient.fetchById(staffId);
+        res.json({ success: true, data });
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  /**
+   * @swagger
+   * /api/anilist/character/{id}:
+   *   get:
+   *     tags:
+   *       - Character
+   *     summary: Get character information
+   *     description: Retrieve detailed information about a character from AniList API.
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: Character details retrieved successfully
+   *       400:
+   *         description: Invalid ID
+   *       404:
+   *         description: Character not found
+   *       500:
+   *         description: Server error
+   */
+  router.get(
+    '/anilist/character/:id',
+    async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+      try {
+        const idParam = req.params.id || '';
+        const characterId = parseInt(idParam, 10);
+        if (isNaN(characterId)) {
+          res.status(400).json({ success: false, errors: [{ message: 'Invalid character ID' }] });
+          return;
+        }
+        const characterClient = (container as any).resolve('anilistCharacterClient');
+        const data = await characterClient.fetchById(characterId);
+        res.json({ success: true, data });
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
   router.use('/anilist', readingMediaRoutes(container));
   router.use('/streaming', streamingRoutes(container));
 
@@ -67,9 +154,15 @@ const initializeRoutes = (container: unknown): Router => {
   );
 
   router.use('/search', searchRoutes(container));
+
+  // Routes with global auth middlewares inside them mounted at '/'
+  router.use('/', channelRoutes(container));
+  router.use('/', messageRoutes(container));
+
   router.use('/', activityRoutes(container));
   router.use('/', followRoutes(container));
   router.use('/list', listRoutes(container));
+  router.use('/schedule', scheduleRoutes(container));
   return router;
 };
 

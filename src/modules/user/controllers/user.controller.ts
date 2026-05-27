@@ -115,6 +115,19 @@ class UserController extends BaseController<IUserService & IBaseService> {
   handleControllerError = (error: Error, req: Request, next: NextFunction): void => {
     this.handleError(error, req, next);
   };
+
+  searchUsers = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const q = req.query.q as string;
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+
+    if (!q || q.trim() === '') {
+      this.success(res, { results: [] });
+      return;
+    }
+
+    const results = await this.service.searchUsers(q, limit);
+    this.success(res, { results });
+  });
 }
 
 export default UserController;
