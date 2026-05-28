@@ -13,13 +13,15 @@ import type {
   PaginatedMessagesDto,
   SendMessageDto,
 } from '../types/message.types';
+import type { IUserRepository } from '../../user/repositories/user.repository';
 
 export class MessageService extends BaseService implements IMessageService {
   constructor(
     private readonly messageRepository: IMessageRepository,
     private readonly channelRepository: IChannelRepository,
     private readonly communityRepository: ICommunityRepository,
-    private readonly communityMemberRepository: ICommunityMemberRepository
+    private readonly communityMemberRepository: ICommunityMemberRepository,
+    private readonly userRepository: IUserRepository
   ) {
     super();
   }
@@ -77,14 +79,26 @@ export class MessageService extends BaseService implements IMessageService {
       attachments: data.attachments || [],
     });
 
+    const sender = await this.userRepository.findById(userId);
+
     return {
       id: String(savedMessage.id),
       channelId: String(channelId),
       senderId: String(userId),
+      sender: sender
+        ? {
+            id: sender.id.toString(),
+            username: sender.username,
+            displayName: sender.displayName ?? null,
+            avatar: sender.avatar ?? null,
+          }
+        : undefined,
       content: data.content,
       replyToId: data.replyToId ? String(data.replyToId) : null,
       attachments: data.attachments || [],
-      createdAt: savedMessage.createdAt ? savedMessage.createdAt.toISOString() : new Date().toISOString(),
+      createdAt: savedMessage.createdAt
+        ? savedMessage.createdAt.toISOString()
+        : new Date().toISOString(),
     };
   }
 
@@ -128,15 +142,37 @@ export class MessageService extends BaseService implements IMessageService {
       docs.pop(); // Remove the extra record
     }
 
-    const items: MessageResponseDto[] = docs.map((doc) => ({
-      id: String(doc._id),
-      channelId: String(doc.channelId),
-      senderId: String(doc.senderId),
-      content: doc.content,
-      replyToId: doc.replyToId ? String(doc.replyToId) : null,
-      attachments: doc.attachments || [],
-      createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : new Date(doc.createdAt).toISOString(),
-    }));
+    // Collect unique sender IDs
+    const senderIds = Array.from(new Set(docs.map((doc) => BigInt(doc.senderId))));
+    const senders = await Promise.all(senderIds.map((id) => this.userRepository.findById(id)));
+    const senderMap = new Map();
+    senders.forEach((s) => {
+      if (s) senderMap.set(String(s.id), s);
+    });
+
+    const items: MessageResponseDto[] = docs.map((doc) => {
+      const s = senderMap.get(String(doc.senderId));
+      return {
+        id: String(doc._id),
+        channelId: String(doc.channelId),
+        senderId: String(doc.senderId),
+        sender: s
+          ? {
+              id: String(s.id),
+              username: s.username,
+              displayName: s.displayName,
+              avatar: s.avatar,
+            }
+          : undefined,
+        content: doc.content,
+        replyToId: doc.replyToId ? String(doc.replyToId) : null,
+        attachments: doc.attachments || [],
+        createdAt:
+          doc.createdAt instanceof Date
+            ? doc.createdAt.toISOString()
+            : new Date(doc.createdAt).toISOString(),
+      };
+    });
 
     let nextCursor: string | null = null;
     if (hasMore && items.length > 0) {
@@ -177,7 +213,9 @@ export class MessageService extends BaseService implements IMessageService {
       channelId: String(channelId),
       userId: String(userId),
       lastReadMessageId: String(lastReadMessageId),
-      updatedAt: participant.lastReadAt ? participant.lastReadAt.toISOString() : new Date().toISOString(),
+      updatedAt: participant.lastReadAt
+        ? participant.lastReadAt.toISOString()
+        : new Date().toISOString(),
     };
   }
 }

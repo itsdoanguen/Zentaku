@@ -3,9 +3,14 @@ import { BaseController, type AuthenticatedRequest } from '../../../core/base/Ba
 import { ValidationError } from '../../../shared/utils/error';
 import type { IMessageService } from '../types/message.types';
 
+import type { IRealtimeGateway } from '../../../realtime/gateway/gateway.interface';
+
 export class MessageController extends BaseController<IMessageService> {
-  constructor(messageService: IMessageService) {
+  private readonly realtimeGateway?: IRealtimeGateway;
+
+  constructor(messageService: IMessageService, realtimeGateway?: IRealtimeGateway) {
     super(messageService);
+    this.realtimeGateway = realtimeGateway;
   }
 
   private getAuthUserId(authReq: AuthenticatedRequest): bigint {
@@ -23,6 +28,16 @@ export class MessageController extends BaseController<IMessageService> {
     const channelId = BigInt(req.params.channelId as string);
 
     const message = await this.service.sendMessage(channelId, userId, req.body);
+
+    if (this.realtimeGateway) {
+      this.realtimeGateway.broadcastToRoom(`channel:${channelId}`, {
+        event: 'message.created',
+        version: '1.0',
+        requestId: req.requestId || Math.random().toString(36).substring(7),
+        timestamp: Date.now(),
+        data: message,
+      });
+    }
 
     this.created(res, message);
   });

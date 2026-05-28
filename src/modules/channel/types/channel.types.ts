@@ -21,6 +21,7 @@ export interface IChannelService extends IBaseService {
   ): Promise<Channel[]>;
   createOrGetPrivateChannel(userId: bigint, recipientId: bigint): Promise<Channel>;
   getChannelDetail(channelId: bigint, userId: bigint): Promise<Channel>;
+  listPrivateChannels(userId: bigint): Promise<Channel[]>;
 }
 
 export interface IChannelRepository {
@@ -31,4 +32,5 @@ export interface IChannelRepository {
   createPrivateChannel(userA: bigint, userB: bigint): Promise<Channel>;
   isParticipant(channelId: bigint, userId: bigint): Promise<boolean>;
   addParticipant(channelId: bigint, userId: bigint): Promise<ChannelParticipant>;
+  findPrivateChannelsByUserId(userId: bigint): Promise<Channel[]>;
 }

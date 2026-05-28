@@ -81,6 +81,20 @@ const initializeChannelRoutes = (container: Container): Router => {
   /**
    * @swagger
    * /api/channels/private:
+   *   get:
+   *     tags: [Channel]
+   *     summary: List all private DM channels for current user
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: List of private channels retrieved successfully
+   */
+  router.get('/channels/private', channelController.listPrivateChannels);
+
+  /**
+   * @swagger
+   * /api/channels/private:
    *   post:
    *     tags: [Channel]
    *     summary: Create or get a private DM channel

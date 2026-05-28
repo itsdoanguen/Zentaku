@@ -141,4 +141,8 @@ export class ChannelService extends BaseService implements IChannelService {
 
     return channel;
   }
+
+  async listPrivateChannels(userId: bigint): Promise<Channel[]> {
+    return this.channelRepository.findPrivateChannelsByUserId(userId);
+  }
 }

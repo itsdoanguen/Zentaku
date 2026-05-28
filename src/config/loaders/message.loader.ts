@@ -31,12 +31,14 @@ const loadMessage = (container: Container): void => {
       const channelRepository = c.resolve('channelRepository');
       const communityRepository = c.resolve('communityRepository');
       const communityMemberRepository = c.resolve('communityMemberRepository');
+      const userRepository = c.resolve('userRepository');
 
       return new MessageService(
         messageRepository,
         channelRepository,
         communityRepository,
-        communityMemberRepository
+        communityMemberRepository,
+        userRepository
       );
     },
     {
@@ -46,6 +48,7 @@ const loadMessage = (container: Container): void => {
         'channelRepository',
         'communityRepository',
         'communityMemberRepository',
+        'userRepository',
       ],
     }
   );
@@ -57,11 +60,12 @@ const loadMessage = (container: Container): void => {
         require('../../modules/message/controllers/message.controller').default ||
         require('../../modules/message/controllers/message.controller');
       const messageService = c.resolve('messageService');
-      return new MessageController(messageService);
+      const realtimeGateway = c.resolve('realtimeGateway');
+      return new MessageController(messageService, realtimeGateway);
     },
     {
       singleton: true,
-      dependencies: ['messageService'],
+      dependencies: ['messageService', 'realtimeGateway'],
     }
   );
 
