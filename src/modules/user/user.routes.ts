@@ -421,6 +421,30 @@ const initializeUserRoutes = (container: Container): Router => {
    */
   router.get('/:username/profile', userController.getProfileByUsername);
 
+  /**
+   * @swagger
+   * /api/user/{username}/animelist:
+   *   get:
+   *     summary: Get user's tracked anime list
+   *     description: Retrieve all media items tracked by a user grouped by status
+   *     tags: [User]
+   *     parameters:
+   *       - in: path
+   *         name: username
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: The username of the user
+   *     responses:
+   *       200:
+   *         description: User animelist retrieved successfully
+   *       404:
+   *         description: User not found
+   *       401:
+   *         description: Unauthorized
+   */
+  router.get('/:username/animelist', userController.getUserAnimeList);
+
   return router;
 };
 

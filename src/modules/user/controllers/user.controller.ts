@@ -36,6 +36,17 @@ class UserController extends BaseController<IUserService & IBaseService> {
     this.success(res, user);
   });
 
+  getUserAnimeList = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const username = req.params.username;
+    if (!username) {
+      this.error(res, 'Username is required', 400);
+      return;
+    }
+
+    const animeList = await this.service.getUserAnimeList(username);
+    this.success(res, animeList);
+  });
+
   updateProfile = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const authReq = req as AuthenticatedRequest;
     this.requireAuth(authReq);

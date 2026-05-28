@@ -10,4 +10,5 @@ export interface IUserService {
   updateAvatar(userId: number, avatarPath: string): Promise<User>;
   updateBanner(userId: number, bannerPath: string): Promise<User>;
   searchUsers(query: string, limit?: number): Promise<any>;
+  getUserAnimeList(username: string): Promise<any>;
 }

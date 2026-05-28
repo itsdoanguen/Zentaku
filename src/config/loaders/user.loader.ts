@@ -28,11 +28,12 @@ const loadUser = (container: Container): void => {
     (c: any) => {
       const { UserService } = require('../../modules/user/services/user.service');
       const userRepository = c.resolve('userRepository');
-      return new UserService(userRepository);
+      const libraryEntryRepository = c.resolve('libraryEntryRepository');
+      return new UserService(userRepository, libraryEntryRepository);
     },
     {
       singleton: true,
-      dependencies: ['userRepository'],
+      dependencies: ['userRepository', 'libraryEntryRepository'],
     }
   );
 
