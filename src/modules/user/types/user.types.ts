@@ -3,6 +3,7 @@ import type { UpdatePreferencesDto, UpdatePrivacyDto, UpdateProfileDto } from '.
 
 export interface IUserService {
   getProfile(userId: number): Promise<User>;
+  getProfileByUsername(username: string): Promise<User>;
   updateProfile(userId: number, updateData: UpdateProfileDto): Promise<User>;
   updatePreferences(userId: number, updateData: UpdatePreferencesDto): Promise<User>;
   updatePrivacy(userId: number, updateData: UpdatePrivacyDto): Promise<User>;

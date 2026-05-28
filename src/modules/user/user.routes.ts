@@ -397,6 +397,30 @@ const initializeUserRoutes = (container: Container): Router => {
    */
   router.post('/me/banner', bannerUpload.single('file'), userController.uploadBanner);
 
+  /**
+   * @swagger
+   * /api/user/{username}/profile:
+   *   get:
+   *     summary: Get user profile by username
+   *     description: Retrieve the public profile information of a user by their username
+   *     tags: [User]
+   *     parameters:
+   *       - in: path
+   *         name: username
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: The username of the user
+   *     responses:
+   *       200:
+   *         description: User profile retrieved successfully
+   *       404:
+   *         description: User not found
+   *       401:
+   *         description: Unauthorized
+   */
+  router.get('/:username/profile', userController.getProfileByUsername);
+
   return router;
 };
 

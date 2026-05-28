@@ -25,6 +25,21 @@ export class UserService extends BaseService implements IUserService {
     return user;
   }
 
+  async getProfileByUsername(username: string): Promise<User> {
+    const safeUsername = this._validateString(username, 'Username', { maxLength: 255 });
+
+    const user = await this._executeWithErrorHandling(
+      () => this.userRepository.findByUsername(safeUsername),
+      'getProfileByUsername'
+    );
+
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    return user;
+  }
+
   async updateProfile(userId: number, updateData: UpdateProfileDto): Promise<User> {
     const id = this._validateId(userId, 'User ID');
     const user = await this.userRepository.findById(id);
