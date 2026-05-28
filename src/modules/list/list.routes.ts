@@ -7,6 +7,7 @@
 import express, { type Router } from 'express';
 import type { Container } from '../../config/container';
 import { authenticate } from '../../middlewares/authenticate';
+import { listBannerUpload } from '../../middlewares/upload';
 import type ListController from './controllers/list.controller';
 import { canEditList, canViewList, isListOwner } from './middlewares/list.guards';
 
@@ -40,6 +41,25 @@ const initializeListRoutes = (container: Container): Router => {
    *         description: Unauthorized
    */
   router.post('/create', authenticate, listController.createList);
+
+  /**
+   * @swagger
+   * /api/list/upload-banner:
+   *   post:
+   *     summary: Upload banner image for a list
+   *     tags: [List]
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: Uploaded successfully
+   */
+  router.post(
+    '/upload-banner',
+    authenticate,
+    listBannerUpload.single('file'),
+    listController.uploadBanner
+  );
 
   /**
    * @swagger

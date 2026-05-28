@@ -49,3 +49,20 @@ export const bannerUpload = multer({
   fileFilter,
   limits: { fileSize: MAX_BANNER_SIZE },
 });
+
+export const listBannerUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      const destinationDir = path.resolve(process.cwd(), 'public', 'uploads', 'lists', 'banner');
+      ensureDir(destinationDir);
+      cb(null, destinationDir);
+    },
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+      const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+      cb(null, name);
+    },
+  }),
+  fileFilter,
+  limits: { fileSize: MAX_BANNER_SIZE },
+});
