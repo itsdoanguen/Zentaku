@@ -318,6 +318,13 @@ class ListController extends BaseController<IListService & IBaseService> {
     this.success(res, likeStatus);
   });
 
+  getListLikers = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const listId = this.getIntParam(req, 'listId');
+    const limit = this.getIntQuery(req, 'limit', 20) || 20;
+    const result = await this.service.getListLikers(listId, limit);
+    this.success(res, result);
+  });
+
   getMostLikedLists = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const page = this.getIntQuery(req, 'page', 1) || 1;
     const limit = this.getIntQuery(req, 'limit', 10) || 10;

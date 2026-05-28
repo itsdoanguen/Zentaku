@@ -728,6 +728,37 @@ const initializeListRoutes = (container: Container): Router => {
 
   /**
    * @swagger
+   * /api/list/{listId}/likers:
+   *   get:
+   *     summary: Get list likers
+   *     tags: [List Likes]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: listId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         example: 1
+   *       - in: query
+   *         name: limit
+   *         required: false
+   *         schema:
+   *           type: integer
+   *           default: 20
+   *     responses:
+   *       200:
+   *         description: List likers retrieved successfully
+   *       401:
+   *         description: Unauthorized
+   *       404:
+   *         description: List not found
+   */
+  router.get('/:listId/likers', canViewList(container), listController.getListLikers);
+
+  /**
+   * @swagger
    * /api/list/likes/most-liked:
    *   get:
    *     summary: Get most liked lists (public only)

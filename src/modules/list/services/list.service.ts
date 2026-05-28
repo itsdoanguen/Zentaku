@@ -1081,6 +1081,40 @@ export class ListService extends BaseService implements IListService {
     }, 'getLikeStatus');
   }
 
+  async getListLikers(listId: number, limit: number = 20): Promise<any> {
+    this._validateId(listId, 'List ID');
+    return this._executeWithErrorHandling(async () => {
+      const activityRepo = this.listRepository.getRepository().manager.getRepository(Activity);
+
+      const activities = await activityRepo.find({
+        where: {
+          listId: BigInt(listId),
+          type: 'LIST_LIKE',
+        },
+        relations: ['user'],
+        order: { createdAt: 'DESC' },
+        take: limit,
+      });
+
+      const likeCount = await activityRepo.count({
+        where: {
+          listId: BigInt(listId),
+          type: 'LIST_LIKE',
+        },
+      });
+
+      return {
+        likers: activities.map((a) => ({
+          id: Number(a.user.id),
+          username: a.user.username,
+          avatarUrl: a.user.avatar,
+        })),
+        showing: activities.length,
+        like_count: likeCount,
+      };
+    }, 'getListLikers');
+  }
+
   async getMostLikedLists(options: LikesDiscoveryOptionsDto): Promise<LikesDiscoveryResultDto> {
     const page = Math.max(1, options.page || 1);
     const limit = Math.min(options.limit || 10, 50);
