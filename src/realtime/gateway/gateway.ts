@@ -42,6 +42,7 @@ const DEFAULT_GATEWAY_CONFIG: GatewayConfig = {
       'playback.pause',
       'playback.seek',
       'playback.sync',
+      'playback.change_episode',
       'queue.update',
     ]),
     allowedVersions: ['1.0'],
