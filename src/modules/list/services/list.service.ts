@@ -358,6 +358,7 @@ export class ListService extends BaseService implements IListService {
       return {
         id: this.toNumberId(item.id),
         mediaId,
+        anilistId: media?.idAnilist ? this.toNumberId(media.idAnilist) : undefined,
         title,
         poster: media?.coverImage || undefined,
         note: item.note || undefined,
