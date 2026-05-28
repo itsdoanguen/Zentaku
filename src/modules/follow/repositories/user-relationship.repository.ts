@@ -115,13 +115,13 @@ export class UserRelationshipRepository extends BaseRepository<UserRelationship>
     const [relationships, total] = await this.repository
       .createQueryBuilder('relationship')
       .leftJoinAndSelect('relationship.follower', 'follower')
-      .where('relationship.following_id = :userId', {
+      .where('relationship.followingId = :userId', {
         userId: normalizedUserId.toString(),
       })
       .andWhere('relationship.type = :type', {
         type: RelationshipType.FOLLOW,
       })
-      .orderBy('relationship.created_at', 'DESC')
+      .orderBy('relationship.createdAt', 'DESC')
       .skip(skip)
       .take(perPage)
       .getManyAndCount();
@@ -155,13 +155,13 @@ export class UserRelationshipRepository extends BaseRepository<UserRelationship>
     const [relationships, total] = await this.repository
       .createQueryBuilder('relationship')
       .leftJoinAndSelect('relationship.following', 'following')
-      .where('relationship.follower_id = :userId', {
+      .where('relationship.followerId = :userId', {
         userId: normalizedUserId.toString(),
       })
       .andWhere('relationship.type = :type', {
         type: RelationshipType.FOLLOW,
       })
-      .orderBy('relationship.created_at', 'DESC')
+      .orderBy('relationship.createdAt', 'DESC')
       .skip(skip)
       .take(perPage)
       .getManyAndCount();
