@@ -298,7 +298,7 @@ export class UserService extends BaseService implements IUserService {
       // Map to frontend expected AnimeItemDetail format
       const animeDetail = {
         id: Number(item.mediaId),
-        anilist_id: Number(item.mediaId),
+        anilist_id: Number((item.media as any)?.idAnilist) || Number(item.mediaId),
         title_english: item.media?.titleEnglish,
         title_romaji: item.media?.titleRomaji,
         name_english: item.media?.titleEnglish,
