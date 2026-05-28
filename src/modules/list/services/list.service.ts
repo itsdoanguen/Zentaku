@@ -363,6 +363,7 @@ export class ListService extends BaseService implements IListService {
         note: item.note || undefined,
         position: item.orderIndex,
         addedAt: this.toISODate(item.createdAt),
+        addedBy: item.addedBy?.username,
       };
     });
   }

@@ -50,7 +50,7 @@ export class ListRepository extends BaseRepository<CustomList> implements IListR
   async findListById(listId: number): Promise<CustomList | null> {
     return this.repository.findOne({
       where: { id: this.toEntityId(listId) },
-      relations: ['owner', 'items', 'items.media'],
+      relations: ['owner', 'items', 'items.media', 'items.addedBy'],
       order: {
         items: {
           orderIndex: 'ASC',
@@ -91,7 +91,7 @@ export class ListRepository extends BaseRepository<CustomList> implements IListR
   async getListBySlug(slug: string): Promise<CustomList | null> {
     return this.repository.findOne({
       where: { slug },
-      relations: ['owner', 'items', 'items.media'],
+      relations: ['owner', 'items', 'items.media', 'items.addedBy'],
       order: {
         items: {
           orderIndex: 'ASC',

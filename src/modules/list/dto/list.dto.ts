@@ -146,6 +146,7 @@ export interface AnimeItemInListDto {
   note?: string;
   position?: number;
   addedAt: string;
+  addedBy?: string;
 }
 
 export interface ListMemberDto {
