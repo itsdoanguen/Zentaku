@@ -230,6 +230,62 @@ const initializeFollowRoutes = (container: Container): Router => {
    */
   router.get('/follows/users/:targetUserId', followController.getUserFollowStatus);
 
+  /**
+   * @swagger
+   * /api/follows/users/{userId}/followers:
+   *   get:
+   *     summary: Get followers of a user
+   *     tags: [Follow]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: userId
+   *         required: true
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: page
+   *         schema:
+   *           type: integer
+   *       - in: query
+   *         name: perPage
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: Followers retrieved successfully
+   */
+  router.get('/follows/users/:userId/followers', followController.getFollowers);
+
+  /**
+   * @swagger
+   * /api/follows/users/{userId}/following:
+   *   get:
+   *     summary: Get users followed by a user
+   *     tags: [Follow]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: userId
+   *         required: true
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: page
+   *         schema:
+   *           type: integer
+   *       - in: query
+   *         name: perPage
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: Following retrieved successfully
+   */
+  router.get('/follows/users/:userId/following', followController.getFollowing);
+
   return router;
 };
 

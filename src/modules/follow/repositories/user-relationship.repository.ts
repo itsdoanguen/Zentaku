@@ -143,6 +143,46 @@ export class UserRelationshipRepository extends BaseRepository<UserRelationship>
     };
   }
 
+  async getFollowing(
+    userId: string | bigint,
+    pagination: { page?: number; perPage?: number }
+  ): Promise<PaginatedResult<User>> {
+    const normalizedUserId = this.toBigInt(userId);
+    const page = Math.max(1, pagination.page || 1);
+    const perPage = Math.min(100, Math.max(1, pagination.perPage || 20));
+    const skip = (page - 1) * perPage;
+
+    const [relationships, total] = await this.repository
+      .createQueryBuilder('relationship')
+      .leftJoinAndSelect('relationship.following', 'following')
+      .where('relationship.follower_id = :userId', {
+        userId: normalizedUserId.toString(),
+      })
+      .andWhere('relationship.type = :type', {
+        type: RelationshipType.FOLLOW,
+      })
+      .orderBy('relationship.created_at', 'DESC')
+      .skip(skip)
+      .take(perPage)
+      .getManyAndCount();
+
+    const data = relationships
+      .map((relationship) => relationship.following)
+      .filter((following): following is User => Boolean(following));
+
+    const totalPages = Math.ceil(total / perPage);
+
+    return {
+      data,
+      total,
+      page,
+      perPage,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    };
+  }
+
   private toBigInt(value: string | bigint): bigint {
     if (typeof value === 'bigint') {
       return value;
