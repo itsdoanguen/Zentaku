@@ -51,6 +51,24 @@ class ListController extends BaseController<IListService & IBaseService> {
   });
 
   /**
+   * POST /list/upload-banner
+   * Upload list banner image
+   */
+  uploadBanner = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    this.requireAuth(authReq);
+
+    const file = req.file;
+    if (!file) {
+      this.error(res, 'No file uploaded', 400);
+      return;
+    }
+
+    const relativePath = `/uploads/lists/banner/${file.filename}`;
+    this.success(res, { url: relativePath }, 200);
+  });
+
+  /**
    * GET /list/user
    * Get all lists by username
    */
@@ -298,6 +316,13 @@ class ListController extends BaseController<IListService & IBaseService> {
     const listId = this.getIntParam(req, 'listId');
     const likeStatus = await this.service.getLikeStatus(listId, userId);
     this.success(res, likeStatus);
+  });
+
+  getListLikers = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const listId = this.getIntParam(req, 'listId');
+    const limit = this.getIntQuery(req, 'limit', 20) || 20;
+    const result = await this.service.getListLikers(listId, limit);
+    this.success(res, result);
   });
 
   getMostLikedLists = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {

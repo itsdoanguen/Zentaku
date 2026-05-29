@@ -7,6 +7,7 @@
 import express, { type Router } from 'express';
 import type { Container } from '../../config/container';
 import { authenticate } from '../../middlewares/authenticate';
+import { listBannerUpload } from '../../middlewares/upload';
 import type ListController from './controllers/list.controller';
 import { canEditList, canViewList, isListOwner } from './middlewares/list.guards';
 
@@ -40,6 +41,25 @@ const initializeListRoutes = (container: Container): Router => {
    *         description: Unauthorized
    */
   router.post('/create', authenticate, listController.createList);
+
+  /**
+   * @swagger
+   * /api/list/upload-banner:
+   *   post:
+   *     summary: Upload banner image for a list
+   *     tags: [List]
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: Uploaded successfully
+   */
+  router.post(
+    '/upload-banner',
+    authenticate,
+    listBannerUpload.single('file'),
+    listController.uploadBanner
+  );
 
   /**
    * @swagger
@@ -705,6 +725,37 @@ const initializeListRoutes = (container: Container): Router => {
    *         description: List not found
    */
   router.get('/:listId/like/status', authenticate, listController.getLikeStatus);
+
+  /**
+   * @swagger
+   * /api/list/{listId}/likers:
+   *   get:
+   *     summary: Get list likers
+   *     tags: [List Likes]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: listId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         example: 1
+   *       - in: query
+   *         name: limit
+   *         required: false
+   *         schema:
+   *           type: integer
+   *           default: 20
+   *     responses:
+   *       200:
+   *         description: List likers retrieved successfully
+   *       401:
+   *         description: Unauthorized
+   *       404:
+   *         description: List not found
+   */
+  router.get('/:listId/likers', canViewList(container), listController.getListLikers);
 
   /**
    * @swagger

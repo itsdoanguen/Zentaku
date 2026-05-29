@@ -141,11 +141,13 @@ export interface ListDetailDto {
 export interface AnimeItemInListDto {
   id: number;
   mediaId: number;
+  anilistId?: number;
   title: string;
   poster?: string;
   note?: string;
   position?: number;
   addedAt: string;
+  addedBy?: string;
 }
 
 export interface ListMemberDto {

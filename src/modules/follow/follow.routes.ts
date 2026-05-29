@@ -7,6 +7,60 @@ const initializeFollowRoutes = (container: Container): Router => {
   const router = express.Router();
   const followController = container.resolve<FollowController>('followController');
 
+  // Public routes (must be defined before authenticate middleware)
+  /**
+   * @swagger
+   * /api/follows/users/{userId}/followers:
+   *   get:
+   *     summary: Get followers of a user
+   *     tags: [Follow]
+   *     parameters:
+   *       - in: path
+   *         name: userId
+   *         required: true
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: page
+   *         schema:
+   *           type: integer
+   *       - in: query
+   *         name: perPage
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: Followers retrieved successfully
+   */
+  router.get('/follows/users/:userId/followers', followController.getFollowers);
+
+  /**
+   * @swagger
+   * /api/follows/users/{userId}/following:
+   *   get:
+   *     summary: Get users followed by a user
+   *     tags: [Follow]
+   *     parameters:
+   *       - in: path
+   *         name: userId
+   *         required: true
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: page
+   *         schema:
+   *           type: integer
+   *       - in: query
+   *         name: perPage
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: Following retrieved successfully
+   */
+  router.get('/follows/users/:userId/following', followController.getFollowing);
+
+  // Protected routes
   router.use(authenticate);
 
   /**

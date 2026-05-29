@@ -102,6 +102,24 @@ class FollowController extends BaseController<FollowService & IBaseService> {
     );
     this.success(res, result);
   });
+
+  getFollowers = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = this.getRequiredParam(req, 'userId');
+    const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+    const perPage = req.query.perPage ? parseInt(req.query.perPage as string, 10) : 20;
+
+    const result = await this.service.getFollowers(userId, page, perPage);
+    this.success(res, result);
+  });
+
+  getFollowing = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = this.getRequiredParam(req, 'userId');
+    const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+    const perPage = req.query.perPage ? parseInt(req.query.perPage as string, 10) : 20;
+
+    const result = await this.service.getFollowing(userId, page, perPage);
+    this.success(res, result);
+  });
 }
 
 export default FollowController;

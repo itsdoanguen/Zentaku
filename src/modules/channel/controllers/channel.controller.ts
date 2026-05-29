@@ -100,6 +100,39 @@ export class ChannelController extends BaseController<IChannelService> {
       createdAt: channel.createdAt.toISOString(),
     });
   });
+
+  listPrivateChannels = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    this.requireAuth(authReq);
+    const userId = this.getAuthUserId(authReq);
+
+    const channels = await this.service.listPrivateChannels(userId);
+
+    this.success(
+      res,
+      channels.map((channel) => ({
+        id: String(channel.id),
+        communityId: null,
+        name: null,
+        type: channel.type,
+        isPrivate: channel.isPrivate,
+        position: channel.position,
+        createdAt: channel.createdAt.toISOString(),
+        participants: channel.participants.map((p) => ({
+          userId: String(p.userId),
+          user: p.user
+            ? {
+                id: String(p.user.id),
+                username: p.user.username,
+                displayName: p.user.displayName,
+                avatar: p.user.avatar,
+              }
+            : undefined,
+          joinedAt: p.createdAt ? p.createdAt.toISOString() : undefined,
+        })),
+      }))
+    );
+  });
 }
 
 export default ChannelController;

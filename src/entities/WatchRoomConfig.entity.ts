@@ -2,7 +2,7 @@
  * Watch Room Config Entity
  */
 
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import { BaseEntity } from './base/BaseEntity';
 import { Channel } from './Channel.entity';
 import { MediaItem } from './MediaItem.entity';
@@ -10,7 +10,7 @@ import { User } from './User.entity';
 
 @Entity('watch_room_configs')
 export class WatchRoomConfig extends BaseEntity {
-  @PrimaryColumn({ name: 'channel_id', type: 'bigint' })
+  @Column({ name: 'channel_id', type: 'bigint', unique: true })
   channelId!: bigint;
 
   @Column({ name: 'media_id', type: 'bigint', nullable: true })

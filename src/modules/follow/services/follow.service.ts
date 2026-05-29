@@ -379,6 +379,16 @@ export class FollowService extends BaseService {
     );
   }
 
+  async getFollowers(userId: string | bigint, page: number = 1, perPage: number = 20) {
+    const actorId = this.validateBigIntLike(userId, 'User ID');
+    return this.userRelationshipRepository.getFollowers(actorId, { page, perPage });
+  }
+
+  async getFollowing(userId: string | bigint, page: number = 1, perPage: number = 20) {
+    const actorId = this.validateBigIntLike(userId, 'User ID');
+    return this.userRelationshipRepository.getFollowing(actorId, { page, perPage });
+  }
+
   private validateBigIntLike(value: string | bigint, fieldName: string): string | bigint {
     if (typeof value === 'bigint') {
       if (value <= 0n) {

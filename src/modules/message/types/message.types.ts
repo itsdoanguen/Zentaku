@@ -12,6 +12,12 @@ export interface MessageResponseDto {
   id: string;
   channelId: string;
   senderId: string;
+  sender?: {
+    id: string;
+    username: string;
+    displayName: string | null;
+    avatar: string | null;
+  };
   content: string;
   replyToId: string | null;
   attachments: Record<string, unknown>[];

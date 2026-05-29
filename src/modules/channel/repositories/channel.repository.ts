@@ -67,6 +67,24 @@ export class ChannelRepository extends BaseRepository<Channel> implements IChann
     return this.findChannelById(savedChannel.id) as Promise<Channel>;
   }
 
+  async findPrivateChannelsByUserId(userId: bigint): Promise<Channel[]> {
+    return this.repository
+      .createQueryBuilder('channel')
+      .innerJoin('channel.participants', 'me', 'me.userId = :userId', { userId })
+      .leftJoinAndSelect(
+        'channel.participants',
+        'otherParticipant',
+        'otherParticipant.userId != :userId',
+        { userId }
+      )
+      .leftJoinAndSelect('otherParticipant.user', 'otherUser')
+      .where('channel.communityId IS NULL')
+      .andWhere('channel.type = :type', { type: ChannelType.TEXT })
+      .andWhere('channel.isPrivate = :isPrivate', { isPrivate: true })
+      .orderBy('channel.createdAt', 'DESC')
+      .getMany();
+  }
+
   async isParticipant(channelId: bigint, userId: bigint): Promise<boolean> {
     const count = await this.participantRepository.count({
       where: {

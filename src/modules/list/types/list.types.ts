@@ -73,6 +73,7 @@ export interface IListService extends IBaseService {
     userId: number,
     options: LikesDiscoveryOptionsDto
   ): Promise<LikesDiscoveryResultDto>;
+  getListLikers(listId: number, limit: number): Promise<any>;
 
   // Phase 5: Search & Discover & Item Manage
   searchLists(options: SearchListDto, userId?: number): Promise<ListSearchResult>;

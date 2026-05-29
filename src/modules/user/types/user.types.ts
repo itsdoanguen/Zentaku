@@ -3,10 +3,12 @@ import type { UpdatePreferencesDto, UpdatePrivacyDto, UpdateProfileDto } from '.
 
 export interface IUserService {
   getProfile(userId: number): Promise<User>;
+  getProfileByUsername(username: string): Promise<User>;
   updateProfile(userId: number, updateData: UpdateProfileDto): Promise<User>;
   updatePreferences(userId: number, updateData: UpdatePreferencesDto): Promise<User>;
   updatePrivacy(userId: number, updateData: UpdatePrivacyDto): Promise<User>;
   updateAvatar(userId: number, avatarPath: string): Promise<User>;
   updateBanner(userId: number, bannerPath: string): Promise<User>;
   searchUsers(query: string, limit?: number): Promise<any>;
+  getUserAnimeList(username: string): Promise<any>;
 }

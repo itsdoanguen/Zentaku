@@ -8,6 +8,35 @@ import {
   updateReadCursorValidation,
 } from './validators/message.validator';
 
+const rateLimitCache = new Map<string, number[]>();
+const messageRateLimiter = (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) => {
+  const userId = (req as any).user?.id || req.ip; // Assuming user ID is set by authenticate middleware
+  const now = Date.now();
+  let timestamps = rateLimitCache.get(String(userId)) || [];
+  timestamps = timestamps.filter((t) => now - t < 1000);
+
+  if (timestamps.length >= 5) {
+    res
+      .status(429)
+      .json({
+        success: false,
+        error: {
+          name: 'TooManyRequests',
+          message: 'Rate limit exceeded: Maximum 5 messages per second',
+        },
+      });
+    return;
+  }
+
+  timestamps.push(now);
+  rateLimitCache.set(String(userId), timestamps);
+  next();
+};
+
 const initializeMessageRoutes = (container: Container): Router => {
   const router = express.Router();
   const messageController = container.resolve<MessageController>('messageController');
@@ -45,6 +74,7 @@ const initializeMessageRoutes = (container: Container): Router => {
    */
   router.post(
     '/channels/:channelId/messages',
+    messageRateLimiter,
     sendMessageValidation,
     messageController.sendMessage
   );

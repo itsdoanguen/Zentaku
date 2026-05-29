@@ -5,8 +5,13 @@ import type { UpdatePreferencesDto, UpdatePrivacyDto, UpdateProfileDto } from '.
 import type { UserRepository } from '../repositories/user.repository';
 import type { IUserService } from '../types/user.types';
 
+import type { LibraryEntryRepository } from '../../follow/repositories/library-entry.repository';
+
 export class UserService extends BaseService implements IUserService {
-  constructor(private readonly userRepository: UserRepository) {
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly libraryEntryRepository: LibraryEntryRepository
+  ) {
     super();
   }
 
@@ -16,6 +21,21 @@ export class UserService extends BaseService implements IUserService {
     const user = await this._executeWithErrorHandling(
       () => this.userRepository.findById(id),
       'getProfile'
+    );
+
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    return user;
+  }
+
+  async getProfileByUsername(username: string): Promise<User> {
+    const safeUsername = this._validateString(username, 'Username', { maxLength: 255 });
+
+    const user = await this._executeWithErrorHandling(
+      () => this.userRepository.findByUsername(safeUsername),
+      'getProfileByUsername'
     );
 
     if (!user) {
@@ -253,5 +273,81 @@ export class UserService extends BaseService implements IUserService {
       avatar: user.avatar,
       followersCount: user.followersCount || 0,
     }));
+  }
+
+  async getUserAnimeList(username: string): Promise<any> {
+    const user = await this.getProfileByUsername(username);
+
+    // Get all library entries for the user (including dropped ones)
+    // { page: 1, perPage: 1000 } is a hack to get "all" items since the UI expects the full list
+    const result = await this.libraryEntryRepository.paginate({
+      where: { userId: user.id },
+      page: 1,
+      perPage: 1000,
+      relations: ['media'],
+    });
+
+    const watching: any[] = [];
+    const completed: any[] = [];
+    const on_hold: any[] = [];
+    const dropped: any[] = [];
+    const plan_to_watch: any[] = [];
+
+    // Group items by status
+    for (const item of result.data) {
+      // Map to frontend expected AnimeItemDetail format
+      const animeDetail = {
+        id: Number(item.mediaId),
+        anilist_id: Number((item.media as any)?.idAnilist) || Number(item.mediaId),
+        title_english: item.media?.titleEnglish,
+        title_romaji: item.media?.titleRomaji,
+        name_english: item.media?.titleEnglish,
+        name_romaji: item.media?.titleRomaji,
+        cover_image: item.media?.coverImage,
+        episodes: (item.media as any)?.episodes,
+        average_score: item.media?.averageScore,
+        format: (item.media as any)?.format,
+        season: (item.media as any)?.season,
+        year: (item.media as any)?.year,
+        status: item.media?.status,
+
+        // Tracking info
+        watch_status: item.status.toLowerCase(),
+        score: item.score,
+        episode_progress: item.progress,
+        total_rewatch: item.rewatchCount,
+        notes: item.notes,
+        isPrivate: item.isPrivate,
+        startDate: item.startDate,
+        finishDate: item.finishDate,
+        createdAt: item.createdAt,
+      };
+
+      switch (item.status) {
+        case 'WATCHING':
+          watching.push(animeDetail);
+          break;
+        case 'COMPLETED':
+          completed.push(animeDetail);
+          break;
+        case 'PAUSED':
+          on_hold.push(animeDetail);
+          break;
+        case 'DROPPED':
+          dropped.push(animeDetail);
+          break;
+        case 'PLANNING':
+          plan_to_watch.push(animeDetail);
+          break;
+      }
+    }
+
+    return {
+      watching,
+      completed,
+      on_hold,
+      dropped,
+      plan_to_watch,
+    };
   }
 }
