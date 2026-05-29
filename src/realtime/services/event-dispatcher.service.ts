@@ -86,6 +86,45 @@ export class EventDispatcherService {
       }
     );
 
+    // 3. Register room.kick handler
+    this.gateway.registerHandler(
+      'room.kick',
+      async (envelope: EventEnvelope, context: AuthenticatedSocketContext) => {
+        const channelId = envelope.data?.channelId;
+        const targetUserId = envelope.data?.targetUserId;
+
+        if (!channelId || !targetUserId) {
+          return {
+            success: false,
+            nack: createNackEnvelope(envelope.requestId, {
+              code: RealtimeErrorCode.PAYLOAD_INVALID,
+              message: 'channelId and targetUserId are required in data payload',
+            }),
+          };
+        }
+
+        const socket = (this.gateway as any).getSocket?.(context.socketId);
+        if (!socket) {
+          return {
+            success: false,
+            nack: createNackEnvelope(envelope.requestId, {
+              code: RealtimeErrorCode.INTERNAL_ERROR,
+              message: 'Socket connection not found',
+            }),
+          };
+        }
+
+        await this.roomOrchestrator.handleRoomKick(
+          socket,
+          channelId,
+          targetUserId,
+          context,
+          envelope.requestId
+        );
+        return { success: true };
+      }
+    );
+
     logger.info('[EventDispatcherService] Core handlers registered successfully');
   }
 }

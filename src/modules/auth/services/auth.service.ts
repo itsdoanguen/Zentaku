@@ -319,6 +319,7 @@ export class AuthService implements IAuthService {
       userId: this.toNumberId(user.id),
       email: user.email,
       username: user.username,
+      avatar: user.avatar,
       roles: user.roles?.map((role) => role.name) ?? [],
     };
 
@@ -363,6 +364,7 @@ export class AuthService implements IAuthService {
       id: this.toNumberId(user.id),
       email: user.email,
       username: user.username,
+      avatar: user.avatar,
       emailVerified,
       roles: user.roles?.map((role) => role.name) ?? [],
     };

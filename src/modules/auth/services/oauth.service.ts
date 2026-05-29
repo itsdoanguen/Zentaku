@@ -69,6 +69,7 @@ export class OAuthService {
       userId: this.toNumberId(user.id),
       email: user.email,
       username: user.username,
+      avatar: user.avatar,
       roles: user.roles?.map((role) => role.name) ?? [],
     };
 

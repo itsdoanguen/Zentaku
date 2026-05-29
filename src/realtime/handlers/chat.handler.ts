@@ -6,10 +6,7 @@ import { RealtimeErrorCode } from '../types/errors';
 import { createAckEnvelope, createNackEnvelope } from '../validators/envelope-validator';
 
 export class ChatHandler {
-  private cursorCache = new Map<
-    string,
-    { lastReadMessageId: bigint; timer: NodeJS.Timeout }
-  >();
+  private cursorCache = new Map<string, { lastReadMessageId: bigint; timer: NodeJS.Timeout }>();
 
   constructor(private readonly gateway: RealtimeGateway) {
     this.registerHandlers();
@@ -47,6 +44,44 @@ export class ChatHandler {
 
     try {
       const container = require('../../config/container').default;
+
+      // Check if this channel is a watch party
+      const watchPartyService = container.resolve('watchPartyService');
+      let isWatchParty = false;
+      try {
+        const room = await watchPartyService.getWatchRoom(channelId);
+        if (room) isWatchParty = true;
+      } catch (err) {
+        console.error('[ChatHandler] getWatchRoom error:', err);
+      }
+
+      console.log(`[ChatHandler] message.send channelId=${channelId} isWatchParty=${isWatchParty}`);
+
+      if (isWatchParty) {
+        const tempMessage = {
+          id: `temp-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          channelId,
+          content,
+          senderId: context.userId,
+          senderName: context.displayName,
+          createdAt: new Date().toISOString(),
+          replyToId,
+          attachments,
+        };
+
+        watchPartyService.addMessage(channelId, tempMessage);
+
+        return {
+          success: true,
+          ack: createAckEnvelope(envelope.requestId, 'message.send'),
+          broadcast: {
+            rooms: [`channel:${channelId}`],
+            event: 'message.created',
+            data: tempMessage,
+          },
+        };
+      }
+
       const messageService = container.resolve('messageService');
       const savedMessage = await messageService.sendMessage(
         BigInt(channelId),
@@ -144,7 +179,7 @@ export class ChatHandler {
     }
 
     const key = `${context.userId}:${channelId}`;
-    
+
     // Check if there is an existing debounce timer in our memory cache
     const cached = this.cursorCache.get(key);
     if (cached) {
@@ -206,9 +241,7 @@ export class ChatHandler {
             cache.lastReadMessageId
           );
         } catch (error: any) {
-          logger.error(
-            `[ChatHandler] Flush failed for key ${key}: ${error.message}`
-          );
+          logger.error(`[ChatHandler] Flush failed for key ${key}: ${error.message}`);
         }
       }
     }

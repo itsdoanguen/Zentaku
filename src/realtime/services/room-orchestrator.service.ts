@@ -75,6 +75,7 @@ export class RoomOrchestratorService {
         channelId,
         userId: context.userId,
         displayName: context.displayName,
+        avatar: context.avatar,
       },
     });
 
@@ -116,6 +117,7 @@ export class RoomOrchestratorService {
         channelId,
         userId: context.userId,
         displayName: context.displayName,
+        avatar: context.avatar,
       },
     });
 
@@ -123,5 +125,57 @@ export class RoomOrchestratorService {
 
     const ack = createAckEnvelope(requestId, 'room.leave');
     this.gateway.sendAck(socket, ack);
+  }
+
+  async handleRoomKick(
+    _socket: Socket,
+    channelId: string,
+    targetUserId: string,
+    context: AuthenticatedSocketContext,
+    requestId: string
+  ): Promise<void> {
+    const targetSocketIds = this.gateway.getUserSockets(targetUserId) as unknown as string[];
+    if (!targetSocketIds || targetSocketIds.length === 0) {
+      return; // User not found or not connected
+    }
+
+    const roomName = `channel:${channelId}`;
+
+    for (const socketId of targetSocketIds) {
+      const targetSocket = (this.gateway as any).getSocket?.(socketId) as Socket | undefined;
+      if (!targetSocket) continue;
+
+      const targetContext = this.gateway.getSocketContext(socketId);
+      if (!targetContext || !targetContext.rooms.has(roomName)) continue;
+
+      // 1. Force the target socket to leave the room
+      this.gateway.leaveRoom(targetSocket, roomName, targetContext);
+
+      // 2. Notify the target user they were kicked
+      targetSocket.emit('message', {
+        event: 'presence.kicked',
+        version: '1.0',
+        requestId,
+        timestamp: Date.now(),
+        data: {
+          channelId,
+          kickedBy: context.userId,
+        },
+      });
+
+      // 3. Broadcast presence.left to the remaining members of the room
+      this.gateway.broadcastToRoom(roomName, {
+        event: 'presence.left',
+        version: '1.0',
+        requestId,
+        timestamp: Date.now(),
+        data: {
+          channelId,
+          userId: targetContext.userId,
+          displayName: targetContext.displayName,
+          avatar: targetContext.avatar,
+        },
+      });
+    }
   }
 }

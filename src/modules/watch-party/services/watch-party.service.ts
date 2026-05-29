@@ -9,6 +9,7 @@ export interface InMemoryWatchRoom {
   currentTimestamp: number;
   currentSourceUrl: string | null;
   playlistQueue: any[];
+  messages: any[];
   settings: Record<string, unknown>;
   lastSyncedAt: Date;
 }
@@ -31,6 +32,7 @@ export class WatchPartyService {
       currentTimestamp: 0,
       currentSourceUrl: data.currentSourceUrl || null,
       playlistQueue: [],
+      messages: [],
       settings: data.settings || {},
       lastSyncedAt: new Date(),
     };
@@ -78,7 +80,9 @@ export class WatchPartyService {
     channelId: string,
     userId: bigint,
     newSourceUrl: string,
-    episodeNumber?: number
+    episodeNumber?: number,
+    subUrl?: string | null,
+    referer?: string | null
   ) {
     const config = this.rooms.get(channelId);
     if (!config) {
@@ -94,10 +98,12 @@ export class WatchPartyService {
     config.isPlaying = true; // Auto play new episode
     config.lastSyncedAt = new Date();
 
-    if (episodeNumber !== undefined) {
+    if (episodeNumber !== undefined || subUrl !== undefined || referer !== undefined) {
       config.settings = {
         ...config.settings,
-        episodeNumber,
+        ...(episodeNumber !== undefined && { episodeNumber }),
+        ...(subUrl !== undefined && { subUrl }),
+        ...(referer !== undefined && { referer }),
       };
     }
 
@@ -119,6 +125,17 @@ export class WatchPartyService {
     return { success: true };
   }
 
+  addMessage(channelId: string, message: any) {
+    const config = this.rooms.get(channelId);
+    if (!config) return null;
+
+    config.messages.push(message);
+    if (config.messages.length > 100) {
+      config.messages.shift();
+    }
+    return message;
+  }
+
   private mapConfigToDto(config: InMemoryWatchRoom) {
     return {
       channelId: config.channelId,
@@ -128,6 +145,7 @@ export class WatchPartyService {
       currentTimestamp: config.currentTimestamp,
       currentSourceUrl: config.currentSourceUrl,
       playlistQueue: config.playlistQueue,
+      messages: config.messages,
       settings: config.settings,
       lastSyncedAt: config.lastSyncedAt,
     };

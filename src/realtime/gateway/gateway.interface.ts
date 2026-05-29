@@ -19,6 +19,7 @@ export interface AuthenticatedSocketContext {
   socketId: string;
   userId: string;
   displayName: string;
+  avatar?: string | null;
   sessionId: string;
   authenticatedAt: number;
   rooms: Set<string>; // Set of joined channelIds

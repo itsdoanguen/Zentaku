@@ -41,6 +41,7 @@ export function initializeRealtime(server: HttpServer, container: Container): So
         participants.push({
           userId: ctx.userId,
           displayName: ctx.displayName,
+          avatar: ctx.avatar,
         });
       }
     }
@@ -93,6 +94,7 @@ export function initializeRealtime(server: HttpServer, container: Container): So
 
     //Handle incoming message events and route to gateway
     socket.on('message', async (envelope) => {
+      logger.info(`[Realtime] Received inbound message from ${socket.id}: ${envelope.event}`);
       try {
         await gateway.handleInboundEvent(socket, envelope, context);
       } catch (error: any) {
@@ -117,6 +119,7 @@ export function initializeRealtime(server: HttpServer, container: Container): So
               channelId,
               userId: context.userId,
               displayName: context.displayName,
+              avatar: context.avatar,
             },
           });
         }
