@@ -116,14 +116,15 @@ export function checkWatchPartyPermission(
     return { authorized: true };
   }
 
-  const playbackControlEvents = [
+  const hostRestrictedEvents = [
     'playback.play',
     'playback.pause',
     'playback.seek',
     'queue.update',
     'playback.change_episode',
+    'room.kick',
   ];
-  if (playbackControlEvents.includes(eventName)) {
+  if (hostRestrictedEvents.includes(eventName)) {
     const isAdmin = userContext.roles.includes(RealtimeRole.ADMIN);
     const isModerator = userContext.roles.includes(RealtimeRole.MODERATOR);
     const isHost = userContext.isHost;
@@ -135,7 +136,7 @@ export function checkWatchPartyPermission(
     return {
       authorized: false,
       errorCode: RealtimeErrorCode.HOST_REQUIRED,
-      errorMessage: 'Only room host, moderator, or admin can control playback',
+      errorMessage: 'Only room host, moderator, or admin can perform this action',
     };
   }
 

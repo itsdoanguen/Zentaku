@@ -41,6 +41,7 @@ export function initializeRealtime(server: HttpServer, container: Container): So
         participants.push({
           userId: ctx.userId,
           displayName: ctx.displayName,
+          avatar: ctx.avatar,
         });
       }
     }
@@ -118,6 +119,7 @@ export function initializeRealtime(server: HttpServer, container: Container): So
               channelId,
               userId: context.userId,
               displayName: context.displayName,
+              avatar: context.avatar,
             },
           });
         }

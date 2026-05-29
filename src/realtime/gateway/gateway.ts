@@ -44,6 +44,7 @@ const DEFAULT_GATEWAY_CONFIG: GatewayConfig = {
       'playback.sync',
       'playback.change_episode',
       'queue.update',
+      'room.kick',
     ]),
     allowedVersions: ['1.0'],
   },

@@ -60,6 +60,7 @@ export const AUTHORIZATION_MATRIX: Record<string, RealtimeRole[]> = {
   'playback.sync': [RealtimeRole.ADMIN, RealtimeRole.MODERATOR, RealtimeRole.MEMBER],
   'queue.update': [RealtimeRole.ADMIN, RealtimeRole.MODERATOR], // Member only if host
   'playback.change_episode': [RealtimeRole.ADMIN, RealtimeRole.MODERATOR], // Member only if host
+  'room.kick': [RealtimeRole.ADMIN, RealtimeRole.MODERATOR], // Member only if host
 };
 
 /**
@@ -71,6 +72,7 @@ export const HOST_OVERRIDE_EVENTS = new Set([
   'playback.seek',
   'queue.update',
   'playback.change_episode',
+  'room.kick',
 ]);
 
 /**

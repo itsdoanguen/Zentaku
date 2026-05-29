@@ -51,6 +51,7 @@ export const createAuthMiddleware = () => {
           socketId: socket.id,
           userId: String(payload.userId || (payload as any).id),
           displayName: payload.username || 'Anonymous',
+          avatar: payload.avatar || null,
           sessionId: randomUUID(),
           authenticatedAt: Date.now(),
           rooms: new Set<string>(),
