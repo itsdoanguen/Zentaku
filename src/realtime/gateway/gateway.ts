@@ -112,17 +112,32 @@ export class RealtimeGateway extends EventEmitter implements IRealtimeGateway {
     const channelId = eventEnvelope.data?.channelId || 'unknown';
     const isDenied = channelId.includes('unauthorized') || channelId.includes('forbidden');
     const channelRole = isDenied ? RealtimeRole.NON_MEMBER : RealtimeRole.MEMBER;
-    const { roles } = resolveUserRoles(context.userId, undefined, channelRole);
+
+    // Query watchPartyService to check if user is host
+    let isHost = false;
+    try {
+      const container = require('../../config/container').default;
+      const watchPartyService = container.resolve('watchPartyService');
+      const room = await watchPartyService.getWatchRoom(channelId);
+      if (room && room.hostId === context.userId) {
+        isHost = true;
+      }
+    } catch {
+      // Ignore errors if room not found or service unavailable
+    }
+
+    const { roles } = resolveUserRoles(context.userId, undefined, channelRole, isHost);
 
     const authzResult = checkEventAuthorization(
       eventName,
       {
         userId: context.userId,
         roles,
+        isHost,
       },
       {
         channelId,
-        channelType: 'TEXT',
+        channelType: 'WATCH_PARTY',
       }
     );
 

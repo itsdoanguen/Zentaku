@@ -78,7 +78,9 @@ export class WatchPartyService {
     channelId: string,
     userId: bigint,
     newSourceUrl: string,
-    episodeNumber?: number
+    episodeNumber?: number,
+    subUrl?: string | null,
+    referer?: string | null
   ) {
     const config = this.rooms.get(channelId);
     if (!config) {
@@ -94,10 +96,12 @@ export class WatchPartyService {
     config.isPlaying = true; // Auto play new episode
     config.lastSyncedAt = new Date();
 
-    if (episodeNumber !== undefined) {
+    if (episodeNumber !== undefined || subUrl !== undefined || referer !== undefined) {
       config.settings = {
         ...config.settings,
-        episodeNumber,
+        ...(episodeNumber !== undefined && { episodeNumber }),
+        ...(subUrl !== undefined && { subUrl }),
+        ...(referer !== undefined && { referer }),
       };
     }
 

@@ -121,6 +121,7 @@ export function checkWatchPartyPermission(
     'playback.pause',
     'playback.seek',
     'queue.update',
+    'playback.change_episode',
   ];
   if (playbackControlEvents.includes(eventName)) {
     const isAdmin = userContext.roles.includes(RealtimeRole.ADMIN);

@@ -93,6 +93,7 @@ export function initializeRealtime(server: HttpServer, container: Container): So
 
     //Handle incoming message events and route to gateway
     socket.on('message', async (envelope) => {
+      logger.info(`[Realtime] Received inbound message from ${socket.id}: ${envelope.event}`);
       try {
         await gateway.handleInboundEvent(socket, envelope, context);
       } catch (error: any) {

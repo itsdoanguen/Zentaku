@@ -27,7 +27,7 @@ export class WatchPartyHandler {
     context: AuthenticatedSocketContext
   ): Promise<any> {
     const channelId = envelope.data?.channelId;
-    const timestamp = envelope.data?.atTimestamp;
+    const timestamp = envelope.data?.timestamp;
 
     if (!channelId) {
       return {
@@ -74,7 +74,7 @@ export class WatchPartyHandler {
     context: AuthenticatedSocketContext
   ): Promise<any> {
     const channelId = envelope.data?.channelId;
-    const timestamp = envelope.data?.atTimestamp;
+    const timestamp = envelope.data?.timestamp;
 
     if (!channelId) {
       return {
@@ -121,7 +121,7 @@ export class WatchPartyHandler {
     context: AuthenticatedSocketContext
   ): Promise<any> {
     const channelId = envelope.data?.channelId;
-    const timestamp = envelope.data?.toTimestamp;
+    const timestamp = envelope.data?.timestamp;
 
     if (!channelId || timestamp === undefined) {
       return {
@@ -170,6 +170,8 @@ export class WatchPartyHandler {
     const channelId = envelope.data?.channelId;
     const newSourceUrl = envelope.data?.newSourceUrl;
     const newEpisodeNumber = envelope.data?.newEpisodeNumber;
+    const subUrl = envelope.data?.subUrl;
+    const referer = envelope.data?.referer;
 
     if (!channelId || !newSourceUrl) {
       return {
@@ -189,7 +191,9 @@ export class WatchPartyHandler {
         channelId,
         BigInt(context.userId),
         newSourceUrl,
-        newEpisodeNumber
+        newEpisodeNumber,
+        subUrl,
+        referer
       );
 
       return {
