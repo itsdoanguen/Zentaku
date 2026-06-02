@@ -145,6 +145,11 @@ const options: swaggerJsdoc.Options = {
             description: { type: 'string', nullable: true, example: 'My top anime lists' },
             privacy: { $ref: '#/components/schemas/ListPrivacyMode' },
             ownerUsername: { type: 'string', example: 'john_doe' },
+            ownerAvatar: {
+              type: 'string',
+              nullable: true,
+              example: 'https://example.com/avatar.jpg',
+            },
             bannerImage: {
               type: 'string',
               nullable: true,

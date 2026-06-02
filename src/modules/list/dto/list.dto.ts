@@ -81,6 +81,7 @@ export interface LikedListDto {
   name: string;
   slug: string;
   ownerUsername: string;
+  ownerAvatar?: string;
   likeCount: number;
   itemCount: number;
   bannerImage?: string;
@@ -187,6 +188,7 @@ export interface ListSummaryDto {
   slug: string;
   description?: string;
   ownerUsername: string;
+  ownerAvatar?: string;
   privacy: 'PUBLIC' | 'PRIVATE' | 'SHARED';
   bannerImage?: string;
   likeCount: number;
