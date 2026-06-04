@@ -89,11 +89,6 @@ export class ChatHandler {
         { content, replyToId, attachments }
       );
 
-      // Fire-and-forget: notify channel participants who are NOT in the room
-      this.notifyOfflineParticipants(channelId, context, content).catch((err: any) => {
-        logger.error(`[ChatHandler] Failed to send message notifications: ${err.message}`);
-      });
-
       return {
         success: true,
         ack: createAckEnvelope(envelope.requestId, 'message.send', savedMessage as any),
@@ -251,72 +246,5 @@ export class ChatHandler {
       }
     }
     this.cursorCache.clear();
-  }
-
-  /**
-   * Send notifications to channel participants who are NOT currently in the socket room.
-   * This implements the 2A approach: only notify users who are not actively viewing the channel.
-   */
-  private async notifyOfflineParticipants(
-    channelId: string,
-    context: AuthenticatedSocketContext,
-    content: string
-  ): Promise<void> {
-    const container = require('../../config/container').default;
-
-    // Check if notificationService is registered
-    if (!container.has('notificationService')) return;
-
-    const notificationService = container.resolve('notificationService');
-    const dataSource = container.resolve('dataSource');
-
-    const { ChannelParticipant } = require('../../entities');
-    const participantRepo = (dataSource as any).getRepository(ChannelParticipant);
-
-    // Get all participants of this channel
-    const participants = await participantRepo.find({
-      where: { channelId: BigInt(channelId) },
-    });
-
-    // Get the set of userIds currently in the socket room
-    const roomName = `channel:${channelId}`;
-    const getRoomParticipants = (this.gateway as any).getRoomParticipants;
-    const activeUserIds = new Set<string>();
-
-    if (getRoomParticipants) {
-      const activeParticipants = getRoomParticipants(roomName);
-      for (const p of activeParticipants) {
-        activeUserIds.add(String(p.userId));
-      }
-    }
-
-    // Build message preview (truncate to 80 chars)
-    const messagePreview = content.length > 80 ? content.substring(0, 80) + '...' : content;
-
-    const { NotificationType } = require('../../entities/types/enums');
-
-    for (const participant of participants) {
-      const participantUserId = String(participant.userId);
-
-      // Skip the sender
-      if (participantUserId === context.userId) continue;
-
-      // Skip users who are currently in the room (they can see the message in real-time)
-      if (activeUserIds.has(participantUserId)) continue;
-
-      await notificationService.createAndPush(
-        participant.userId,
-        NotificationType.MESSAGE,
-        `New message from ${context.displayName}`,
-        messagePreview,
-        {
-          channelId,
-          senderId: context.userId,
-          senderName: context.displayName,
-          senderAvatar: context.avatar || null,
-          messagePreview,
-        }
-      );
-    }
   }
 }

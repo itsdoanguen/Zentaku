@@ -4,13 +4,26 @@ import { ValidationError } from '../../../shared/utils/error';
 import type { IMessageService } from '../types/message.types';
 
 import type { IRealtimeGateway } from '../../../realtime/gateway/gateway.interface';
+import type { NotificationService } from '../../notification/services/notification.service';
+import { NotificationType } from '../../../entities/types/enums';
+import type { IChannelRepository } from '../../channel/types/channel.types';
+import logger from '../../../shared/utils/logger';
 
 export class MessageController extends BaseController<IMessageService> {
   private readonly realtimeGateway?: IRealtimeGateway;
+  private readonly notificationService?: NotificationService;
+  private readonly channelRepository?: IChannelRepository;
 
-  constructor(messageService: IMessageService, realtimeGateway?: IRealtimeGateway) {
+  constructor(
+    messageService: IMessageService,
+    realtimeGateway?: IRealtimeGateway,
+    notificationService?: NotificationService,
+    channelRepository?: IChannelRepository
+  ) {
     super(messageService);
     this.realtimeGateway = realtimeGateway;
+    this.notificationService = notificationService;
+    this.channelRepository = channelRepository;
   }
 
   private getAuthUserId(authReq: AuthenticatedRequest): bigint {
@@ -37,10 +50,66 @@ export class MessageController extends BaseController<IMessageService> {
         timestamp: Date.now(),
         data: message,
       });
+
+      // Async notify offline participants
+      this.notifyOfflineParticipants(channelId, message).catch((err) => {
+        logger.error(`[MessageController] Failed to notify offline participants: ${err.message}`);
+      });
     }
 
     this.created(res, message);
   });
+
+  private async notifyOfflineParticipants(channelId: bigint, message: any): Promise<void> {
+    if (!this.notificationService || !this.channelRepository || !this.realtimeGateway) return;
+
+    // 1. Lấy danh sách participants của channel
+    const channel = await this.channelRepository.findChannelById(channelId);
+    if (!channel || !channel.participants) return;
+
+    // 2. Lấy danh sách user đang active trong socket room của channel
+    const roomName = `channel:${channelId}`;
+    const getRoomParticipants = (this.realtimeGateway as any).getRoomParticipants;
+    const activeUserIds = new Set<string>();
+
+    if (getRoomParticipants) {
+      const activeParticipants = getRoomParticipants(roomName);
+      for (const p of activeParticipants) {
+        activeUserIds.add(String(p.userId));
+      }
+    }
+
+    // 3. Chuẩn bị nội dung thông báo
+    const content = message.content || 'Sent an attachment';
+    const messagePreview = content.length > 80 ? content.substring(0, 80) + '...' : content;
+    const senderId = message.sender?.id || message.senderId;
+    const senderName = message.sender?.displayName || message.sender?.username || 'Someone';
+
+    // 4. Gửi thông báo cho những người không active
+    for (const participant of channel.participants) {
+      const participantUserId = String(participant.userId);
+
+      // Bỏ qua người gửi
+      if (participantUserId === String(senderId)) continue;
+
+      // Bỏ qua những người đang mở cửa sổ chat này
+      if (activeUserIds.has(participantUserId)) continue;
+
+      await this.notificationService.createAndPush(
+        participant.userId,
+        NotificationType.MESSAGE,
+        `New message from ${senderName}`,
+        messagePreview,
+        {
+          channelId: String(channelId),
+          senderId: String(senderId),
+          senderName,
+          senderAvatar: message.sender?.avatar || null,
+          messagePreview,
+        }
+      );
+    }
+  }
 
   getMessageHistory = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const authReq = req as AuthenticatedRequest;
