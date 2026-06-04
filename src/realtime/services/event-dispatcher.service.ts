@@ -6,6 +6,7 @@ import { RealtimeErrorCode } from '../types/errors';
 import { createNackEnvelope } from '../validators/envelope-validator';
 import type { RoomOrchestratorService } from './room-orchestrator.service';
 import { ChatHandler } from '../handlers/chat.handler';
+import { NotificationHandler } from '../handlers/notification.handler';
 
 /**
  * Event Dispatcher Service
@@ -18,6 +19,7 @@ export class EventDispatcherService {
     private roomOrchestrator: RoomOrchestratorService
   ) {
     new ChatHandler(this.gateway);
+    new NotificationHandler(this.gateway);
     this.registerCoreHandlers();
   }
 

@@ -81,6 +81,9 @@ export function initializeRealtime(server: HttpServer, container: Container): So
     );
     gateway.setSocketContext(socket.id, context);
 
+    // Auto-join user to their personal notification room
+    socket.join(`user:${context.userId}`);
+
     socket.emit('message', {
       event: 'connection.ready',
       version: '1.0',

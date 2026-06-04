@@ -18,6 +18,27 @@ const loadSchedule = (container: any): void => {
     }
   );
 
+  // Register Schedule Cron Service for anime airing notifications
+  container.register(
+    'scheduleCronService',
+    (c: any) => {
+      const { ScheduleCronService } = require('../../modules/schedule/schedule-cron.service');
+      const notificationService = c.resolve('notificationService');
+      const anilistScheduleClient = c.resolve('anilistScheduleClient');
+      const libraryEntryRepository = c.resolve('libraryEntryRepository');
+
+      return new ScheduleCronService(
+        notificationService,
+        anilistScheduleClient,
+        libraryEntryRepository
+      );
+    },
+    {
+      singleton: true,
+      dependencies: ['notificationService', 'anilistScheduleClient', 'libraryEntryRepository'],
+    }
+  );
+
   logger.info('[Loader] Schedule module registered');
 };
 

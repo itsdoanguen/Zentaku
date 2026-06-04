@@ -24,11 +24,13 @@ const initializeRoutes = (container: unknown): Router => {
   const messageRoutes = require('../modules/message/message.routes');
   const scheduleRoutes = require('../modules/schedule/schedule.routes');
   const watchPartyRoutes = require('../modules/watch-party/watch-party.routes');
+  const notificationRoutes = require('../modules/notification/notification.routes');
 
   router.use('/auth', authRoutes(container));
   router.use('/user', userRoutes(container));
   router.use('/communities', communityRoutes(container));
   router.use('/watch-rooms', watchPartyRoutes(container));
+  router.use('/notifications', notificationRoutes(container));
 
   router.use('/anilist/anime', animeRoutes(container));
 

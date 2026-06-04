@@ -20,6 +20,14 @@ const startServer = async (): Promise<void> => {
 
     initializeRealtime(server, container);
 
+    // Start the anime airing notification cron service
+    try {
+      const scheduleCronService = container.resolve<any>('scheduleCronService');
+      scheduleCronService.start();
+    } catch (err: any) {
+      logger.warn(`[Server] Schedule cron service not available: ${err.message}`);
+    }
+
     server.on('error', (err: Error & { code?: string }) => {
       console.error('Server error:', err.message);
       if (err.code === 'EADDRINUSE') {

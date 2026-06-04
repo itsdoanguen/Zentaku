@@ -67,3 +67,8 @@ export enum AnimeSeason {
   SUMMER = 'SUMMER',
   FALL = 'FALL',
 }
+
+export enum NotificationType {
+  MESSAGE = 'message',
+  ANIME_AIRING = 'anime_airing',
+}
