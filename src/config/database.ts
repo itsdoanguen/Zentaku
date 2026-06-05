@@ -39,6 +39,7 @@ export const AppDataSource = new DataSource({
     entities.WatchRoomConfig,
     entities.Activity,
     entities.Comment,
+    entities.Notification,
   ],
 
   migrations: ['src/migrations/**/*.ts'],

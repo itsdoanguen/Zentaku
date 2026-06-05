@@ -190,6 +190,38 @@ export interface QueueUpdateData {
 }
 
 // ============================================================================
+// Notification Events
+// ============================================================================
+
+/**
+ * notification.new (server -> client)
+ * A new notification has been created for the user
+ */
+export interface NotificationNewData {
+  id: string;
+  type: 'message' | 'anime_airing';
+  title: string;
+  body?: string | null;
+  metadata?: Record<string, unknown> | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+/**
+ * notification.read (client -> server)
+ * User marks a single notification as read
+ */
+export interface NotificationReadData {
+  notificationId: string;
+}
+
+/**
+ * notification.read-all (client -> server)
+ * User marks all notifications as read
+ */
+export interface NotificationReadAllData {}
+
+// ============================================================================
 // Event Registry Type
 // ============================================================================
 
@@ -216,6 +248,10 @@ export type EventRegistry = {
   'playback.seek': PlaybackSeekData;
   'playback.sync': PlaybackSyncData;
   'queue.update': QueueUpdateData;
+
+  'notification.new': NotificationNewData;
+  'notification.read': NotificationReadData;
+  'notification.read-all': NotificationReadAllData;
 };
 
 export type SupportedEventName = keyof EventRegistry;
@@ -237,4 +273,7 @@ export const SUPPORTED_EVENTS: Record<SupportedEventName, boolean> = {
   'playback.seek': true,
   'playback.sync': true,
   'queue.update': true,
+  'notification.new': true,
+  'notification.read': true,
+  'notification.read-all': true,
 };

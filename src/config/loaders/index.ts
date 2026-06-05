@@ -22,6 +22,7 @@ import channelLoader = require('./channel.loader');
 import messageLoader = require('./message.loader');
 import scheduleLoader = require('./schedule.loader');
 import watchPartyLoader = require('./watch-party.loader');
+import notificationLoader = require('./notification.loader');
 
 /**
  * Load all modules into the container
@@ -55,6 +56,7 @@ const loadModules = (container: Container): void => {
   messageLoader(container);
   scheduleLoader(container);
   watchPartyLoader(container);
+  notificationLoader(container);
 
   logger.debug('[Loaders] All modules registered successfully');
   logger.debug(`[Loaders] Total registered: ${container.getRegistered().length} dependencies`);

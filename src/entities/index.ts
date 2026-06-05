@@ -45,3 +45,6 @@ export { Message } from './Message.entity';
 export { Activity } from './Activity.entity';
 export { Comment } from './Comment.entity';
 export { WatchRoomConfig } from './WatchRoomConfig.entity';
+
+// Notifications
+export { Notification } from './Notification.entity';

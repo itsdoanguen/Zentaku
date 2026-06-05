@@ -61,11 +61,26 @@ const loadMessage = (container: Container): void => {
         require('../../modules/message/controllers/message.controller');
       const messageService = c.resolve('messageService');
       const realtimeGateway = c.resolve('realtimeGateway');
-      return new MessageController(messageService, realtimeGateway);
+      const notificationService = c.has('notificationService')
+        ? c.resolve('notificationService')
+        : undefined;
+      const channelRepository = c.resolve('channelRepository');
+
+      return new MessageController(
+        messageService,
+        realtimeGateway,
+        notificationService,
+        channelRepository
+      );
     },
     {
       singleton: true,
-      dependencies: ['messageService', 'realtimeGateway'],
+      dependencies: [
+        'messageService',
+        'realtimeGateway',
+        'notificationService',
+        'channelRepository',
+      ],
     }
   );
 
