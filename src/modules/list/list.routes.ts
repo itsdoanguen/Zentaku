@@ -208,6 +208,33 @@ const initializeListRoutes = (container: Container): Router => {
     listController.deleteList
   );
 
+  /**
+   * @swagger
+   * /api/list/{listId}/chat:
+   *   post:
+   *     summary: Create or get list chat
+   *     description: Create a community and channel for the list or get existing ones
+   *     tags: [List]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: listId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: Chat created or retrieved successfully
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Not list owner
+   *       404:
+   *         description: List not found
+   */
+  router.post('/:listId/chat', authenticate, isListOwner(container), listController.createListChat);
+
   // ==================== PHASE 2: MEMBER MANAGEMENT ====================
 
   /**

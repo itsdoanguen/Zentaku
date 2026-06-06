@@ -136,6 +136,8 @@ export interface ListDetailDto {
   updatedAt: string;
   likeCount: number;
   likedByMe: boolean;
+  communityId?: string;
+  channelId?: string;
   animeItems: AnimeItemInListDto[];
 }
 
