@@ -227,9 +227,13 @@ class SearchController {
    * Get current season anime
    * GET /api/search/seasonal/current
    */
-  async getCurrentSeason(_req: Request, res: Response): Promise<void> {
+  async getCurrentSeason(req: Request, res: Response): Promise<void> {
     try {
-      const result = await this.discoveryService.getCurrentSeason();
+      const { page, perPage } = req.query;
+      const result = await this.discoveryService.getCurrentSeason({
+        page: page ? parseInt(page as string, 10) : undefined,
+        perPage: perPage ? parseInt(perPage as string, 10) : undefined,
+      });
       res.json(result);
     } catch (error) {
       res.status(500).json({
@@ -243,9 +247,13 @@ class SearchController {
    * Get next season anime
    * GET /api/search/seasonal/next
    */
-  async getNextSeason(_req: Request, res: Response): Promise<void> {
+  async getNextSeason(req: Request, res: Response): Promise<void> {
     try {
-      const result = await this.discoveryService.getNextSeason();
+      const { page, perPage } = req.query;
+      const result = await this.discoveryService.getNextSeason({
+        page: page ? parseInt(page as string, 10) : undefined,
+        perPage: perPage ? parseInt(perPage as string, 10) : undefined,
+      });
       res.json(result);
     } catch (error) {
       res.status(500).json({

@@ -56,7 +56,7 @@ class DiscoveryService {
     }
   }
 
-  async getCurrentSeason(): Promise<DiscoveryResult> {
+  async getCurrentSeason(options?: { page?: number; perPage?: number }): Promise<DiscoveryResult> {
     const now = new Date();
     const month = now.getMonth(); // 0-11
     const year = now.getFullYear();
@@ -67,10 +67,10 @@ class DiscoveryService {
     else if (month >= 6 && month <= 8) season = 'SUMMER';
     else season = 'FALL';
 
-    return this.getSeasonalAnime({ season, year });
+    return this.getSeasonalAnime({ season, year, ...options });
   }
 
-  async getNextSeason(): Promise<DiscoveryResult> {
+  async getNextSeason(options?: { page?: number; perPage?: number }): Promise<DiscoveryResult> {
     const now = new Date();
     const month = now.getMonth(); // 0-11
     let year = now.getFullYear();
@@ -87,7 +87,7 @@ class DiscoveryService {
       year += 1; // Winter of next year
     }
 
-    return this.getSeasonalAnime({ season, year });
+    return this.getSeasonalAnime({ season, year, ...options });
   }
 
   private async fetchSeasonalAnime(
