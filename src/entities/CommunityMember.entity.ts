@@ -25,6 +25,9 @@ export class CommunityMember extends BaseJoinEntity {
   @Column({ name: 'joined_at', type: 'datetime' })
   joinedAt!: Date;
 
+  @Column({ name: 'is_muted', type: 'boolean', default: false })
+  isMuted!: boolean;
+
   // ==================== RELATIONSHIPS ====================
 
   @ManyToOne('Community', 'members', { onDelete: 'CASCADE' })

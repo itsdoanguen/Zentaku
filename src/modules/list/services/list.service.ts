@@ -40,17 +40,55 @@ import type { IListRepository, IListService, ListSearchResult } from '../types/l
 
 import type { ICommunityService } from '../../community/types/community.types';
 import type { IChannelService } from '../../channel/types/channel.types';
-import { ChannelType } from '../../../entities/types/enums';
+import { ChannelType, NotificationType } from '../../../entities/types/enums';
+import type { NotificationService } from '../../notification/services/notification.service';
 
 export class ListService extends BaseService implements IListService {
+  private readonly notificationService?: NotificationService;
+
   constructor(
     private readonly listRepository: IListRepository,
     private readonly userRepository: IUserRepository,
     private readonly animeRepository: AnimeRepository,
     private readonly communityService: ICommunityService,
-    private readonly channelService: IChannelService
+    private readonly channelService: IChannelService,
+    notificationService?: NotificationService
   ) {
     super();
+    this.notificationService = notificationService;
+  }
+
+  private async pushListNotification(
+    userId: bigint,
+    title: string,
+    body: string,
+    list: CustomList,
+    actionType: string,
+    actorName: string,
+    actorAvatar?: string | null
+  ) {
+    if (!this.notificationService) return;
+    try {
+      await this.notificationService.createAndPush(
+        userId,
+        NotificationType.LIST_INTERACTION,
+        title,
+        body,
+        {
+          listId: String(list.id),
+          listName: list.name,
+          listBanner: list.bannerImage || null,
+          actionType,
+          actorName,
+          actorAvatar: actorAvatar || null,
+        }
+      );
+    } catch (error) {
+      this._logError(`Failed to push list notification to ${userId}: ${(error as Error).message}`, {
+        userId,
+        error,
+      });
+    }
   }
 
   private _validatePrivacy(privacy?: string): void {
@@ -584,6 +622,7 @@ export class ListService extends BaseService implements IListService {
       const community = await this.communityService.createCommunity(BigInt(userId), {
         name: `Chat: ${list.name}`,
         description: `Nhóm chat dành riêng cho AnimeList: ${list.name}`,
+        icon: list.bannerImage || undefined,
         isPublic: false,
       });
 
@@ -788,6 +827,20 @@ export class ListService extends BaseService implements IListService {
       member.status = InviteStatus.ACCEPTED;
       await invitationRepo.save(member);
 
+      const actorUser = await this.userRepository.findById(BigInt(userId));
+      const list = await this.findListOrThrow(listId);
+      if (actorUser) {
+        await this.pushListNotification(
+          targetUser.id,
+          'List Permission Updated',
+          `${actorUser.displayName || actorUser.username} has changed your role in "${list.name}" to ${permission}`,
+          list,
+          permission === ListPermission.EDITOR ? 'PROMOTE' : 'DEMOTE',
+          actorUser.displayName || actorUser.username,
+          actorUser.avatar
+        );
+      }
+
       this._logInfo('Member permission updated', {
         listId,
         userId,
@@ -830,8 +883,21 @@ export class ListService extends BaseService implements IListService {
         inviteeId: BigInt(this.toNumberId(targetUser.id)),
       });
 
+      const actorUser = await this.userRepository.findById(BigInt(userId));
+      const list = await this.findListOrThrow(listId);
+      if (actorUser) {
+        await this.pushListNotification(
+          targetUser.id,
+          'Removed from List',
+          `${actorUser.displayName || actorUser.username} removed you from the list "${list.name}"`,
+          list,
+          'KICK',
+          actorUser.displayName || actorUser.username,
+          actorUser.avatar
+        );
+      }
+
       // Sync to community if chat is enabled
-      const list = await this.listRepository.findListById(listId);
       if (list && list.settings && list.settings.communityId) {
         try {
           await this.communityService.leaveCommunity(
@@ -902,6 +968,19 @@ export class ListService extends BaseService implements IListService {
             permission: ListPermission.VIEWER,
             status: InviteStatus.PENDING,
           })
+        );
+      }
+
+      const actorUser = await this.userRepository.findById(BigInt(userId));
+      if (actorUser && list.ownerId) {
+        await this.pushListNotification(
+          list.ownerId,
+          'New Join Request',
+          `${actorUser.displayName || actorUser.username} requested to join your list "${list.name}"`,
+          list,
+          'REQUEST_JOIN',
+          actorUser.displayName || actorUser.username,
+          actorUser.avatar
         );
       }
 
@@ -1062,9 +1141,23 @@ export class ListService extends BaseService implements IListService {
         action: data.action,
       });
 
+      const actorUser = await this.userRepository.findById(BigInt(userId));
+      const list = await this.findListOrThrow(listId);
+
+      if (actorUser && nextStatus === InviteStatus.ACCEPTED) {
+        await this.pushListNotification(
+          BigInt(requestUserId),
+          'Request Accepted',
+          `${actorUser.displayName || actorUser.username} accepted your request for the list "${list.name}"`,
+          list,
+          'ACCEPT_JOIN',
+          actorUser.displayName || actorUser.username,
+          actorUser.avatar
+        );
+      }
+
       // Sync to community if chat is enabled and request is accepted
       if (nextStatus === InviteStatus.ACCEPTED) {
-        const list = await this.listRepository.findListById(listId);
         if (list && list.settings && list.settings.communityId) {
           try {
             const community = await this.communityService.getCommunityDetail(

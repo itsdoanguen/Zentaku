@@ -199,6 +199,35 @@ const initializeCommunityRoutes = (container: Container): Router => {
    */
   router.post('/:communityId/leave', getCommunityValidation, communityController.leaveCommunity);
 
+  /**
+   * @swagger
+   * /api/communities/{communityId}/mute:
+   *   post:
+   *     tags: [Community]
+   *     summary: Toggle mute for a community
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: communityId
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               isMuted:
+   *                 type: boolean
+   *     responses:
+   *       200:
+   *         description: Successfully toggled mute
+   */
+  router.post('/:communityId/mute', getCommunityValidation, communityController.toggleMute);
+
   return router;
 };
 

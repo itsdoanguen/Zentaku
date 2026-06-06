@@ -71,4 +71,32 @@ export class CommunityMemberRepository
   async countMembers(communityId: bigint): Promise<number> {
     return this.count({ communityId: communityId as any });
   }
+
+  async listMembers(communityId: bigint): Promise<CommunityMember[]> {
+    return this.repository.find({
+      where: { communityId: communityId as any },
+      relations: ['user'],
+    });
+  }
+
+  async updateMemberMute(
+    communityId: bigint,
+    userId: bigint,
+    isMuted: boolean
+  ): Promise<CommunityMember> {
+    await this.repository.update(
+      {
+        communityId: communityId as any,
+        userId: userId as any,
+      },
+      { isMuted }
+    );
+    const updated = await this.findMember(communityId, userId);
+    if (!updated) {
+      throw new Error(
+        `Failed to update member mute for community ${communityId} and user ${userId}`
+      );
+    }
+    return updated;
+  }
 }

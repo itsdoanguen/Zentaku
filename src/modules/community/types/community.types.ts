@@ -10,12 +10,14 @@ import type { UserRole } from '../../../entities/types/enums';
 export interface CreateCommunityDto {
   name: string;
   description?: string;
+  icon?: string;
   isPublic?: boolean;
 }
 
 export interface UpdateCommunityDto {
   name?: string;
   description?: string;
+  icon?: string;
   isPublic?: boolean;
 }
 
@@ -23,6 +25,7 @@ export interface CommunitySummaryDto {
   id: string;
   name: string;
   description: string | null;
+  icon: string | null;
   isPublic: boolean;
   inviteCode: string | null;
   ownerId: string;
@@ -63,6 +66,7 @@ export interface ICommunityService extends IBaseService {
   joinCommunity(userId: bigint, inviteCode: string): Promise<CommunityMember>;
   leaveCommunity(userId: bigint, communityId: bigint): Promise<void>;
   getMemberRole(communityId: bigint, userId: bigint): Promise<UserRole | null>;
+  toggleMute(userId: bigint, communityId: bigint, isMuted: boolean): Promise<CommunityMember>;
 }
 
 export interface ICommunityRepository {
@@ -86,5 +90,7 @@ export interface ICommunityMemberRepository {
   addMember(communityId: bigint, userId: bigint, role?: UserRole): Promise<CommunityMember>;
   removeMember(communityId: bigint, userId: bigint): Promise<void>;
   updateMemberRole(communityId: bigint, userId: bigint, role: UserRole): Promise<CommunityMember>;
+  updateMemberMute(communityId: bigint, userId: bigint, isMuted: boolean): Promise<CommunityMember>;
   countMembers(communityId: bigint): Promise<number>;
+  listMembers(communityId: bigint): Promise<CommunityMember[]>;
 }

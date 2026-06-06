@@ -35,12 +35,16 @@ const loadList = (container: Container): void => {
       const animeRepository = c.resolve('animeRepository');
       const communityService = c.resolve('communityService');
       const channelService = c.resolve('channelService');
+      const notificationService = c.has('notificationService')
+        ? c.resolve('notificationService')
+        : undefined;
       return new ListService(
         listRepository,
         userRepository,
         animeRepository,
         communityService,
-        channelService
+        channelService,
+        notificationService
       );
     },
     {
@@ -51,6 +55,7 @@ const loadList = (container: Container): void => {
         'animeRepository',
         'communityService',
         'channelService',
+        'notificationService',
       ],
     }
   );
