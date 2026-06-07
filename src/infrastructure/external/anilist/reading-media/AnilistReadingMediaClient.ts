@@ -205,6 +205,7 @@ class AnilistReadingMediaClient extends AnilistClient {
       formats?: MediaFormat[];
       page?: number;
       perPage?: number;
+      isAdult?: boolean;
     } = {}
   ): Promise<{
     pageInfo: PageInfo;
@@ -219,6 +220,7 @@ class AnilistReadingMediaClient extends AnilistClient {
         page,
         perpage: perPage,
         format_in: formats || undefined,
+        isAdult: options.isAdult || false,
       },
       `searchReadingMedia("${query}", formats: ${formats ? formats.join(',') : 'all'})`
     );
@@ -243,6 +245,7 @@ class AnilistReadingMediaClient extends AnilistClient {
     options: {
       page?: number;
       perPage?: number;
+      isAdult?: boolean;
     } = {}
   ): Promise<{
     pageInfo: PageInfo;
@@ -274,6 +277,7 @@ class AnilistReadingMediaClient extends AnilistClient {
       page?: number;
       perPage?: number;
       sort?: string[];
+      isAdult?: boolean;
     } = {}
   ): Promise<{
     pageInfo: PageInfo;
@@ -292,6 +296,7 @@ class AnilistReadingMediaClient extends AnilistClient {
         page,
         perpage: perPage,
         sort,
+        isAdult: options.isAdult || false,
       },
       `searchReadingMediaByCriteria(formats: ${formats ? formats.join(',') : 'all'})`
     );
@@ -317,7 +322,7 @@ class AnilistReadingMediaClient extends AnilistClient {
       status?: string;
       countryOfOrigin?: string;
     } = {},
-    options: { page?: number; perPage?: number; sort?: string[] } = {}
+    options: { page?: number; perPage?: number; sort?: string[]; isAdult?: boolean } = {}
   ): Promise<{ pageInfo: PageInfo; media: ReadingMediaSearchByGenreResult[] }> {
     const formats = this.getFormatsForGroup(formatGroup);
     return this.searchByCriteria({ ...criteria, formats }, options);

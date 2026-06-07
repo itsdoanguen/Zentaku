@@ -148,6 +148,25 @@ class ListController extends BaseController<IListService & IBaseService> {
     this.success(res, { message: 'List deleted successfully' });
   });
 
+  /**
+   * POST /list/:listId/chat
+   * Create or get list chat community
+   */
+  createListChat = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    this.requireAuth(authReq);
+
+    const userId = this.getUserId(authReq);
+    if (!userId) {
+      this.error(res, 'Unauthorized', 401);
+      return;
+    }
+
+    const listId = this.getIntParam(req, 'listId');
+    const result = await this.service.createListChat(listId, userId);
+    this.success(res, result);
+  });
+
   // ==================== PHASE 2: MEMBER MANAGEMENT (STUBS) ====================
 
   listMembers = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {

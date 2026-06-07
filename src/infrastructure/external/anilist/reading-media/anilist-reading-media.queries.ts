@@ -63,10 +63,10 @@ query ($ids: [Int]) {
 `;
 
 export const READING_MEDIA_ID_SEARCH_QS = `
-query ($query: String, $page: Int, $perpage: Int, $format_in: [MediaFormat]) {
+query ($query: String, $page: Int, $perpage: Int, $format_in: [MediaFormat], $isAdult: Boolean) {
   Page (page: $page, perPage: $perpage) {
     pageInfo { total currentPage lastPage hasNextPage }
-    media (search: $query, type: MANGA, format_in: $format_in) {
+    media (search: $query, type: MANGA, format_in: $format_in, isAdult: $isAdult) {
       id
       title { romaji english native }
       coverImage { large }
@@ -82,10 +82,10 @@ query ($query: String, $page: Int, $perpage: Int, $format_in: [MediaFormat]) {
 `;
 
 export const READING_MEDIA_SEARCH_CRITERIA_QS = `
-query ($genres: [String], $format_in: [MediaFormat], $status: MediaStatus, $countryOfOrigin: CountryCode, $page: Int, $perpage: Int, $sort: [MediaSort]) {
+query ($genres: [String], $format_in: [MediaFormat], $status: MediaStatus, $countryOfOrigin: CountryCode, $page: Int, $perpage: Int, $sort: [MediaSort], $isAdult: Boolean) {
   Page(page: $page, perPage: $perpage) {
     pageInfo { total currentPage lastPage hasNextPage }
-    media(genre_in: $genres, format_in: $format_in, status: $status, countryOfOrigin: $countryOfOrigin, type: MANGA, sort: $sort) {
+    media(genre_in: $genres, format_in: $format_in, status: $status, countryOfOrigin: $countryOfOrigin, type: MANGA, sort: $sort, isAdult: $isAdult) {
       id
       title { romaji english native }
       coverImage { large }

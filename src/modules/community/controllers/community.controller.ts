@@ -35,6 +35,7 @@ export class CommunityController extends BaseController<ICommunityService> {
       id: String(community.id),
       name: community.name,
       description: community.description ?? null,
+      icon: community.icon ?? null,
       isPublic: community.isPublic,
       inviteCode: community.inviteCode ?? null,
       ownerId: String(community.ownerId),
@@ -63,6 +64,7 @@ export class CommunityController extends BaseController<ICommunityService> {
       id: String(community.id),
       name: community.name,
       description: community.description ?? null,
+      icon: community.icon ?? null,
       isPublic: community.isPublic,
       inviteCode: community.inviteCode ?? null,
       ownerId: String(community.ownerId),
@@ -122,6 +124,21 @@ export class CommunityController extends BaseController<ICommunityService> {
     await this.service.leaveCommunity(userId, communityId);
 
     this.success(res, { message: 'Successfully left the community' });
+  });
+
+  toggleMute = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    this.requireAuth(authReq);
+    const userId = BigInt(this.getUserId(authReq)!);
+    const communityId = BigInt(req.params.communityId as string);
+    const isMuted = req.body.isMuted === true;
+
+    const member = await this.service.toggleMute(userId, communityId, isMuted);
+    this.success(res, {
+      communityId: String(member.communityId),
+      userId: String(member.userId),
+      isMuted: member.isMuted,
+    });
   });
 }
 

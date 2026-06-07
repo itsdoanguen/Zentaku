@@ -171,16 +171,17 @@ class AnilistAnimeClient extends AnilistClient {
     options: {
       page?: number;
       perPage?: number;
+      isAdult?: boolean;
     } = {}
   ): Promise<{
     pageInfo: PageInfo;
     media: AnimeSearchResult[];
   }> {
-    const { page = 1, perPage = 20 } = options;
+    const { page = 1, perPage = 20, isAdult = false } = options;
 
     const data = await this.executeQuery<AnimeSearchResponse>(
       ANIME_ID_SEARCH_QS,
-      { query, page, perpage: perPage },
+      { query, page, perpage: perPage, isAdult },
       `searchAnime("${query}")`
     );
 
@@ -201,13 +202,13 @@ class AnilistAnimeClient extends AnilistClient {
   async fetchSeasonal(
     season: string,
     seasonYear: number,
-    options: { page?: number; perPage?: number; sort?: string[] } = {}
+    options: { page?: number; perPage?: number; sort?: string[]; isAdult?: boolean } = {}
   ): Promise<{ pageInfo: PageInfo; media: AnimeSeasonalResult[] }> {
-    const { page = 1, perPage = 20, sort = ['POPULARITY_DESC'] } = options;
+    const { page = 1, perPage = 20, sort = ['POPULARITY_DESC'], isAdult = false } = options;
 
     const data = await this.executeQuery<AnimeSeasonalResponse>(
       ANIME_SEASON_TREND_QS,
-      { season, seasonYear, page, perpage: perPage, sort },
+      { season, seasonYear, page, perpage: perPage, sort, isAdult },
       `fetchSeasonalAnime(${season} ${seasonYear})`
     );
 
@@ -231,22 +232,24 @@ class AnilistAnimeClient extends AnilistClient {
       seasonYear?: number;
       format?: string;
       status?: string;
+      isAdult?: boolean;
     } = {},
     options: {
       page?: number;
       perPage?: number;
       sort?: string[];
+      isAdult?: boolean;
     } = {}
   ): Promise<{
     pageInfo: PageInfo;
     media: AnimeSeasonalResult[];
   }> {
-    const { query, genres, season, seasonYear, format, status } = criteria;
+    const { query, genres, season, seasonYear, format, status, isAdult = false } = criteria;
     const { page = 1, perPage = 20, sort = ['POPULARITY_DESC'] } = options;
 
     const data = await this.executeQuery<AnimeSeasonalResponse>(
       ANIME_SEARCH_CRITERIA_QS,
-      { query, genres, season, seasonYear, format, status, page, perpage: perPage, sort },
+      { query, genres, season, seasonYear, format, status, page, perpage: perPage, sort, isAdult },
       `searchAnimeByCriteria()`
     );
 

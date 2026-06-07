@@ -43,6 +43,7 @@ export class CommunityService extends BaseService implements ICommunityService {
       ownerId: userId,
       name: data.name,
       description: data.description ?? null,
+      icon: data.icon ?? null,
       isPublic: data.isPublic !== undefined ? data.isPublic : true,
       inviteCode,
     });
@@ -142,6 +143,7 @@ export class CommunityService extends BaseService implements ICommunityService {
       id: String(community.id),
       name: community.name,
       description: community.description ?? null,
+      icon: community.icon ?? null,
       isPublic: community.isPublic,
       inviteCode: community.inviteCode ?? null,
       ownerId: String(community.ownerId),
@@ -197,5 +199,17 @@ export class CommunityService extends BaseService implements ICommunityService {
   async getMemberRole(communityId: bigint, userId: bigint): Promise<UserRole | null> {
     const member = await this.communityMemberRepository.findMember(communityId, userId);
     return member ? member.role : null;
+  }
+
+  async toggleMute(
+    userId: bigint,
+    communityId: bigint,
+    isMuted: boolean
+  ): Promise<CommunityMember> {
+    const member = await this.communityMemberRepository.findMember(communityId, userId);
+    if (!member) {
+      throw new ValidationError('You are not a member of this community');
+    }
+    return this.communityMemberRepository.updateMemberMute(communityId, userId, isMuted);
   }
 }

@@ -5,6 +5,7 @@
 import { Column, Entity, JoinTable, ManyToMany, OneToMany, OneToOne } from 'typeorm';
 import type { Activity } from './Activity.entity';
 import { SoftDeletableEntity } from './base/SoftDeletableEntity';
+import { SystemRole } from './types/enums';
 import type { ChannelParticipant } from './ChannelParticipant.entity';
 import type { Comment } from './Comment.entity';
 import type { Community } from './Community.entity';
@@ -37,6 +38,13 @@ export class User extends SoftDeletableEntity {
 
   @Column({ type: 'json', nullable: true })
   settings?: Record<string, unknown> | null;
+
+  @Column({
+    type: 'enum',
+    enum: SystemRole,
+    default: SystemRole.USER,
+  })
+  systemRole!: SystemRole;
 
   // ==================== PERSONALIZATION FIELDS ====================
 

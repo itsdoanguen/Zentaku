@@ -39,6 +39,10 @@ export interface IListService extends IBaseService {
   getListDetail(listId: number, userId?: number): Promise<ListDetailDto>;
   getUserLists(username: string, userId?: number): Promise<ListSummaryDto[]>;
   getListAnimes(listId: number): Promise<ListItem[]>;
+  createListChat(
+    listId: number,
+    userId: number
+  ): Promise<{ communityId: string; channelId: string }>;
 
   // Phase 2: Member Management (stub for now)
   listMembers(listId: number): Promise<ListMemberDto[]>;

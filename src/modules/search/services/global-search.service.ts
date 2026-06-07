@@ -33,7 +33,7 @@ class GlobalSearchService {
    * Each search service calls external API directly
    */
   async search(params: GlobalSearchParams): Promise<GlobalSearchResult> {
-    const { q, types = ['all'], page = 1, perPage = 20 } = params;
+    const { q, types = ['all'], page = 1, perPage = 20, isAdult = false } = params;
 
     const searchTypes: MediaCategory[] = types.includes('all')
       ? ['anime', 'manga', 'novel']
@@ -48,7 +48,7 @@ class GlobalSearchService {
     if (searchTypes.includes('anime')) {
       searchPromises.push(
         this.animeSearchService
-          .searchByText({ q, page, perPage })
+          .searchByText({ q, page, perPage, isAdult })
           .then((animeResults: SearchResult<unknown>) => {
             result.data.anime = animeResults.data;
           })
@@ -65,7 +65,7 @@ class GlobalSearchService {
     if (searchTypes.includes('manga')) {
       searchPromises.push(
         this.mangaSearchService
-          .searchByText({ q, page, perPage })
+          .searchByText({ q, page, perPage, isAdult })
           .then((mangaResults: SearchResult<unknown>) => {
             result.data.manga = mangaResults.data;
           })
@@ -82,7 +82,7 @@ class GlobalSearchService {
     if (searchTypes.includes('novel')) {
       searchPromises.push(
         this.novelSearchService
-          .searchByText({ q, page, perPage })
+          .searchByText({ q, page, perPage, isAdult })
           .then((novelResults: SearchResult<unknown>) => {
             result.data.novel = novelResults.data;
           })

@@ -10,6 +10,7 @@ export interface ITokenPayload {
   username: string;
   avatar?: string | null;
   roles?: string[];
+  systemRole?: string;
 }
 
 export interface IAuthUser {
@@ -19,6 +20,7 @@ export interface IAuthUser {
   avatar?: string | null;
   emailVerified: boolean;
   roles: string[];
+  systemRole: string;
 }
 
 export enum AuthProvider {

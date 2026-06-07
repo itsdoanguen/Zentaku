@@ -13,17 +13,20 @@ export class MessageController extends BaseController<IMessageService> {
   private readonly realtimeGateway?: IRealtimeGateway;
   private readonly notificationService?: NotificationService;
   private readonly channelRepository?: IChannelRepository;
+  private readonly communityMemberRepository?: any;
 
   constructor(
     messageService: IMessageService,
     realtimeGateway?: IRealtimeGateway,
     notificationService?: NotificationService,
-    channelRepository?: IChannelRepository
+    channelRepository?: IChannelRepository,
+    communityMemberRepository?: any
   ) {
     super(messageService);
     this.realtimeGateway = realtimeGateway;
     this.notificationService = notificationService;
     this.channelRepository = channelRepository;
+    this.communityMemberRepository = communityMemberRepository;
   }
 
   private getAuthUserId(authReq: AuthenticatedRequest): bigint {
@@ -65,7 +68,25 @@ export class MessageController extends BaseController<IMessageService> {
 
     // 1. Lấy danh sách participants của channel
     const channel = await this.channelRepository.findChannelById(channelId);
-    if (!channel || !channel.participants) return;
+    if (!channel) return;
+
+    let recipients: Array<{ userId: bigint; isMuted?: boolean; username?: string }> = [];
+
+    if (channel.communityId && this.communityMemberRepository) {
+      const members = await this.communityMemberRepository.listMembers(channel.communityId);
+      recipients = members.map((m: any) => ({
+        userId: m.userId,
+        isMuted: m.isMuted,
+        username: m.user?.username,
+      }));
+    } else if (channel.participants) {
+      recipients = channel.participants.map((p: any) => ({
+        userId: p.userId,
+        isMuted: p.isMuted,
+      }));
+    }
+
+    if (recipients.length === 0) return;
 
     // 2. Lấy danh sách user đang active trong socket room của channel
     const roomName = `channel:${channelId}`;
@@ -86,17 +107,25 @@ export class MessageController extends BaseController<IMessageService> {
     const senderName = message.sender?.displayName || message.sender?.username || 'Someone';
 
     // 4. Gửi thông báo cho những người không active
-    for (const participant of channel.participants) {
-      const participantUserId = String(participant.userId);
+    for (const recipient of recipients) {
+      const recipientUserId = String(recipient.userId);
 
       // Bỏ qua người gửi
-      if (participantUserId === String(senderId)) continue;
+      if (recipientUserId === String(senderId)) continue;
 
       // Bỏ qua những người đang mở cửa sổ chat này
-      if (activeUserIds.has(participantUserId)) continue;
+      if (activeUserIds.has(recipientUserId)) continue;
+
+      // Check for mentions or mute
+      let isMentioned = content.includes('@everyone');
+      if (!isMentioned && recipient.username) {
+        isMentioned = content.includes(`@${recipient.username}`);
+      }
+
+      if (recipient.isMuted && !isMentioned) continue;
 
       await this.notificationService.createAndPush(
-        participant.userId,
+        recipient.userId,
         NotificationType.MESSAGE,
         `New message from ${senderName}`,
         messagePreview,

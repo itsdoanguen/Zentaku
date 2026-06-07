@@ -8,6 +8,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "build:watch": "tsc --watch",
+    "seed:admin": "ts-node src/scripts/seed-admin.ts",
     "type-check": "tsc --noEmit",
     "type-check:watch": "tsc --noEmit --watch",
     "clean": "rimraf dist",

@@ -33,11 +33,30 @@ const loadList = (container: Container): void => {
       const listRepository = c.resolve('listRepository');
       const userRepository = c.resolve('userRepository');
       const animeRepository = c.resolve('animeRepository');
-      return new ListService(listRepository, userRepository, animeRepository);
+      const communityService = c.resolve('communityService');
+      const channelService = c.resolve('channelService');
+      const notificationService = c.has('notificationService')
+        ? c.resolve('notificationService')
+        : undefined;
+      return new ListService(
+        listRepository,
+        userRepository,
+        animeRepository,
+        communityService,
+        channelService,
+        notificationService
+      );
     },
     {
       singleton: true,
-      dependencies: ['listRepository', 'userRepository', 'animeRepository'],
+      dependencies: [
+        'listRepository',
+        'userRepository',
+        'animeRepository',
+        'communityService',
+        'channelService',
+        'notificationService',
+      ],
     }
   );
 

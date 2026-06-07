@@ -50,6 +50,11 @@ export enum RelationshipType {
   BLOCK = 'BLOCK',
 }
 
+export enum SystemRole {
+  USER = 'USER',
+  SUPER_ADMIN = 'SUPER_ADMIN',
+}
+
 export enum ListPermission {
   EDITOR = 'EDITOR',
   VIEWER = 'VIEWER',
@@ -71,4 +76,5 @@ export enum AnimeSeason {
 export enum NotificationType {
   MESSAGE = 'message',
   ANIME_AIRING = 'anime_airing',
+  LIST_INTERACTION = 'list_interaction',
 }

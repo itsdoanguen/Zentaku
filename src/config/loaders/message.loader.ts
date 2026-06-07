@@ -65,12 +65,14 @@ const loadMessage = (container: Container): void => {
         ? c.resolve('notificationService')
         : undefined;
       const channelRepository = c.resolve('channelRepository');
+      const communityMemberRepository = c.resolve('communityMemberRepository');
 
       return new MessageController(
         messageService,
         realtimeGateway,
         notificationService,
-        channelRepository
+        channelRepository,
+        communityMemberRepository
       );
     },
     {
@@ -80,6 +82,7 @@ const loadMessage = (container: Container): void => {
         'realtimeGateway',
         'notificationService',
         'channelRepository',
+        'communityMemberRepository',
       ],
     }
   );
