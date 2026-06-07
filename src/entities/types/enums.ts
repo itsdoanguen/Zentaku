@@ -50,6 +50,11 @@ export enum RelationshipType {
   BLOCK = 'BLOCK',
 }
 
+export enum SystemRole {
+  USER = 'USER',
+  SUPER_ADMIN = 'SUPER_ADMIN',
+}
+
 export enum ListPermission {
   EDITOR = 'EDITOR',
   VIEWER = 'VIEWER',

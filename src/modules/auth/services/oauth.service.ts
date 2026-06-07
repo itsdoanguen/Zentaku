@@ -71,6 +71,7 @@ export class OAuthService {
       username: user.username,
       avatar: user.avatar,
       roles: user.roles?.map((role) => role.name) ?? [],
+      systemRole: user.systemRole,
     };
 
     const accessToken = TokenUtil.generateAccessToken(payload);

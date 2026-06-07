@@ -321,6 +321,7 @@ export class AuthService implements IAuthService {
       username: user.username,
       avatar: user.avatar,
       roles: user.roles?.map((role) => role.name) ?? [],
+      systemRole: user.systemRole,
     };
 
     const accessToken = TokenUtil.generateAccessToken(payload);
@@ -367,6 +368,7 @@ export class AuthService implements IAuthService {
       avatar: user.avatar,
       emailVerified,
       roles: user.roles?.map((role) => role.name) ?? [],
+      systemRole: user.systemRole,
     };
   }
 

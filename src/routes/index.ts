@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Router } from 'express';
 import express from 'express';
 
@@ -10,6 +11,7 @@ const initializeRoutes = (container: unknown): Router => {
   const router = express.Router();
 
   const authRoutes = require('../modules/auth/auth.routes');
+  const adminRoutes = require('../modules/admin/admin.routes').default;
   const animeRoutes = require('../modules/anime/anime.routes');
   const readingMediaRoutes = require('../modules/reading-media/reading-media.routes');
   const streamingRoutes = require('../modules/streaming/streaming.routes');
@@ -27,6 +29,7 @@ const initializeRoutes = (container: unknown): Router => {
   const notificationRoutes = require('../modules/notification/notification.routes');
 
   router.use('/auth', authRoutes(container));
+  router.use('/admin', adminRoutes(container));
   router.use('/user', userRoutes(container));
   router.use('/communities', communityRoutes(container));
   router.use('/watch-rooms', watchPartyRoutes(container));
