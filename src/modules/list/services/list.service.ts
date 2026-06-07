@@ -1155,6 +1155,16 @@ export class ListService extends BaseService implements IListService {
           actorUser.displayName || actorUser.username,
           actorUser.avatar
         );
+      } else if (actorUser && nextStatus === InviteStatus.DECLINED) {
+        await this.pushListNotification(
+          BigInt(requestUserId),
+          'Request Declined',
+          `${actorUser.displayName || actorUser.username} declined your request for the list "${list.name}"`,
+          list,
+          'DECLINE_JOIN',
+          actorUser.displayName || actorUser.username,
+          actorUser.avatar
+        );
       }
 
       // Sync to community if chat is enabled and request is accepted
