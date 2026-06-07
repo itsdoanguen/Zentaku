@@ -972,9 +972,10 @@ export class ListService extends BaseService implements IListService {
       }
 
       const actorUser = await this.userRepository.findById(BigInt(userId));
-      if (actorUser && list.ownerId) {
+      const targetUserId = list.owner?.id || list.ownerId;
+      if (actorUser && targetUserId) {
         await this.pushListNotification(
-          list.ownerId,
+          BigInt(targetUserId),
           'New Join Request',
           `${actorUser.displayName || actorUser.username} requested to join your list "${list.name}"`,
           list,
