@@ -40,6 +40,8 @@ const loadModules = (container: Container): void => {
 
   userLoader(container);
 
+  notificationLoader(container);
+
   animeLoader(container);
 
   readingMediaLoader(container);
@@ -56,7 +58,6 @@ const loadModules = (container: Container): void => {
   messageLoader(container);
   scheduleLoader(container);
   watchPartyLoader(container);
-  notificationLoader(container);
 
   logger.debug('[Loaders] All modules registered successfully');
   logger.debug(`[Loaders] Total registered: ${container.getRegistered().length} dependencies`);
