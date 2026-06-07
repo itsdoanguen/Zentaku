@@ -14,11 +14,12 @@ class MangaSearchService {
   }
 
   async searchByText(params: MediaSearchParams): Promise<SearchResult<unknown>> {
-    const { q, page = 1, perPage = 20 } = params;
+    const { q, page = 1, perPage = 20, isAdult = false } = params;
 
     const results = await this.readingMediaClient.searchByFormatGroup(q, 'manga', {
       page,
       perPage,
+      isAdult,
     });
 
     return {

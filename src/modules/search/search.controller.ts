@@ -58,6 +58,7 @@ class SearchController {
         types: typesArray,
         page: page ? parseInt(page as string, 10) : 1,
         perPage: perPage ? parseInt(perPage as string, 10) : 20,
+        isAdult: req.query.isAdult === 'true',
       });
 
       res.json(result);
@@ -109,12 +110,13 @@ class SearchController {
    */
   async searchManga(req: Request, res: Response): Promise<void> {
     try {
-      const { q, page, perPage } = req.query;
+      const { q, page, perPage, isAdult } = req.query;
 
       const result = await this.mangaSearchService.searchByText({
         q: q as string,
         page: page ? parseInt(page as string, 10) : 1,
         perPage: perPage ? parseInt(perPage as string, 10) : 20,
+        isAdult: isAdult === 'true',
       });
 
       res.json(result);
@@ -132,12 +134,13 @@ class SearchController {
    */
   async searchNovel(req: Request, res: Response): Promise<void> {
     try {
-      const { q, page, perPage } = req.query;
+      const { q, page, perPage, isAdult } = req.query;
 
       const result = await this.novelSearchService.searchByText({
         q: q as string,
         page: page ? parseInt(page as string, 10) : 1,
         perPage: perPage ? parseInt(perPage as string, 10) : 20,
+        isAdult: isAdult === 'true',
       });
 
       res.json(result);

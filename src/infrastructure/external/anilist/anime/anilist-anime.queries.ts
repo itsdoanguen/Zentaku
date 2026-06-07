@@ -62,10 +62,10 @@ query ($ids: [Int]) {
 `;
 
 export const ANIME_ID_SEARCH_QS = `
-query ($query: String, $page: Int, $perpage: Int) {
+query ($query: String, $page: Int, $perpage: Int, $isAdult: Boolean) {
   Page (page: $page, perPage: $perpage) {
     pageInfo { total currentPage lastPage hasNextPage }
-    media (search: $query, type: ANIME) {
+    media (search: $query, type: ANIME, isAdult: $isAdult) {
       id
       title { romaji english native }
       coverImage { large }
@@ -80,10 +80,10 @@ query ($query: String, $page: Int, $perpage: Int) {
 `;
 
 export const ANIME_SEASON_TREND_QS = `
-query ($season: MediaSeason, $seasonYear: Int, $page: Int, $perpage: Int, $sort: [MediaSort]) {
+query ($season: MediaSeason, $seasonYear: Int, $page: Int, $perpage: Int, $sort: [MediaSort], $isAdult: Boolean) {
   Page(page: $page, perPage: $perpage) {
     pageInfo { total currentPage lastPage hasNextPage }
-    media(season: $season, seasonYear: $seasonYear, type: ANIME, sort: $sort) {
+    media(season: $season, seasonYear: $seasonYear, type: ANIME, sort: $sort, isAdult: $isAdult) {
       id
       title { romaji english native }
       coverImage { large }
@@ -101,10 +101,10 @@ query ($season: MediaSeason, $seasonYear: Int, $page: Int, $perpage: Int, $sort:
 `;
 
 export const ANIME_SEARCH_CRITERIA_QS = `
-query ($query: String, $genres: [String], $season: MediaSeason, $seasonYear: Int, $format: MediaFormat, $status: MediaStatus, $page: Int, $perpage: Int, $sort: [MediaSort]) {
+query ($query: String, $genres: [String], $season: MediaSeason, $seasonYear: Int, $format: MediaFormat, $status: MediaStatus, $page: Int, $perpage: Int, $sort: [MediaSort], $isAdult: Boolean) {
   Page(page: $page, perPage: $perpage) {
     pageInfo { total currentPage lastPage hasNextPage }
-    media(search: $query, genre_in: $genres, season: $season, seasonYear: $seasonYear, format: $format, status: $status, type: ANIME, sort: $sort) {
+    media(search: $query, genre_in: $genres, season: $season, seasonYear: $seasonYear, format: $format, status: $status, type: ANIME, sort: $sort, isAdult: $isAdult) {
       id
       title { romaji english native }
       coverImage { large }

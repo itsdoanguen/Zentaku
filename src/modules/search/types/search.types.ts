@@ -29,6 +29,7 @@ export interface MediaSearchParams extends BaseSearchParams {
 
 export interface GlobalSearchParams extends BaseSearchParams {
   types?: MediaCategory[];
+  isAdult?: boolean;
 }
 
 export interface SearchResult<T> {

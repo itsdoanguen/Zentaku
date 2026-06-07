@@ -14,9 +14,9 @@ class AnimeSearchService {
   }
 
   async searchByText(params: MediaSearchParams): Promise<SearchResult<unknown>> {
-    const { q, page = 1, perPage = 20 } = params;
+    const { q, page = 1, perPage = 20, isAdult = false } = params;
 
-    const results = await this.animeClient.search(q, { page, perPage });
+    const results = await this.animeClient.search(q, { page, perPage, isAdult });
 
     return {
       success: true,
@@ -36,9 +36,9 @@ class AnimeSearchService {
 
   async searchByCriteria(
     criteria: AnimeSearchCriteria,
-    options: { page?: number; perPage?: number } = {}
+    options: { page?: number; perPage?: number; isAdult?: boolean } = {}
   ): Promise<SearchResult<unknown>> {
-    const { page = 1, perPage = 20 } = options;
+    const { page = 1, perPage = 20, isAdult = false } = options;
     const { query, sort, format, status, genres, season, seasonYear } = criteria;
 
     const results = await this.animeClient.searchByCriteria(
@@ -54,6 +54,7 @@ class AnimeSearchService {
         page,
         perPage,
         sort: sort || ['POPULARITY_DESC'],
+        isAdult: criteria.isAdult ?? isAdult,
       }
     );
 
@@ -86,14 +87,15 @@ class AnimeSearchService {
   async getSeasonal(
     season: 'WINTER' | 'SPRING' | 'SUMMER' | 'FALL',
     year: number,
-    options: { page?: number; perPage?: number; sort?: string[] } = {}
+    options: { page?: number; perPage?: number; sort?: string[]; isAdult?: boolean } = {}
   ): Promise<SearchResult<unknown>> {
-    const { page = 1, perPage = 20, sort = ['POPULARITY_DESC'] } = options;
+    const { page = 1, perPage = 20, sort = ['POPULARITY_DESC'], isAdult = false } = options;
 
     const results = await this.animeClient.fetchSeasonal(season, year, {
       page,
       perPage,
       sort,
+      isAdult,
     });
 
     return {
