@@ -50,11 +50,11 @@ const loadModules = (container: Container): void => {
 
   searchLoader(container);
 
-  listLoader(container);
   activityLoader(container);
   followLoader(container);
   communityLoader(container);
   channelLoader(container);
+  listLoader(container);
   messageLoader(container);
   scheduleLoader(container);
   watchPartyLoader(container);

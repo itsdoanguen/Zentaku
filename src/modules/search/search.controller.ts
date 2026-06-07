@@ -83,7 +83,7 @@ class SearchController {
           genres: genres ? (genres as string).split(',') : undefined,
           seasonYear: year ? parseInt(year as string, 10) : undefined,
           season: season as any,
-          status: status as any,
+          status: status ? ((status as string).split(',') as any) : undefined,
           format: format ? ((format as string).split(',') as any) : undefined,
           sort: sort ? ((sort as string).split(',') as any) : undefined,
           isAdult: isAdult === 'true',
