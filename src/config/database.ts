@@ -40,6 +40,7 @@ export const AppDataSource = new DataSource({
     entities.Activity,
     entities.Comment,
     entities.Notification,
+    entities.SupportTicket,
   ],
 
   migrations: ['src/migrations/**/*.ts'],
