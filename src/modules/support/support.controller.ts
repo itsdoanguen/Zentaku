@@ -17,7 +17,12 @@ export class SupportController {
         return;
       }
       const ticket = await this.supportService.createTicket(userId, req.body);
-      res.status(201).json({ success: true, data: ticket });
+      const serializedTicket = {
+        ...ticket,
+        id: ticket.id.toString(),
+        userId: ticket.userId.toString(),
+      };
+      res.status(201).json({ success: true, data: serializedTicket });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }
@@ -31,7 +36,13 @@ export class SupportController {
       const category = req.query.category as string | undefined;
 
       const result = await this.supportService.getTickets({ page, limit, status, category });
-      res.status(200).json({ success: true, data: result });
+      const serializedData = result.data.map((ticket) => ({
+        ...ticket,
+        id: ticket.id.toString(),
+        userId: ticket.userId.toString(),
+        user: ticket.user ? { ...ticket.user, id: ticket.user.id.toString() } : undefined,
+      }));
+      res.status(200).json({ success: true, data: { data: serializedData, total: result.total } });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }
@@ -44,7 +55,12 @@ export class SupportController {
       const ticketId = BigInt(ticketIdStr);
       const { status } = req.body;
       const ticket = await this.supportService.updateTicketStatus(ticketId, status as TicketStatus);
-      res.status(200).json({ success: true, data: ticket });
+      const serializedTicket = {
+        ...ticket,
+        id: ticket.id.toString(),
+        userId: ticket.userId.toString(),
+      };
+      res.status(200).json({ success: true, data: serializedTicket });
     } catch (error: any) {
       res.status(404).json({ success: false, message: error.message });
     }
