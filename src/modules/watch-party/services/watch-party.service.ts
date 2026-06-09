@@ -17,7 +17,7 @@ export interface InMemoryWatchRoom {
 export class WatchPartyService {
   private rooms: Map<string, InMemoryWatchRoom>;
 
-  constructor() {
+  constructor(private realtimeGateway?: any) {
     this.rooms = new Map();
   }
 
@@ -45,7 +45,11 @@ export class WatchPartyService {
   async getWatchRoom(channelId: string) {
     const config = this.rooms.get(channelId);
     if (!config) {
-      throw Object.assign(new Error('Watch room not found'), { code: 'ROOM_NOT_FOUND' });
+      const err = new Error('Watch room not found') as any;
+      err.code = 'ROOM_NOT_FOUND';
+      err.statusCode = 404;
+      err.isOperational = true;
+      throw err;
     }
     return this.mapConfigToDto(config);
   }
@@ -53,11 +57,19 @@ export class WatchPartyService {
   async updatePlaybackState(channelId: string, userId: bigint, data: UpdatePlaybackStateDto) {
     const config = this.rooms.get(channelId);
     if (!config) {
-      throw Object.assign(new Error('Watch room not found'), { code: 'ROOM_NOT_FOUND' });
+      const err = new Error('Watch room not found') as any;
+      err.code = 'ROOM_NOT_FOUND';
+      err.statusCode = 404;
+      err.isOperational = true;
+      throw err;
     }
 
     if (config.hostId !== userId.toString()) {
-      throw Object.assign(new Error('Only host can control playback'), { code: 'HOST_REQUIRED' });
+      const err = new Error('Only host can control playback') as any;
+      err.code = 'HOST_REQUIRED';
+      err.statusCode = 403;
+      err.isOperational = true;
+      throw err;
     }
 
     config.lastSyncedAt = new Date();
@@ -86,11 +98,19 @@ export class WatchPartyService {
   ) {
     const config = this.rooms.get(channelId);
     if (!config) {
-      throw Object.assign(new Error('Watch room not found'), { code: 'ROOM_NOT_FOUND' });
+      const err = new Error('Watch room not found') as any;
+      err.code = 'ROOM_NOT_FOUND';
+      err.statusCode = 404;
+      err.isOperational = true;
+      throw err;
     }
 
     if (config.hostId !== userId.toString()) {
-      throw Object.assign(new Error('Only host can change episode'), { code: 'HOST_REQUIRED' });
+      const err = new Error('Only host can change episode') as any;
+      err.code = 'HOST_REQUIRED';
+      err.statusCode = 403;
+      err.isOperational = true;
+      throw err;
     }
 
     config.currentSourceUrl = newSourceUrl;
@@ -114,14 +134,31 @@ export class WatchPartyService {
   async joinWatchRoom(channelId: string, _userId: bigint) {
     const config = this.rooms.get(channelId);
     if (!config) {
-      throw Object.assign(new Error('Watch room not found'), { code: 'ROOM_NOT_FOUND' });
+      const err = new Error('Watch room not found') as any;
+      err.code = 'ROOM_NOT_FOUND';
+      err.statusCode = 404;
+      err.isOperational = true;
+      throw err;
     }
     // Return snapshot for late joiners
     return this.mapConfigToDto(config);
   }
 
-  async leaveWatchRoom(_channelId: string, _userId: bigint) {
-    // Basic leave, no host transfer logic for MVP
+  async leaveWatchRoom(channelId: string, userId: bigint) {
+    const config = this.rooms.get(channelId);
+    if (config && config.hostId === userId.toString()) {
+      this.rooms.delete(channelId);
+
+      if (this.realtimeGateway) {
+        this.realtimeGateway.broadcastToRoom(`channel:${channelId}`, {
+          event: 'room.closed',
+          version: '1.0',
+          requestId: crypto.randomUUID(),
+          timestamp: Date.now(),
+          data: { channelId },
+        });
+      }
+    }
     return { success: true };
   }
 
