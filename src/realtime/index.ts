@@ -21,8 +21,14 @@ import { createNackEnvelope } from './validators/envelope-validator';
 export function initializeRealtime(server: HttpServer, container: Container): SocketIOServer {
   const io = new SocketIOServer(server, {
     cors: {
-      origin: '*',
+      origin: (_origin, callback) => {
+        // Cho phép mọi origin truy cập
+        callback(null, true);
+      },
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      credentials: true,
     },
+    transports: ['websocket', 'polling'],
   });
 
   const gateway = container.resolve<RealtimeGateway>('realtimeGateway');
