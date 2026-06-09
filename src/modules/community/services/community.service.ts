@@ -224,4 +224,16 @@ export class CommunityService extends BaseService implements ICommunityService {
     }
     return this.communityMemberRepository.updateMemberMute(communityId, userId, isMuted);
   }
+
+  async updateMemberRole(
+    communityId: bigint,
+    userId: bigint,
+    role: UserRole
+  ): Promise<CommunityMember> {
+    const member = await this.communityMemberRepository.findMember(communityId, userId);
+    if (!member) {
+      throw new ValidationError('You are not a member of this community');
+    }
+    return this.communityMemberRepository.updateMemberRole(communityId, userId, role);
+  }
 }
