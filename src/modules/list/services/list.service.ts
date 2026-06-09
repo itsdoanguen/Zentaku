@@ -536,6 +536,21 @@ export class ListService extends BaseService implements IListService {
 
       const updated = await this.listRepository.updateList(listId, payload);
 
+      if (data.bannerImage !== undefined && existing.settings && existing.settings.communityId) {
+        try {
+          await this.communityService.updateCommunity(
+            BigInt(existing.settings.communityId as string),
+            BigInt(userId),
+            { icon: payload.bannerImage || '' }
+          );
+        } catch (e) {
+          this._logError(`Failed to update community icon: ${(e as Error).message}`, {
+            listId,
+            error: e,
+          });
+        }
+      }
+
       this._logInfo('List updated', { listId, userId, fields: Object.keys(payload) });
       return updated;
     }, 'updateList');

@@ -82,6 +82,9 @@ export class CommunityService extends BaseService implements ICommunityService {
     if (data.isPublic !== undefined) {
       updateData.isPublic = data.isPublic;
     }
+    if (data.icon !== undefined) {
+      updateData.icon = data.icon === '' ? null : (data.icon as any);
+    }
 
     return this.communityRepository.updateCommunity(communityId, updateData);
   }
