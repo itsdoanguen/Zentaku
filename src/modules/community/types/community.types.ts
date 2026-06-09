@@ -65,6 +65,7 @@ export interface ICommunityService extends IBaseService {
   }): Promise<PaginatedCommunitiesDto>;
   joinCommunity(userId: bigint, inviteCode: string): Promise<CommunityMember>;
   leaveCommunity(userId: bigint, communityId: bigint): Promise<void>;
+  getCommunityMembers(communityId: bigint, userId?: bigint): Promise<CommunityMember[]>;
   getMemberRole(communityId: bigint, userId: bigint): Promise<UserRole | null>;
   toggleMute(userId: bigint, communityId: bigint, isMuted: boolean): Promise<CommunityMember>;
 }

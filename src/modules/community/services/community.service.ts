@@ -204,6 +204,15 @@ export class CommunityService extends BaseService implements ICommunityService {
     return member ? member.role : null;
   }
 
+  async getCommunityMembers(communityId: bigint, _userId?: bigint): Promise<CommunityMember[]> {
+    const community = await this.communityRepository.findCommunityById(communityId);
+    if (!community) {
+      throw new NotFoundError('Community not found');
+    }
+
+    return this.communityMemberRepository.listMembers(communityId);
+  }
+
   async toggleMute(
     userId: bigint,
     communityId: bigint,
