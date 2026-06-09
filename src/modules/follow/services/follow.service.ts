@@ -258,6 +258,7 @@ export class FollowService extends BaseService {
         'targetId' | 'targetType' | 'action' | 'snapshotAt'
       > = {
         targetName: targetUser.displayName || targetUser.username,
+        targetUsername: targetUser.username,
         targetImage: targetUser.avatar || undefined,
       };
 
@@ -327,6 +328,7 @@ export class FollowService extends BaseService {
         'targetId' | 'targetType' | 'action' | 'snapshotAt'
       > = {
         targetName: targetUser?.displayName || targetUser?.username,
+        targetUsername: targetUser?.username,
         targetImage: targetUser?.avatar || undefined,
       };
 
