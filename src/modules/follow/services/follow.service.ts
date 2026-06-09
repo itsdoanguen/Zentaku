@@ -3,8 +3,9 @@ import { AppDataSource } from '../../../config/database';
 import { BaseService } from '../../../core/base/BaseService';
 import type { LibraryEntry } from '../../../entities/LibraryEntry.entity';
 import { MediaItem } from '../../../entities/MediaItem.entity';
-import { LibraryStatus } from '../../../entities/types/enums';
+import { LibraryStatus, NotificationType } from '../../../entities/types/enums';
 import { User } from '../../../entities/User.entity';
+import type { NotificationService } from '../../notification/services/notification.service';
 import type { ActivityService } from '../../activity/services/activity.service';
 import {
   ActivityAction,
@@ -31,6 +32,7 @@ export class FollowService extends BaseService {
     private readonly libraryEntryRepository: LibraryEntryRepository,
     private readonly userRelationshipRepository: UserRelationshipRepository,
     private readonly activityService: ActivityService,
+    private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource = AppDataSource
   ) {
     super();
@@ -235,8 +237,14 @@ export class FollowService extends BaseService {
         },
       });
 
-      if (!targetUser) {
-        throw new ValidationException('Target user not found');
+      const actorUser = await manager.getRepository(User).findOne({
+        where: {
+          id: this.toBigInt(actorId),
+        },
+      });
+
+      if (!targetUser || !actorUser) {
+        throw new ValidationException('Target user or actor user not found');
       }
 
       const relationship = await this.userRelationshipRepository.followUser(
@@ -261,6 +269,20 @@ export class FollowService extends BaseService {
         metadata,
         undefined,
         manager
+      );
+
+      // Gửi thông báo
+      await this.notificationService.createAndPush(
+        targetUser.id,
+        NotificationType.NEW_FOLLOWER,
+        'New Follower',
+        `${actorUser.displayName || actorUser.username} started following you`,
+        {
+          followerId: this.toStringId(actorUser.id),
+          followerName: actorUser.displayName || actorUser.username,
+          followerUsername: actorUser.username,
+          followerAvatar: actorUser.avatar || undefined,
+        }
       );
 
       return {

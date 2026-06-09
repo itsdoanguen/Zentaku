@@ -49,12 +49,14 @@ const loadFollow = (container: Container): void => {
       const libraryEntryRepository = c.resolve('libraryEntryRepository');
       const userRelationshipRepository = c.resolve('userRelationshipRepository');
       const activityService = c.resolve('activityService');
+      const notificationService = c.resolve('notificationService');
       const dataSource = c.resolve('dataSource');
 
       return new FollowService(
         libraryEntryRepository,
         userRelationshipRepository,
         activityService,
+        notificationService,
         dataSource
       );
     },
@@ -64,6 +66,7 @@ const loadFollow = (container: Container): void => {
         'libraryEntryRepository',
         'userRelationshipRepository',
         'activityService',
+        'notificationService',
         'dataSource',
       ],
     }
