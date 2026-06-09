@@ -142,4 +142,34 @@ export default class WatchPartyController {
       next(error);
     }
   };
+
+  public inviteToWatchRoom = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({
+          code: 'PAYLOAD_INVALID',
+          message: 'Invalid request payload',
+          details: errors.array(),
+        });
+        return;
+      }
+
+      const channelId = req.params.channelId as string;
+      const targetUserId = BigInt(req.body.targetUserId);
+      const result = await this.watchPartyService.inviteToWatchRoom(
+        channelId,
+        BigInt(req.user!.userId),
+        targetUserId
+      );
+
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  };
 }
