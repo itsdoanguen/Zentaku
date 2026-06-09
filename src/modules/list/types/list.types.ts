@@ -38,6 +38,7 @@ export interface IListService extends IBaseService {
   deleteList(listId: number, userId: number): Promise<void>;
   getListDetail(listId: number, userId?: number): Promise<ListDetailDto>;
   getUserLists(username: string, userId?: number): Promise<ListSummaryDto[]>;
+  getUserJoinedLists(userId: number): Promise<ListSummaryDto[]>;
   getListAnimes(listId: number): Promise<ListItem[]>;
   createListChat(
     listId: number,

@@ -605,6 +605,32 @@ export class ListService extends BaseService implements IListService {
     }, 'getUserLists');
   }
 
+  async getUserJoinedLists(userId: number): Promise<ListSummaryDto[]> {
+    this._validateId(userId, 'User ID');
+
+    return this._executeWithErrorHandling(async () => {
+      const invitationRepo = this.getInvitationRepository();
+
+      const invitations = await invitationRepo.find({
+        where: {
+          inviteeId: BigInt(userId),
+          status: InviteStatus.ACCEPTED,
+        },
+        relations: ['list', 'list.owner', 'list.items'],
+      });
+
+      const joinedLists = invitations.filter((inv) => inv.list).map((inv) => inv.list);
+
+      // Only return lists that are not soft-deleted and where the list owner is not the user
+      // (Just in case the owner has an invitation to their own list)
+      const validLists = joinedLists.filter(
+        (list) => list.deletedAt === null && list.ownerId !== BigInt(userId)
+      );
+
+      return validLists.map((list) => this.mapListSummary(list));
+    }, 'getUserJoinedLists');
+  }
+
   async getListAnimes(listId: number): Promise<ListItem[]> {
     this._validateId(listId, 'List ID');
 
@@ -1520,7 +1546,9 @@ export class ListService extends BaseService implements IListService {
         .groupBy('activity.listId')
         .getRawMany()) as Array<{ listId: string; likeCount: number }>;
 
-      const likeCountMap = new Map(likeCounts.map((stat) => [BigInt(stat.listId), stat.likeCount]));
+      const likeCountMap = new Map(
+        likeCounts.map((stat) => [String(stat.listId), Number(stat.likeCount)])
+      );
 
       const data = lists.map((list) => ({
         id: this.toNumberId(list.id),
@@ -1528,7 +1556,7 @@ export class ListService extends BaseService implements IListService {
         slug: list.slug,
         ownerUsername: list.owner?.username || '',
         ownerAvatar: list.owner?.avatar || undefined,
-        likeCount: likeCountMap.get(list.id) || 0,
+        likeCount: likeCountMap.get(String(list.id)) || 0,
         itemCount: list.items?.length || 0,
         bannerImage: list.bannerImage || undefined,
         privacy: list.privacy,

@@ -83,6 +83,24 @@ class ListController extends BaseController<IListService & IBaseService> {
   });
 
   /**
+   * GET /list/user/joined
+   * Get all lists that the logged-in user has joined
+   */
+  getUserJoinedLists = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    this.requireAuth(authReq);
+
+    const userId = this.getUserId(authReq);
+    if (!userId) {
+      this.error(res, 'Unauthorized', 401);
+      return;
+    }
+
+    const lists = await this.service.getUserJoinedLists(userId);
+    this.success(res, lists);
+  });
+
+  /**
    * GET /list/:listId
    * Get list detail with anime items
    */
