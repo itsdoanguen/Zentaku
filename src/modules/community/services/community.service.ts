@@ -82,6 +82,9 @@ export class CommunityService extends BaseService implements ICommunityService {
     if (data.isPublic !== undefined) {
       updateData.isPublic = data.isPublic;
     }
+    if (data.icon !== undefined) {
+      updateData.icon = data.icon === '' ? null : (data.icon as any);
+    }
 
     return this.communityRepository.updateCommunity(communityId, updateData);
   }
@@ -199,6 +202,15 @@ export class CommunityService extends BaseService implements ICommunityService {
   async getMemberRole(communityId: bigint, userId: bigint): Promise<UserRole | null> {
     const member = await this.communityMemberRepository.findMember(communityId, userId);
     return member ? member.role : null;
+  }
+
+  async getCommunityMembers(communityId: bigint, _userId?: bigint): Promise<CommunityMember[]> {
+    const community = await this.communityRepository.findCommunityById(communityId);
+    if (!community) {
+      throw new NotFoundError('Community not found');
+    }
+
+    return this.communityMemberRepository.listMembers(communityId);
   }
 
   async toggleMute(

@@ -27,6 +27,7 @@ const initializeRoutes = (container: unknown): Router => {
   const scheduleRoutes = require('../modules/schedule/schedule.routes');
   const watchPartyRoutes = require('../modules/watch-party/watch-party.routes');
   const notificationRoutes = require('../modules/notification/notification.routes');
+  const supportRoutes = require('../modules/support/support.routes').default;
 
   router.use('/auth', authRoutes(container));
   router.use('/admin', adminRoutes(container));
@@ -34,6 +35,7 @@ const initializeRoutes = (container: unknown): Router => {
   router.use('/communities', communityRoutes(container));
   router.use('/watch-rooms', watchPartyRoutes(container));
   router.use('/notifications', notificationRoutes(container));
+  router.use('/support', supportRoutes);
 
   router.use('/anilist/anime', animeRoutes(container));
 

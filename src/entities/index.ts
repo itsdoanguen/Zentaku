@@ -48,3 +48,6 @@ export { WatchRoomConfig } from './WatchRoomConfig.entity';
 
 // Notifications
 export { Notification } from './Notification.entity';
+
+// Support
+export { SupportTicket } from './SupportTicket.entity';

@@ -95,7 +95,7 @@ export class WatchPartyService {
 
     config.currentSourceUrl = newSourceUrl;
     config.currentTimestamp = 0;
-    config.isPlaying = true; // Auto play new episode
+    config.isPlaying = false; // Wait for host to play the new episode
     config.lastSyncedAt = new Date();
 
     if (episodeNumber !== undefined || subUrl !== undefined || referer !== undefined) {

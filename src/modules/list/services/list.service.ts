@@ -536,6 +536,21 @@ export class ListService extends BaseService implements IListService {
 
       const updated = await this.listRepository.updateList(listId, payload);
 
+      if (data.bannerImage !== undefined && existing.settings && existing.settings.communityId) {
+        try {
+          await this.communityService.updateCommunity(
+            BigInt(existing.settings.communityId as string),
+            BigInt(userId),
+            { icon: payload.bannerImage || '' }
+          );
+        } catch (e) {
+          this._logError(`Failed to update community icon: ${(e as Error).message}`, {
+            listId,
+            error: e,
+          });
+        }
+      }
+
       this._logInfo('List updated', { listId, userId, fields: Object.keys(payload) });
       return updated;
     }, 'updateList');
@@ -588,6 +603,32 @@ export class ListService extends BaseService implements IListService {
 
       return visibleLists.map((list) => this.mapListSummary(list));
     }, 'getUserLists');
+  }
+
+  async getUserJoinedLists(userId: number): Promise<ListSummaryDto[]> {
+    this._validateId(userId, 'User ID');
+
+    return this._executeWithErrorHandling(async () => {
+      const invitationRepo = this.getInvitationRepository();
+
+      const invitations = await invitationRepo.find({
+        where: {
+          inviteeId: BigInt(userId),
+          status: InviteStatus.ACCEPTED,
+        },
+        relations: ['list', 'list.owner', 'list.items'],
+      });
+
+      const joinedLists = invitations.filter((inv) => inv.list).map((inv) => inv.list);
+
+      // Only return lists that are not soft-deleted and where the list owner is not the user
+      // (Just in case the owner has an invitation to their own list)
+      const validLists = joinedLists.filter(
+        (list) => list.deletedAt === null && list.ownerId !== BigInt(userId)
+      );
+
+      return validLists.map((list) => this.mapListSummary(list));
+    }, 'getUserJoinedLists');
   }
 
   async getListAnimes(listId: number): Promise<ListItem[]> {
@@ -1505,7 +1546,9 @@ export class ListService extends BaseService implements IListService {
         .groupBy('activity.listId')
         .getRawMany()) as Array<{ listId: string; likeCount: number }>;
 
-      const likeCountMap = new Map(likeCounts.map((stat) => [BigInt(stat.listId), stat.likeCount]));
+      const likeCountMap = new Map(
+        likeCounts.map((stat) => [String(stat.listId), Number(stat.likeCount)])
+      );
 
       const data = lists.map((list) => ({
         id: this.toNumberId(list.id),
@@ -1513,7 +1556,7 @@ export class ListService extends BaseService implements IListService {
         slug: list.slug,
         ownerUsername: list.owner?.username || '',
         ownerAvatar: list.owner?.avatar || undefined,
-        likeCount: likeCountMap.get(list.id) || 0,
+        likeCount: likeCountMap.get(String(list.id)) || 0,
         itemCount: list.items?.length || 0,
         bannerImage: list.bannerImage || undefined,
         privacy: list.privacy,

@@ -140,6 +140,32 @@ export class CommunityController extends BaseController<ICommunityService> {
       isMuted: member.isMuted,
     });
   });
+
+  getCommunityMembers = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const authReq = req as AuthenticatedRequest;
+    this.requireAuth(authReq);
+    const userId = BigInt(this.getUserId(authReq)!);
+    const communityId = BigInt(req.params.communityId as string);
+
+    const members = await this.service.getCommunityMembers(communityId, userId);
+
+    this.success(
+      res,
+      members.map((m) => ({
+        userId: String(m.userId),
+        role: m.role,
+        joinedAt: m.joinedAt.toISOString(),
+        user: m.user
+          ? {
+              id: String(m.user.id),
+              username: m.user.username,
+              displayName: m.user.displayName,
+              avatar: m.user.avatar,
+            }
+          : null,
+      }))
+    );
+  });
 }
 
 export default CommunityController;

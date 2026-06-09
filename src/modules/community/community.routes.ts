@@ -161,6 +161,30 @@ const initializeCommunityRoutes = (container: Container): Router => {
 
   /**
    * @swagger
+   * /api/communities/{communityId}/members:
+   *   get:
+   *     tags: [Community]
+   *     summary: Get community members
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: communityId
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Community members retrieved successfully
+   */
+  router.get(
+    '/:communityId/members',
+    getCommunityValidation,
+    communityController.getCommunityMembers
+  );
+
+  /**
+   * @swagger
    * /api/communities/{communityId}:
    *   delete:
    *     tags: [Community]

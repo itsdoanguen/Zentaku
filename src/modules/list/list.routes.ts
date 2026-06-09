@@ -87,6 +87,20 @@ const initializeListRoutes = (container: Container): Router => {
 
   /**
    * @swagger
+   * /api/list/user/joined:
+   *   get:
+   *     summary: Get lists joined by the user
+   *     tags: [List]
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: Lists retrieved successfully
+   */
+  router.get('/user/joined', authenticate, listController.getUserJoinedLists);
+
+  /**
+   * @swagger
    * /api/list/{listId}:
    *   get:
    *     summary: Get list detail
