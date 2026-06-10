@@ -110,7 +110,7 @@ export class ChannelController extends BaseController<IChannelService> {
 
     this.success(
       res,
-      channels.map((channel) => ({
+      channels.map((channel: any) => ({
         id: String(channel.id),
         communityId: null,
         name: null,
@@ -127,7 +127,7 @@ export class ChannelController extends BaseController<IChannelService> {
                 : undefined,
             }
           : null,
-        participants: channel.participants.map((p) => ({
+        participants: channel.participants.map((p: any) => ({
           userId: String(p.userId),
           user: p.user
             ? {
