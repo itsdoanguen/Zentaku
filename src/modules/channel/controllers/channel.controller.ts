@@ -110,7 +110,7 @@ export class ChannelController extends BaseController<IChannelService> {
 
     this.success(
       res,
-      channels.map((channel) => ({
+      channels.map((channel: any) => ({
         id: String(channel.id),
         communityId: null,
         name: null,
@@ -118,7 +118,16 @@ export class ChannelController extends BaseController<IChannelService> {
         isPrivate: channel.isPrivate,
         position: channel.position,
         createdAt: channel.createdAt.toISOString(),
-        participants: channel.participants.map((p) => ({
+        lastMessage: (channel as any).lastMessage
+          ? {
+              id: String((channel as any).lastMessage.id),
+              content: (channel as any).lastMessage.content,
+              createdAt: (channel as any).lastMessage.createdAt
+                ? (channel as any).lastMessage.createdAt.toISOString()
+                : undefined,
+            }
+          : null,
+        participants: channel.participants.map((p: any) => ({
           userId: String(p.userId),
           user: p.user
             ? {

@@ -6,6 +6,7 @@ import type {
   ICommunityMemberRepository,
   ICommunityRepository,
 } from '../../community/types/community.types';
+import { ChatMessageModel } from '../../message/repositories/message.schema';
 import type { IUserRepository } from '../../user/repositories/user.repository';
 import type { CreateChannelDto, IChannelRepository, IChannelService } from '../types/channel.types';
 
@@ -143,6 +144,32 @@ export class ChannelService extends BaseService implements IChannelService {
   }
 
   async listPrivateChannels(userId: bigint): Promise<Channel[]> {
-    return this.channelRepository.findPrivateChannelsByUserId(userId);
+    const channels = await this.channelRepository.findPrivateChannelsByUserId(userId);
+
+    const lastMessageIds = channels
+      .filter((ch: any) => ch.lastMessage?.id)
+      .map((ch: any) => String(ch.lastMessage.id));
+
+    if (lastMessageIds.length > 0) {
+      const messages = await ChatMessageModel.find({ _id: { $in: lastMessageIds } }).lean();
+      const messageMap = new Map();
+      messages.forEach((m: any) => messageMap.set(String(m._id), m));
+
+      channels.forEach((ch: any) => {
+        if (ch.lastMessage?.id) {
+          const mongoMsg = messageMap.get(String(ch.lastMessage.id));
+          if (mongoMsg) {
+            ch.lastMessage.content = mongoMsg.content;
+            ch.lastMessage.attachments = mongoMsg.attachments;
+            // Ensure createdAt from MongoDB is used if more accurate
+            if (mongoMsg.createdAt) {
+              ch.lastMessage.createdAt = mongoMsg.createdAt;
+            }
+          }
+        }
+      });
+    }
+
+    return channels;
   }
 }

@@ -416,6 +416,36 @@ const initializeAuthRoutes = (container: Container): Router => {
    */
   router.get('/me', authenticate, authController.getCurrentUser);
 
+  /**
+   * @swagger
+   * /api/auth/google:
+   *   get:
+   *     summary: Login with Google
+   *     description: Redirect user to Google OAuth consent screen.
+   *     tags: [Auth]
+   *     responses:
+   *       302:
+   *         description: Redirect to Google
+   */
+  router.get('/google', authController.googleLogin);
+
+  /**
+   * @swagger
+   * /api/auth/google/callback:
+   *   get:
+   *     summary: Google OAuth Callback
+   *     description: Handle the callback from Google OAuth and authenticate the user.
+   *     tags: [Auth]
+   *     responses:
+   *       302:
+   *         description: Redirect to frontend with token
+   *       400:
+   *         description: Missing authorization code
+   *       500:
+   *         description: Authentication failed
+   */
+  router.get('/google/callback', authController.googleCallback);
+
   return router;
 };
 
