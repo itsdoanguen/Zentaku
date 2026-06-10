@@ -86,6 +86,26 @@ export default (): Router => {
 
   /**
    * @swagger
+   * /admin/movies/{animeId}:
+   *   delete:
+   *     tags: [Admin - Movies]
+   *     summary: Delete an ENTIRE anime completely from FilmServer
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: animeId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: Entire anime deleted successfully
+   */
+  router.delete('/movies/:animeId', movieUploadController.deleteAnime.bind(movieUploadController));
+
+  /**
+   * @swagger
    * /admin/movies/{animeId}/{episodeNumber}:
    *   delete:
    *     tags: [Admin - Movies]

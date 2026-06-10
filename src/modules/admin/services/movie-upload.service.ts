@@ -165,6 +165,21 @@ export class MovieUploadService {
   }
 
   /**
+   * Delete an ENTIRE anime from FilmServer
+   */
+  async deleteAnime(animeId: number): Promise<boolean> {
+    try {
+      await axios.delete(`${this.filmServerUrl}/api/movies/${animeId}`, {
+        timeout: 5000,
+      });
+      return true;
+    } catch (err: any) {
+      logger.error(`[MovieUploadService] Failed to delete anime: ${err.message}`);
+      return false;
+    }
+  }
+
+  /**
    * Delete an episode from FilmServer
    */
   async deleteEpisode(animeId: number, episodeNumber: number): Promise<boolean> {
