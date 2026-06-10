@@ -104,18 +104,47 @@ const loadAuth = (container: any): void => {
   );
 
   container.register(
+    'oauthService',
+    (c: any) => {
+      const { OAuthService } = require('../../modules/auth/services/oauth.service');
+      const {
+        GoogleOAuthStrategy,
+      } = require('../../modules/auth/strategies/google-oauth.strategy');
+
+      const userRepository = c.resolve('userRepository');
+      const userAuthenticationRepository = c.resolve('userAuthenticationRepository');
+
+      const strategies = new Map();
+      strategies.set(
+        'google',
+        new GoogleOAuthStrategy(
+          process.env.GOOGLE_CLIENT_ID || '',
+          process.env.GOOGLE_CLIENT_SECRET || ''
+        )
+      );
+
+      return new OAuthService(userRepository, userAuthenticationRepository, strategies);
+    },
+    {
+      singleton: true,
+      dependencies: ['userRepository', 'userAuthenticationRepository'],
+    }
+  );
+
+  container.register(
     'authController',
     (c: any) => {
       const AuthController =
         require('../../modules/auth/controllers/auth.controller').default ||
         require('../../modules/auth/controllers/auth.controller');
       const authService = c.resolve('authService');
+      const oauthService = c.resolve('oauthService');
 
-      return new AuthController(authService);
+      return new AuthController(authService, oauthService);
     },
     {
       singleton: true,
-      dependencies: ['authService'],
+      dependencies: ['authService', 'oauthService'],
     }
   );
 

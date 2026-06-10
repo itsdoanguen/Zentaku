@@ -1,9 +1,13 @@
 import type { NextFunction, Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import type { IAuthService } from '../services/auth.service';
+import type { OAuthService } from '../services/oauth.service';
 
 class AuthController {
-  constructor(private readonly authService: IAuthService) {}
+  constructor(
+    private readonly authService: IAuthService,
+    private readonly oauthService: OAuthService
+  ) {}
 
   register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -245,6 +249,48 @@ class AuthController {
       res.json(user);
     } catch (error) {
       next(error);
+    }
+  };
+
+  googleLogin = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // Assuming frontend runs on port 5173, or using an env variable.
+      // We will pass the redirect URL. The callback URL must be registered in Google Console.
+      const redirectUri =
+        process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3500/api/auth/google/callback';
+      const url = this.oauthService.getAuthorizationUrl('google', redirectUri);
+      res.redirect(url);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  googleCallback = async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    try {
+      const { code } = req.query;
+      if (!code || typeof code !== 'string') {
+        res.status(400).send('Authorization code missing');
+        return;
+      }
+
+      const redirectUri =
+        process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3500/api/auth/google/callback';
+      const result = await this.oauthService.authenticateWithProvider('google', code, redirectUri);
+
+      // Set refresh token in cookie
+      res.cookie('refreshToken', result.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      // Redirect to frontend with access token in URL
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      res.redirect(`${frontendUrl}/login?token=${result.accessToken}`);
+    } catch (error) {
+      console.error('OAuth Callback Error:', error);
+      res.status(500).send('Google authentication failed');
     }
   };
 }
