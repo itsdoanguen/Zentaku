@@ -13,6 +13,7 @@ export class MovieUploadController {
     this.getEpisodes = this.getEpisodes.bind(this);
     this.getConversionStatus = this.getConversionStatus.bind(this);
     this.getMovies = this.getMovies.bind(this);
+    this.deleteEpisode = this.deleteEpisode.bind(this);
   }
 
   /**
@@ -150,6 +151,35 @@ export class MovieUploadController {
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch movies',
+      });
+    }
+  }
+
+  /**
+   * DELETE /admin/movies/:animeId/:episodeNumber
+   * Delete an episode from FilmServer
+   */
+  async deleteEpisode(req: Request, res: Response): Promise<void> {
+    try {
+      const animeId = parseInt(req.params.animeId || '', 10);
+      const episodeNumber = parseInt(req.params.episodeNumber || '', 10);
+
+      if (isNaN(animeId) || isNaN(episodeNumber)) {
+        res.status(400).json({ success: false, error: 'Invalid animeId or episodeNumber' });
+        return;
+      }
+
+      const success = await this.movieUploadService.deleteEpisode(animeId, episodeNumber);
+      if (!success) {
+        res.status(500).json({ success: false, error: 'Failed to delete episode from server' });
+        return;
+      }
+
+      res.json({ success: true, message: 'Episode deleted successfully' });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete episode',
       });
     }
   }

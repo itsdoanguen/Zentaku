@@ -79,7 +79,38 @@ export default (): Router => {
    *       200:
    *         description: List of episodes
    */
-  router.get('/movies/:animeId/episodes', movieUploadController.getEpisodes);
+  router.get(
+    '/movies/:animeId/episodes',
+    movieUploadController.getEpisodes.bind(movieUploadController)
+  );
+
+  /**
+   * @swagger
+   * /admin/movies/{animeId}/{episodeNumber}:
+   *   delete:
+   *     tags: [Admin - Movies]
+   *     summary: Delete an episode completely from FilmServer
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: animeId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *       - in: path
+   *         name: episodeNumber
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: Episode deleted successfully
+   */
+  router.delete(
+    '/movies/:animeId/:episodeNumber',
+    movieUploadController.deleteEpisode.bind(movieUploadController)
+  );
 
   /**
    * @swagger

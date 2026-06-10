@@ -164,6 +164,21 @@ export class MovieUploadService {
     }
   }
 
+  /**
+   * Delete an episode from FilmServer
+   */
+  async deleteEpisode(animeId: number, episodeNumber: number): Promise<boolean> {
+    try {
+      await axios.delete(`${this.filmServerUrl}/api/movies/${animeId}/${episodeNumber}`, {
+        timeout: 5000,
+      });
+      return true;
+    } catch (err: any) {
+      logger.error(`[MovieUploadService] Failed to delete episode: ${err.message}`);
+      return false;
+    }
+  }
+
   private cleanupTempFiles(...filePaths: (string | undefined)[]): void {
     for (const filePath of filePaths) {
       if (filePath && fs.existsSync(filePath)) {
