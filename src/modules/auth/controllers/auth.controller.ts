@@ -257,7 +257,7 @@ class AuthController {
       // Assuming frontend runs on port 5173, or using an env variable.
       // We will pass the redirect URL. The callback URL must be registered in Google Console.
       const redirectUri =
-        process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3500/api/auth/google/callback';
+        process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3500/api/auth/google/callback';
       const url = this.oauthService.getAuthorizationUrl('google', redirectUri);
       res.redirect(url);
     } catch (error) {
@@ -274,7 +274,7 @@ class AuthController {
       }
 
       const redirectUri =
-        process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3500/api/auth/google/callback';
+        process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3500/api/auth/google/callback';
       const result = await this.oauthService.authenticateWithProvider('google', code, redirectUri);
 
       // Set refresh token in cookie
@@ -286,7 +286,7 @@ class AuthController {
       });
 
       // Redirect to frontend with access token in URL
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
       res.redirect(`${frontendUrl}/login?token=${result.accessToken}`);
     } catch (error) {
       console.error('OAuth Callback Error:', error);
