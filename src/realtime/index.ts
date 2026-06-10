@@ -17,12 +17,19 @@ import logger from '../shared/utils/logger';
 import type { RealtimeGateway } from './gateway/gateway';
 import { createAuthMiddleware } from './gateway/middleware';
 import { createNackEnvelope } from './validators/envelope-validator';
+import type { WatchPartyService } from '../modules/watch-party/services/watch-party.service';
 
 export function initializeRealtime(server: HttpServer, container: Container): SocketIOServer {
   const io = new SocketIOServer(server, {
     cors: {
-      origin: '*',
+      origin: (_origin, callback) => {
+        // Cho phép mọi origin truy cập
+        callback(null, true);
+      },
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      credentials: true,
     },
+    transports: ['websocket', 'polling'],
   });
 
   const gateway = container.resolve<RealtimeGateway>('realtimeGateway');
@@ -125,6 +132,21 @@ export function initializeRealtime(server: HttpServer, container: Container): So
               avatar: context.avatar,
             },
           });
+
+          if (roomName.startsWith('channel:')) {
+            try {
+              const watchPartyService = container.resolve<WatchPartyService>('watchPartyService');
+              if (watchPartyService) {
+                watchPartyService.leaveWatchRoom(channelId, BigInt(context.userId)).catch((err) => {
+                  logger.error(
+                    `[Realtime] Error leaving watch room ${channelId} on disconnect: ${err.message}`
+                  );
+                });
+              }
+            } catch (err: any) {
+              logger.error(`[Realtime] Failed to resolve watchPartyService: ${err.message}`);
+            }
+          }
         }
       }
       gateway.removeSocketContext(socket.id);

@@ -37,3 +37,16 @@ export const updatePlaybackStateValidation = [
     .withMessage('action must be one of: play, pause, seek'),
   body('timestamp').optional().isNumeric().withMessage('timestamp must be a number'),
 ];
+
+export const inviteToWatchRoomValidation = [
+  param('channelId')
+    .notEmpty()
+    .withMessage('channelId is required')
+    .isString()
+    .withMessage('channelId must be a string'),
+  body('targetUserId')
+    .notEmpty()
+    .withMessage('targetUserId is required')
+    .isNumeric()
+    .withMessage('targetUserId must be a valid user id'),
+];

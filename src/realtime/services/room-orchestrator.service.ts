@@ -123,6 +123,16 @@ export class RoomOrchestratorService {
 
     this.gateway.leaveRoom(socket, roomName, context);
 
+    try {
+      const container = require('../../config/container').default;
+      const watchPartyService = container.resolve('watchPartyService');
+      if (watchPartyService) {
+        await watchPartyService.leaveWatchRoom(channelId, BigInt(context.userId));
+      }
+    } catch {
+      // Ignore if watchPartyService cannot be resolved
+    }
+
     const ack = createAckEnvelope(requestId, 'room.leave');
     this.gateway.sendAck(socket, ack);
   }

@@ -1,5 +1,8 @@
 import crypto from 'crypto';
 import type { CreateWatchRoomDto, UpdatePlaybackStateDto } from '../dto/watch-party.dto';
+import type { NotificationService } from '../../notification/services/notification.service';
+import { NotificationType } from '../../../entities/types/enums';
+import logger from '../../../shared/utils/logger';
 
 export interface InMemoryWatchRoom {
   channelId: string;
@@ -17,7 +20,13 @@ export interface InMemoryWatchRoom {
 export class WatchPartyService {
   private rooms: Map<string, InMemoryWatchRoom>;
 
-  constructor() {
+  constructor(
+    private realtimeGateway?: any,
+    private notificationService?: NotificationService,
+    private channelService?: any,
+    private messageService?: any,
+    private userRepository?: any
+  ) {
     this.rooms = new Map();
   }
 
@@ -45,7 +54,11 @@ export class WatchPartyService {
   async getWatchRoom(channelId: string) {
     const config = this.rooms.get(channelId);
     if (!config) {
-      throw Object.assign(new Error('Watch room not found'), { code: 'ROOM_NOT_FOUND' });
+      const err = new Error('Watch room not found') as any;
+      err.code = 'ROOM_NOT_FOUND';
+      err.statusCode = 404;
+      err.isOperational = true;
+      throw err;
     }
     return this.mapConfigToDto(config);
   }
@@ -53,11 +66,19 @@ export class WatchPartyService {
   async updatePlaybackState(channelId: string, userId: bigint, data: UpdatePlaybackStateDto) {
     const config = this.rooms.get(channelId);
     if (!config) {
-      throw Object.assign(new Error('Watch room not found'), { code: 'ROOM_NOT_FOUND' });
+      const err = new Error('Watch room not found') as any;
+      err.code = 'ROOM_NOT_FOUND';
+      err.statusCode = 404;
+      err.isOperational = true;
+      throw err;
     }
 
     if (config.hostId !== userId.toString()) {
-      throw Object.assign(new Error('Only host can control playback'), { code: 'HOST_REQUIRED' });
+      const err = new Error('Only host can control playback') as any;
+      err.code = 'HOST_REQUIRED';
+      err.statusCode = 403;
+      err.isOperational = true;
+      throw err;
     }
 
     config.lastSyncedAt = new Date();
@@ -86,11 +107,19 @@ export class WatchPartyService {
   ) {
     const config = this.rooms.get(channelId);
     if (!config) {
-      throw Object.assign(new Error('Watch room not found'), { code: 'ROOM_NOT_FOUND' });
+      const err = new Error('Watch room not found') as any;
+      err.code = 'ROOM_NOT_FOUND';
+      err.statusCode = 404;
+      err.isOperational = true;
+      throw err;
     }
 
     if (config.hostId !== userId.toString()) {
-      throw Object.assign(new Error('Only host can change episode'), { code: 'HOST_REQUIRED' });
+      const err = new Error('Only host can change episode') as any;
+      err.code = 'HOST_REQUIRED';
+      err.statusCode = 403;
+      err.isOperational = true;
+      throw err;
     }
 
     config.currentSourceUrl = newSourceUrl;
@@ -114,14 +143,31 @@ export class WatchPartyService {
   async joinWatchRoom(channelId: string, _userId: bigint) {
     const config = this.rooms.get(channelId);
     if (!config) {
-      throw Object.assign(new Error('Watch room not found'), { code: 'ROOM_NOT_FOUND' });
+      const err = new Error('Watch room not found') as any;
+      err.code = 'ROOM_NOT_FOUND';
+      err.statusCode = 404;
+      err.isOperational = true;
+      throw err;
     }
     // Return snapshot for late joiners
     return this.mapConfigToDto(config);
   }
 
-  async leaveWatchRoom(_channelId: string, _userId: bigint) {
-    // Basic leave, no host transfer logic for MVP
+  async leaveWatchRoom(channelId: string, userId: bigint) {
+    const config = this.rooms.get(channelId);
+    if (config && config.hostId === userId.toString()) {
+      this.rooms.delete(channelId);
+
+      if (this.realtimeGateway) {
+        this.realtimeGateway.broadcastToRoom(`channel:${channelId}`, {
+          event: 'room.closed',
+          version: '1.0',
+          requestId: crypto.randomUUID(),
+          timestamp: Date.now(),
+          data: { channelId },
+        });
+      }
+    }
     return { success: true };
   }
 
@@ -134,6 +180,90 @@ export class WatchPartyService {
       config.messages.shift();
     }
     return message;
+  }
+
+  async inviteToWatchRoom(
+    channelId: string,
+    hostUserId: bigint,
+    targetUserId: bigint,
+    frontendUrl: string = 'http://localhost:5173'
+  ) {
+    const config = this.rooms.get(channelId);
+    if (!config) {
+      const err = new Error('Watch room not found') as any;
+      err.code = 'ROOM_NOT_FOUND';
+      err.statusCode = 404;
+      err.isOperational = true;
+      throw err;
+    }
+
+    if (config.hostId !== hostUserId.toString()) {
+      const err = new Error('Only host can invite users') as any;
+      err.code = 'HOST_REQUIRED';
+      err.statusCode = 403;
+      err.isOperational = true;
+      throw err;
+    }
+
+    // Get host user info for notification
+    let hostDisplayName = 'Someone';
+    let hostAvatar: string | null = null;
+    let hostUsername = '';
+    if (this.userRepository) {
+      try {
+        const hostUser = await this.userRepository.findById(hostUserId);
+        if (hostUser) {
+          hostDisplayName = hostUser.displayName || hostUser.username;
+          hostAvatar = hostUser.avatar || null;
+          hostUsername = hostUser.username;
+        }
+      } catch {
+        logger.warn('[WatchPartyService] Could not fetch host user info');
+      }
+    }
+
+    // 1. Send chat message with room link via private channel
+    let chatChannelId: string | null = null;
+    if (this.channelService && this.messageService) {
+      try {
+        const channel = await this.channelService.createOrGetPrivateChannel(
+          hostUserId,
+          targetUserId
+        );
+        chatChannelId = channel.id.toString();
+
+        const inviteLink = `${frontendUrl}/watch-along/${channelId}`;
+        const messageContent = `🎬 Mời bạn xem anime cùng!\nNhấn vào link để tham gia: ${inviteLink}`;
+
+        await this.messageService.sendMessage(BigInt(chatChannelId!), hostUserId, {
+          content: messageContent,
+        });
+      } catch (chatErr: any) {
+        logger.warn(`[WatchPartyService] Could not send chat invite: ${chatErr.message}`);
+      }
+    }
+
+    // 2. Create notification for the invited user
+    if (this.notificationService) {
+      try {
+        await this.notificationService.createAndPush(
+          targetUserId,
+          NotificationType.WATCH_PARTY_INVITE,
+          'Lời mời xem cùng',
+          `${hostDisplayName} đã mời bạn xem anime cùng`,
+          {
+            channelId,
+            hostUsername,
+            hostAvatar,
+            chatChannelId,
+          }
+        );
+      } catch (notifErr: any) {
+        logger.warn(`[WatchPartyService] Could not send invite notification: ${notifErr.message}`);
+      }
+    }
+
+    return { success: true, channelId, targetUserId: targetUserId.toString() };
   }
 
   private mapConfigToDto(config: InMemoryWatchRoom) {

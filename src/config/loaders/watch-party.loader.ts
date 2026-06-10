@@ -6,15 +6,34 @@ const loadWatchParty = (container: Container): void => {
 
   container.register(
     'watchPartyService',
-    (_c: any) => {
+    (c: any) => {
       const {
         WatchPartyService,
       } = require('../../modules/watch-party/services/watch-party.service');
-      return new WatchPartyService();
+      const realtimeGateway = c.has('realtimeGateway') ? c.resolve('realtimeGateway') : undefined;
+      const notificationService = c.has('notificationService')
+        ? c.resolve('notificationService')
+        : undefined;
+      const channelService = c.has('channelService') ? c.resolve('channelService') : undefined;
+      const messageService = c.has('messageService') ? c.resolve('messageService') : undefined;
+      const userRepository = c.has('userRepository') ? c.resolve('userRepository') : undefined;
+      return new WatchPartyService(
+        realtimeGateway,
+        notificationService,
+        channelService,
+        messageService,
+        userRepository
+      );
     },
     {
       singleton: true,
-      dependencies: [],
+      dependencies: [
+        'realtimeGateway',
+        'notificationService',
+        'channelService',
+        'messageService',
+        'userRepository',
+      ],
     }
   );
 

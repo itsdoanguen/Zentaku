@@ -68,6 +68,7 @@ export interface ICommunityService extends IBaseService {
   getCommunityMembers(communityId: bigint, userId?: bigint): Promise<CommunityMember[]>;
   getMemberRole(communityId: bigint, userId: bigint): Promise<UserRole | null>;
   toggleMute(userId: bigint, communityId: bigint, isMuted: boolean): Promise<CommunityMember>;
+  updateMemberRole(communityId: bigint, userId: bigint, role: UserRole): Promise<CommunityMember>;
 }
 
 export interface ICommunityRepository {

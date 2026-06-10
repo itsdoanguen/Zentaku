@@ -77,4 +77,6 @@ export enum NotificationType {
   MESSAGE = 'message',
   ANIME_AIRING = 'anime_airing',
   LIST_INTERACTION = 'list_interaction',
+  NEW_FOLLOWER = 'new_follower',
+  WATCH_PARTY_INVITE = 'watch_party_invite',
 }

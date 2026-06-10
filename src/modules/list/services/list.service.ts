@@ -40,7 +40,7 @@ import type { IListRepository, IListService, ListSearchResult } from '../types/l
 
 import type { ICommunityService } from '../../community/types/community.types';
 import type { IChannelService } from '../../channel/types/channel.types';
-import { ChannelType, NotificationType } from '../../../entities/types/enums';
+import { ChannelType, NotificationType, UserRole } from '../../../entities/types/enums';
 import type { NotificationService } from '../../notification/services/notification.service';
 
 export class ListService extends BaseService implements IListService {
@@ -681,9 +681,12 @@ export class ListService extends BaseService implements IListService {
           try {
             await this.communityService.joinCommunity(BigInt(member.userId), community.inviteCode!);
 
-            // Wait, we need to set role appropriately? joinCommunity sets MEMBER by default.
-            // But we don't have updateMemberRole API in CommunityService right now, so MEMBER is fine for both EDITOR and VIEWER.
-            // If we really need MODERATOR, we'd have to update CommunityMember directly, but MEMBER is acceptable.
+            // Update role based on list permission
+            const role =
+              member.permissionLevel === ListPermission.EDITOR
+                ? UserRole.MODERATOR
+                : UserRole.MEMBER;
+            await this.communityService.updateMemberRole(community.id, BigInt(member.userId), role);
           } catch (e) {
             this._logError(`Failed to add list member to community: ${(e as Error).message}`, {
               userId: member.userId,
@@ -813,6 +816,11 @@ export class ListService extends BaseService implements IListService {
           );
           if (community && community.inviteCode) {
             await this.communityService.joinCommunity(BigInt(targetUserId), community.inviteCode);
+
+            // Sync role
+            const role =
+              permission === ListPermission.EDITOR ? UserRole.MODERATOR : UserRole.MEMBER;
+            await this.communityService.updateMemberRole(community.id, BigInt(targetUserId), role);
           }
         } catch (e) {
           this._logError(`Failed to sync list member to community: ${(e as Error).message}`, {
@@ -880,6 +888,26 @@ export class ListService extends BaseService implements IListService {
           actorUser.displayName || actorUser.username,
           actorUser.avatar
         );
+      }
+
+      // Sync role to community if chat is enabled
+      if (list.settings && list.settings.communityId) {
+        try {
+          const role = permission === ListPermission.EDITOR ? UserRole.MODERATOR : UserRole.MEMBER;
+          await this.communityService.updateMemberRole(
+            BigInt(list.settings.communityId as string),
+            BigInt(targetUser.id),
+            role
+          );
+        } catch (e) {
+          this._logError(
+            `Failed to sync list member permission to community: ${(e as Error).message}`,
+            {
+              userId: targetUser.id,
+              error: e,
+            }
+          );
+        }
       }
 
       this._logInfo('Member permission updated', {

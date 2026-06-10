@@ -6,6 +6,7 @@ import {
   createWatchRoomValidation,
   getWatchRoomValidation,
   updatePlaybackStateValidation,
+  inviteToWatchRoomValidation,
 } from './validators/watch-party.validator';
 
 const initializeWatchPartyRoutes = (container: Container): Router => {
@@ -23,6 +24,11 @@ const initializeWatchPartyRoutes = (container: Container): Router => {
   );
   router.post('/:channelId/join', getWatchRoomValidation, watchPartyController.joinWatchRoom);
   router.post('/:channelId/leave', getWatchRoomValidation, watchPartyController.leaveWatchRoom);
+  router.post(
+    '/:channelId/invite',
+    inviteToWatchRoomValidation,
+    watchPartyController.inviteToWatchRoom
+  );
 
   return router;
 };
