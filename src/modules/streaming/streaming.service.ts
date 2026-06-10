@@ -443,12 +443,13 @@ class StreamingService extends BaseService implements IStreamingService {
     page: number,
     limit: number
   ): Promise<AvailableEpisodesResponse> {
-    const episodeCount = await this.filmServerClient.getAvailableEpisodeCount(anilistId);
-    const allEpisodes: EpisodeInfo[] = Array.from({ length: episodeCount }, (_, i) => ({
-      number: i + 1,
+    // Fetch actual episode numbers (e.g. [9, 10, 11]) instead of just count
+    const episodeNumbers = await this.filmServerClient.getEpisodeNumbers(anilistId);
+    const allEpisodes: EpisodeInfo[] = episodeNumbers.map((epNum, i) => ({
+      number: epNum,
       order: i + 1,
-      title: `Episode ${i + 1}`,
-      episodeId: `filmserver-${anilistId}-ep${i + 1}`,
+      title: `Episode ${epNum}`,
+      episodeId: `filmserver-${anilistId}-ep${epNum}`,
     }));
 
     const normalizedPage = Math.max(1, page);
@@ -460,13 +461,13 @@ class StreamingService extends BaseService implements IStreamingService {
     return {
       anilistId,
       hianimeId: `filmserver-${anilistId}`,
-      totalEpisodes: episodeCount,
+      totalEpisodes: allEpisodes.length,
       episodes: pagedEpisodes,
       pagination: {
         currentPage: normalizedPage,
         totalPages,
         pageSize: normalizedLimit,
-        totalItems: episodeCount,
+        totalItems: allEpisodes.length,
         hasNextPage: normalizedPage < totalPages,
         hasPreviousPage: normalizedPage > 1,
       },

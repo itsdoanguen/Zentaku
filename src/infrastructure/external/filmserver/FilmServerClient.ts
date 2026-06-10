@@ -56,6 +56,26 @@ class FilmServerClient {
     return this.cachedMovies[anilistId] ?? 12;
   }
 
+  /**
+   * Get actual episode numbers from FilmServer (e.g. [9, 10, 11] instead of just count=3)
+   */
+  async getEpisodeNumbers(anilistId: number): Promise<number[]> {
+    if (!this.baseUrl) return [];
+    try {
+      const response = await axios.get(`${this.baseUrl}/api/episodes/${anilistId}`, {
+        timeout: 5000,
+      });
+      const episodes = response.data?.episodes || [];
+      return episodes
+        .map((ep: any) => parseInt(ep.episodeNumber, 10))
+        .filter((n: number) => !isNaN(n))
+        .sort((a: number, b: number) => a - b);
+    } catch (err: any) {
+      logger.error(`[FilmServerClient] Failed to fetch episode numbers: ${err.message}`);
+      return [];
+    }
+  }
+
   async getAvailableAnimeIds(): Promise<number[]> {
     await this.fetchMovies();
     return Object.keys(this.cachedMovies).map(Number);
