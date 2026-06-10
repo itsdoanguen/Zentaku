@@ -412,10 +412,10 @@ class StreamingService extends BaseService implements IStreamingService {
     anilistId: number,
     episodeNumber: number
   ): Promise<EpisodeSourcesResponse> {
-    const episodeCount = await this.filmServerClient.getAvailableEpisodeCount(anilistId);
-    if (episodeNumber > episodeCount) {
+    const episodeNumbers = await this.filmServerClient.getEpisodeNumbers(anilistId);
+    if (!episodeNumbers.includes(episodeNumber)) {
       throw new NotFoundError(
-        `Episode ${episodeNumber} not found for anime ${anilistId}. Available: 1-${episodeCount}`
+        `Episode ${episodeNumber} not found for anime ${anilistId}. Available: [${episodeNumbers.join(', ')}]`
       );
     }
 
