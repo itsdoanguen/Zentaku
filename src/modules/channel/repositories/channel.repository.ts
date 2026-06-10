@@ -78,10 +78,16 @@ export class ChannelRepository extends BaseRepository<Channel> implements IChann
         { userId }
       )
       .leftJoinAndSelect('otherParticipant.user', 'otherUser')
+      .leftJoinAndMapOne(
+        'channel.lastMessage',
+        'channel.messages',
+        'msg',
+        'msg.id = (SELECT m.id FROM messages m WHERE m.channel_id = channel.id ORDER BY m.created_at DESC LIMIT 1)'
+      )
       .where('channel.communityId IS NULL')
       .andWhere('channel.type = :type', { type: ChannelType.TEXT })
       .andWhere('channel.isPrivate = :isPrivate', { isPrivate: true })
-      .orderBy('channel.createdAt', 'DESC')
+      .orderBy('COALESCE(msg.createdAt, channel.createdAt)', 'DESC')
       .getMany();
   }
 

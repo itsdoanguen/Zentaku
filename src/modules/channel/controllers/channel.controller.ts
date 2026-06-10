@@ -118,6 +118,15 @@ export class ChannelController extends BaseController<IChannelService> {
         isPrivate: channel.isPrivate,
         position: channel.position,
         createdAt: channel.createdAt.toISOString(),
+        lastMessage: (channel as any).lastMessage
+          ? {
+              id: String((channel as any).lastMessage.id),
+              content: (channel as any).lastMessage.content,
+              createdAt: (channel as any).lastMessage.createdAt
+                ? (channel as any).lastMessage.createdAt.toISOString()
+                : undefined,
+            }
+          : null,
         participants: channel.participants.map((p) => ({
           userId: String(p.userId),
           user: p.user
