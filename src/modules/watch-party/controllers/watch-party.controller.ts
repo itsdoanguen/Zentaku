@@ -161,10 +161,12 @@ export default class WatchPartyController {
 
       const channelId = req.params.channelId as string;
       const targetUserId = BigInt(req.body.targetUserId);
+      const frontendUrl = req.body.frontendUrl;
       const result = await this.watchPartyService.inviteToWatchRoom(
         channelId,
         BigInt(req.user!.userId),
-        targetUserId
+        targetUserId,
+        frontendUrl
       );
 
       res.status(200).json(result);

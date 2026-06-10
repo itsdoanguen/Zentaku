@@ -1611,8 +1611,9 @@ export class ListService extends BaseService implements IListService {
         .createQueryBuilder('list')
         .leftJoinAndSelect('list.owner', 'owner')
         .leftJoinAndSelect('list.items', 'items')
-        .where('list.name LIKE :query', { query: `%${options.query}%` })
-        .orWhere('list.description LIKE :query', { query: `%${options.query}%` });
+        .where('(list.name LIKE :query OR list.description LIKE :query)', {
+          query: `%${options.query}%`,
+        });
 
       if (options.isPublicOnly) {
         qb.andWhere('list.privacy = :privacy', { privacy: PrivacyMode.PUBLIC });

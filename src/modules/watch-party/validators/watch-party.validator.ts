@@ -49,4 +49,5 @@ export const inviteToWatchRoomValidation = [
     .withMessage('targetUserId is required')
     .isNumeric()
     .withMessage('targetUserId must be a valid user id'),
+  body('frontendUrl').optional().isString().withMessage('frontendUrl must be a string'),
 ];

@@ -66,3 +66,50 @@ export const listBannerUpload = multer({
   fileFilter,
   limits: { fileSize: MAX_BANNER_SIZE },
 });
+
+// ==================== MOVIE UPLOAD (Video + Subtitle) ====================
+
+const MAX_VIDEO_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
+const ALLOWED_VIDEO_MIMES = new Set(['video/mp4', 'video/x-matroska', 'video/webm']);
+const ALLOWED_SUBTITLE_EXTS = new Set(['.vtt', '.srt', '.ass']);
+
+const movieFileFilter = (
+  _req: Request,
+  file: Express.Multer.File,
+  cb: FileFilterCallback
+): void => {
+  const ext = path.extname(file.originalname).toLowerCase();
+
+  if (file.fieldname === 'video') {
+    if (ALLOWED_VIDEO_MIMES.has(file.mimetype) || ['.mp4', '.mkv', '.webm'].includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Invalid video file type: ${file.mimetype}. Allowed: mp4, mkv, webm`));
+    }
+  } else if (file.fieldname === 'subtitle') {
+    if (ALLOWED_SUBTITLE_EXTS.has(ext) || file.mimetype === 'text/vtt') {
+      cb(null, true);
+    } else {
+      cb(new Error(`Invalid subtitle file type: ${ext}. Allowed: vtt, srt, ass`));
+    }
+  } else {
+    cb(new Error(`Unexpected field: ${file.fieldname}`));
+  }
+};
+
+export const movieUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      const destinationDir = path.resolve(process.cwd(), 'public', 'uploads', 'movies', 'temp');
+      ensureDir(destinationDir);
+      cb(null, destinationDir);
+    },
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+      cb(null, name);
+    },
+  }),
+  fileFilter: movieFileFilter,
+  limits: { fileSize: MAX_VIDEO_SIZE },
+});
