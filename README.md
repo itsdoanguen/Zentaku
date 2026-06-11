@@ -13,6 +13,7 @@ Zentaku is a complete system divided into three main repositories:
 1. **[Zentaku_BE (Backend)](https://github.com/itsdoanguen/Zentaku)** - _You are here!_
 2. **[pbl5_webFE (Web Frontend)](https://github.com/UmaMusumeEnjoyer/Zentaku)** - The user-facing web interface.
 3. **[shared-logic (Shared Library)](https://github.com/UmaMusumeEnjoyer/pbl5_fe_shared-logic)** - Common state and logic shared across clients.
+4. **[FilmServer (HLS Transcoder)](#)** - Local HLS Streaming and Video Conversion service.
 
 ---
 
