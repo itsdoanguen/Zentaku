@@ -139,7 +139,7 @@ class ListController extends BaseController<IListService & IBaseService> {
    */
   getListRecommendations = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const listId = this.getIntParam(req, 'listId');
-    const limit = this.getIntQuery(req, 'limit', 30) || 30;
+    const limit = this.getIntQuery(req, 'limit', 10) || 10;
 
     const recommendations = await this.recommendationService.getRecommendationsForList(
       listId,

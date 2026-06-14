@@ -147,7 +147,7 @@ export class RecommendationService {
                 genres: (item as any).genres || [],
                 episodes: item.episodes || undefined,
                 relevanceScore: 0, // Fallback has lower priority
-                recommendedBy: ['Thể loại tương tự'],
+                recommendedBy: ['GENRE_FALLBACK'],
               });
             }
           }
