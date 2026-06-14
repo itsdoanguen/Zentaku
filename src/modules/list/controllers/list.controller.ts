@@ -24,9 +24,17 @@ import type {
 } from '../dto/list.dto';
 import type { IListService } from '../types/list.types';
 
+import type { RecommendationService } from '../services/recommendation.service';
+
 class ListController extends BaseController<IListService & IBaseService> {
-  constructor(listService: IListService & IBaseService) {
+  private readonly recommendationService: RecommendationService;
+
+  constructor(
+    listService: IListService & IBaseService,
+    recommendationService: RecommendationService
+  ) {
     super(listService);
+    this.recommendationService = recommendationService;
   }
 
   // ==================== PHASE 1: CRUD ====================
@@ -123,6 +131,21 @@ class ListController extends BaseController<IListService & IBaseService> {
 
     const animes = await this.service.getListAnimes(listId);
     this.success(res, animes);
+  });
+
+  /**
+   * GET /list/:listId/recommendations
+   * Get recommended anime for a list
+   */
+  getListRecommendations = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const listId = this.getIntParam(req, 'listId');
+    const limit = this.getIntQuery(req, 'limit', 10) || 10;
+
+    const recommendations = await this.recommendationService.getRecommendationsForList(
+      listId,
+      limit
+    );
+    this.success(res, recommendations);
   });
 
   /**
