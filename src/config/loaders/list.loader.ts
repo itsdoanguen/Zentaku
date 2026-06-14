@@ -61,17 +61,34 @@ const loadList = (container: Container): void => {
   );
 
   container.register(
+    'recommendationService',
+    (c: any) => {
+      const {
+        RecommendationService,
+      } = require('../../modules/list/services/recommendation.service');
+      const listRepository = c.resolve('listRepository');
+      const anilistAnimeClient = c.resolve('anilistAnimeClient');
+      return new RecommendationService(listRepository, anilistAnimeClient);
+    },
+    {
+      singleton: true,
+      dependencies: ['listRepository', 'anilistAnimeClient'],
+    }
+  );
+
+  container.register(
     'listController',
     (c: any) => {
       const ListController =
         require('../../modules/list/controllers/list.controller').default ||
         require('../../modules/list/controllers/list.controller');
       const listService = c.resolve('listService');
-      return new ListController(listService);
+      const recommendationService = c.resolve('recommendationService');
+      return new ListController(listService, recommendationService);
     },
     {
       singleton: true,
-      dependencies: ['listService'],
+      dependencies: ['listService', 'recommendationService'],
     }
   );
 

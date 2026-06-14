@@ -151,6 +151,29 @@ const initializeListRoutes = (container: Container): Router => {
 
   /**
    * @swagger
+   * /api/list/{listId}/recommendations:
+   *   get:
+   *     summary: Get anime recommendations for list
+   *     description: Get anime recommendations based on the items in the list
+   *     tags: [List]
+   *     parameters:
+   *       - in: path
+   *         name: listId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: Recommendations retrieved successfully
+   */
+  router.get(
+    '/:listId/recommendations',
+    canViewList(container),
+    listController.getListRecommendations
+  );
+
+  /**
+   * @swagger
    * /api/list/{listId}/update:
    *   put:
    *     summary: Update list details

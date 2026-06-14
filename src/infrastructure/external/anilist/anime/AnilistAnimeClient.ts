@@ -13,6 +13,7 @@ import {
   ANIME_SEASON_TREND_QS,
   ANIME_WHERE_TO_WATCH_QS,
 } from './anilist-anime.queries';
+import { MEDIA_RECOMMENDATIONS_QS } from '../anilist.queries';
 import type {
   AnimeBatchInfo,
   AnimeBatchResponse,
@@ -216,6 +217,31 @@ class AnilistAnimeClient extends AnilistClient {
       pageInfo: data.Page?.pageInfo || ({} as PageInfo),
       media: data.Page?.media || [],
     };
+  }
+
+  /**
+   * Fetch anime recommendations based on an anime ID
+   *
+   * @param {number} animeId - Anime ID
+   * @param {object} options - Pagination options
+   * @returns {Promise<any>} - Recommendations
+   */
+  async fetchRecommendations(
+    animeId: number,
+    options: { page?: number; perPage?: number } = {}
+  ): Promise<any> {
+    const { page = 1, perPage = 10 } = options;
+    const data = await this.executeQuery<any>(
+      MEDIA_RECOMMENDATIONS_QS,
+      { id: animeId, type: 'ANIME', page, perPage },
+      `fetchRecommendations(${animeId})`
+    );
+
+    if (!data?.Media) {
+      throw new NotFoundError(`Anime with ID ${animeId} not found`);
+    }
+
+    return data.Media.recommendations;
   }
 
   /**
